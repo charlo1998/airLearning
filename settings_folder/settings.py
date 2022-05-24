@@ -141,7 +141,7 @@ move_by_position = False
 # DDPG parameters
 # ---------------------------
 
-buffer_size = 100000
+buffer_size = 100000  #replay buffer
 batch_size = 64  # ToDo: Determine what this value is
 gamma = 0.99
 tau = 0.001  # Target Network HyperParameters
@@ -196,7 +196,7 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 # ---------------------------
 # training params
 # ---------------------------
-training_steps_cap = 1000000
+training_steps_cap = 8000
 nb_steps_warmup = 300
 episode_count_cap = 100000
 policy = "shallow"
@@ -230,10 +230,11 @@ use_preloaded_json = False
 meta_data_folder = "C:\workspace\zone2"
 
 #--------------------------------
-# profiling
+# profiling (of the env.step fnc?) check if other fnc are profiled
 #--------------------------------
 
 profile = True
+
 
 
 #--------------------------------

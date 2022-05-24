@@ -22,9 +22,9 @@ def runTask(task):
         if (task["algo"] in ["DDPG", "DQN", "PPO", "SAC", "DQN-B"]):
             if (task["algo"] == "DDPG"):
                 msgs.algo = "DDPG"
-                train_class = ddpg_airsim #ddpg not working?
+                train_class = ddpg_airsim
             elif (task["algo"] == "PPO"):
-                msgs.algo = "PPO" #reeeeeeally slow?
+                msgs.algo = "PPO"
                 train_class = ppo_airsim
             elif (task["algo"] == "DQN"):
                 train_class = dqn_airsim
@@ -47,7 +47,17 @@ def runTask(task):
         train_obj, env = train_class.setup(env_name=task["env_name"], \
                                            difficulty_level=task["difficulty_level"])
         print("starting training")
-        train_class.train(train_obj, env)
+        if (task["algo"] == "DQN"):
+            train_class.train(train_obj, env)
+
+        if(task["algo"] == "DQN-B"):
+            train_class.train(train_obj, env)
+
+        if (task["algo"] == "PPO"):
+            train_class.train(train_obj, env)
+
+        if (task["algo"] == "SAC"):
+            train_class.train(train_obj, env)
 
     if (task["task_type"] == "test"):
 

@@ -11,6 +11,8 @@ from pylab import array, uint8, arange
 
 import msgs
 
+#performances:
+import time
 
 
 class AirLearningClient(airsim.MultirotorClient):
@@ -40,11 +42,21 @@ class AirLearningClient(airsim.MultirotorClient):
 
     def getConcatState(self, goal):
 
+        sample0 = time.time()
         now = self.drone_pos()
+        sample1 = time.time()
+        print(f"uav position took {(sample1 - sample0)*1000} miliseconds")
         track = self.goal_direction(goal, now)
+        sample2 = time.time()
+        print(f"track goal took {(sample2 - sample1)*1000} miliseconds")
         encoded_depth = self.getScreenDepthVis(track)
+        sample3 = time.time()
+        print(f"getScreenDepthVis took {(sample3 - sample2)*1000} miliseconds")
         encoded_depth_shape = encoded_depth.shape
         encoded_depth_1d = encoded_depth.reshape(1, encoded_depth_shape[0]*encoded_depth_shape[1])
+        sample4 = time.time()
+        print(f"reshaping took {(sample4 - sample3)*1000} miliseconds")
+
 
         #ToDo: Add RGB, velocity etc
         if(settings.position):

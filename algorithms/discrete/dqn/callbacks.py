@@ -395,6 +395,7 @@ class DataLogger(Callback):
 		self.episodeN = 0
 
 	def on_episode_end(self, step, logs={}):
+		
 		append_log_file(self.episodeN, "verbose")
 		append_log_file(self.episodeN, "")
 		self.episodeN += 1

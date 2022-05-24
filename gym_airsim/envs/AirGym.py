@@ -14,6 +14,7 @@ from gym import spaces
 from gym.utils import seeding
 from algorithms.continuous.ddpg.OU import OU
 import random
+import time
 from gym_airsim.envs.airlearningclient import *
 from utils import append_log_file
 logger = logging.getLogger(__name__)
@@ -475,7 +476,9 @@ class AirSimEnv(gym.Env):
         msgs.meta_data= {**(msgs.meta_data), **self.game_config_handler.cur_game_config.get_all_items()}
     """
 
-    def _step(self, action):
+    def step(self, action): #changed from _step
+        
+		
         msgs.success = False 
         msgs.meta_data = {}
 
@@ -520,21 +523,40 @@ class AirSimEnv(gym.Env):
                 self.actions_in_step.append(str(action))
                 if(settings.profile):
                     self.take_action_list.append(take_action_end - take_action_start)
+                    clct_state_start = time.time()
 
-            if(settings.profile):
-                clct_state_start = time.time()
-            now = self.airgym.drone_pos()
-            self.track = self.airgym.goal_direction(self.goal, now)
-            #self.depth = self.airgym.getScreenDepthVis(self.track)
-            self.concat_state = self.airgym.getConcatState(self.goal)
-            self.rgb = self.airgym.getScreenRGB()
-            self.position = self.airgym.get_distance(self.goal)
-            self.velocity = self.airgym.drone_velocity()
+            
+            if(False): #hardcoded for performance testing
+                sample0 = time.time()
+                now = self.airgym.drone_pos()
+                self.track = self.airgym.goal_direction(self.goal, now)
+                #self.depth = self.airgym.getScreenDepthVis(self.track)
+                sample1 = time.time()
+                print(f"track uav and goal position took {(sample1 - sample0)*1000} miliseconds")
+                self.concat_state = self.airgym.getConcatState(self.goal)
+                sample2 = time.time()
+                print(f"collecting concatenated state took {(sample2 - sample1)*1000} miliseconds")
+                self.rgb = self.airgym.getScreenRGB()
+                sample3 = time.time()
+                print(f"collecting screen RGB took {(sample3 - sample2)*1000} miliseconds")
+                self.position = self.airgym.get_distance(self.goal)
+                self.velocity = self.airgym.drone_velocity()
+                sample4 = time.time()
+                print(f"collecting pose and speed took {(sample4 - sample3)*1000} miliseconds")
+            else:
+                now = self.airgym.drone_pos()
+                self.track = self.airgym.goal_direction(self.goal, now)
+                #self.depth = self.airgym.getScreenDepthVis(self.track)
+                self.concat_state = self.airgym.getConcatState(self.goal)
+                self.rgb = self.airgym.getScreenRGB()
+                self.position = self.airgym.get_distance(self.goal)
+                self.velocity = self.airgym.drone_velocity()
+
             if(settings.profile):
                 clct_state_end = time.time()
                 self.clct_state_list.append(clct_state_end - clct_state_start)
             self.speed = np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2)
-            print("Speed:"+str(self.speed))
+            #print("Speed:"+str(self.speed))
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             
             if distance < settings.success_distance_to_goal:
@@ -610,7 +632,8 @@ class AirSimEnv(gym.Env):
         self.velocity = self.airgym.drone_velocity()
         msgs.cur_zone_number = self.cur_zone_number_buff  #which delays the update for cur_zone_number
 
-    def _reset(self):
+    def reset(self): #was_reset, which means it wasn't imported with a import * (don't know where it was imported yet
+        print("called reset method from airSim env")
         try:
             if(settings.profile):
                 if(self.stepN>1):

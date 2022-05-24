@@ -39,7 +39,8 @@ def train(env, agent):
     # Train the agent
     agent.learn(total_timesteps=settings.training_steps_cap)
 
-    agent.save()
+    agent.save("C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model") #todo: automate the path
+
 def test(env, agent, filepath):
     model = DQN.load(filepath)
     obs = env.reset()

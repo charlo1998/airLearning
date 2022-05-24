@@ -2,6 +2,7 @@ import os
 
 os.sys.path.insert(0, os.path.abspath('../settings_folder'))
 
+
 import settings
 import ddpg_airsim
 import dqn_airsim
@@ -22,9 +23,9 @@ def runTask(task):
         if (task["algo"] in ["DDPG", "DQN", "PPO", "SAC", "DQN-B"]):
             if (task["algo"] == "DDPG"):
                 msgs.algo = "DDPG"
-                train_class = ddpg_airsim #ddpg not working?
+                train_class = ddpg_airsim
             elif (task["algo"] == "PPO"):
-                msgs.algo = "PPO" #reeeeeeally slow?
+                msgs.algo = "PPO"
                 train_class = ppo_airsim
             elif (task["algo"] == "DQN"):
                 train_class = dqn_airsim
@@ -47,7 +48,17 @@ def runTask(task):
         train_obj, env = train_class.setup(env_name=task["env_name"], \
                                            difficulty_level=task["difficulty_level"])
         print("starting training")
-        train_class.train(train_obj, env)
+        if (task["algo"] == "DQN"):
+            train_class.train(train_obj, env)
+
+        if(task["algo"] == "DQN-B"):
+            train_class.train(train_obj, env)
+
+        if (task["algo"] == "PPO"):
+            train_class.train(train_obj, env)
+
+        if (task["algo"] == "SAC"):
+            train_class.train(train_obj, env)
 
     if (task["task_type"] == "test"):
 
@@ -82,7 +93,7 @@ def main():
     taskList = []
     model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model.pkl"]
 
-    algo = "DQN"
+    algo = "DQN-B"
 
     task1 = {"task_type": "start_game"}
     task2 = {"algo": algo, "task_type": "train", "difficulty_level": "default", "env_name": "AirSimEnv-v42",
@@ -95,8 +106,8 @@ def main():
     taskList.append(task1)
     taskList.append(task2)
     #taskList.append(task3)
-    taskList.append(task4)
-    taskList.append(task5)
+    #taskList.append(task4)
+    #taskList.append(task5)
 
     for task_el in taskList:
         runTask(task_el)

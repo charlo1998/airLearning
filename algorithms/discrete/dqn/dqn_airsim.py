@@ -41,7 +41,8 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     np.random.seed(123)
     env.seed(123)
     nb_actions = env.action_space.n
-    
+    print(f"actions space: {nb_actions}")
+
     WINDOW_LENGTH = 1
     depth_shape = env.depth.shape
     vel_shape = env.velocity.shape

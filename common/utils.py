@@ -11,16 +11,16 @@ import shutil
 import pandas as pd
 import subprocess
 
-
 def parse_data(file_name):
     if (file_name == ''):
         file_hndl = open(os.path.join(settings.proj_root_path, "data", msgs.algo, msgs.mode + "_episodal_log.txt"), "r")
     else:
         file_hndl = open(file_name, "r")
+    #print(f"parsing: {file_name}")
     data = json.load(file_hndl)
     data_clusterd_based_on_key = {}
-    for episode, episode_data in data.items():
-        for key, value in episode_data.items():
+    for episode, episode_data in data.items(): #loops through the episode and get the keys (ex. success rate, n step, etc.)
+        for key, value in episode_data.items(): #loops through all the keys of an episode and get their values
             if not (key in data_clusterd_based_on_key.keys()):
                 data_clusterd_based_on_key[key] = [value]
             else:
@@ -45,7 +45,11 @@ def santize_data(file):
 def plot_data(file, data_to_inquire, mode="separate"):
     # santize_data(file)
     data = parse_data(file)
+    #print(data)
+    #print(data_to_inquire)
     for el in data_to_inquire:
+        #print(data['success_ratio_within_window'])
+        #print(el)
         plt.plot(data[el[0]], data[el[1]])
         plt.xlabel(el[0])
         plt.ylabel(el[1])
@@ -60,6 +64,14 @@ def plot_data(file, data_to_inquire, mode="separate"):
 
 
 def generate_csv(file):
+    with open(file, 'a+') as f:
+        f.seek(0,0)
+        lines = f.readlines()
+        if lines[-1] != '}':
+            print("added } at log eof!")
+            f.write("\n}")
+        else:
+            print("already well formatted")
     data = parse_data(file)
     data_frame = pd.DataFrame(data)
     data_frame.to_csv(file.replace("txt", "csv"), index=False)
@@ -70,16 +82,18 @@ def append_log_file(episodeN, log_mode="verbose"):
               "a+") as f:
         if (episodeN == 0):
             f.write('{\n')
+        else:
+            f.write(",\n")
         if (log_mode == "verbose"):
             f.write(
                 '"' + str(episodeN) + '"' + ":" + str(msgs.episodal_log_dic_verbose).replace("\'", "\"").replace("True",
                                                                                                                  "\"True\"").replace(
-                    "False", "\"False\"") + ",\n")
+                    "False", "\"False\""))
         # replace("\'", "\"") +",\n")
         else:
             f.write('"' + str(episodeN) + '"' + ":" + str(msgs.episodal_log_dic).replace("\'", "\"").replace("True",
                                                                                                              "\"True\"").replace(
-                "False", "\"False\"") + ",\n")
+                "False", "\"False\""))
         f.close()
 
 
