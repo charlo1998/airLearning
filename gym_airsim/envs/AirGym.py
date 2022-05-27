@@ -126,7 +126,7 @@ class AirSimEnv(gym.Env):
             self.model = ""
 
         # pitch, yaw and roll are in radians ( min : -45 deg, max: 45 deg)
-        if(msgs.algo == "DDPG "):
+        if(msgs.algo == "DDPG"): #fixed typo, was "DDPG "
             self.action_space = spaces.Box(np.array([-0.785, -0.785, -0.785]),
                                        np.array([+0.785, +0.785, +0.785]),
                                        dtype=np.float32)  # pitch, roll, yaw_rate
@@ -308,8 +308,8 @@ class AirSimEnv(gym.Env):
             return
     def dqn_baselines_call_back_emulator(self):
             if (msgs.mode == 'train'):
-                append_log_file(self.episodeN, "verbose")
-                append_log_file(self.episodeN, "")
+                append_log_file(self.episodeN-1, "verbose")
+                append_log_file(self.episodeN-1, "")
                 if not(msgs.success):
                     return
                 weight_file_name = self.check_point.find_file_to_check_point(msgs.cur_zone_number)
@@ -317,8 +317,8 @@ class AirSimEnv(gym.Env):
                 with open(weight_file_name+"_meta_data", "w") as file_hndle:
                     json.dump(msgs.meta_data, file_hndle)
             elif (msgs.mode == 'test'):
-                append_log_file(self.episodeN, "verbose")
-                append_log_file(self.episodeN, "")
+                append_log_file(self.episodeN-1, "verbose")
+                append_log_file(self.episodeN-1, "")
                 with open(msgs.weight_file_under_test+"_test"+str(msgs.tst_inst_ctr) + "_meta_data", "w") as file_hndle:
                     json.dump(msgs.meta_data, file_hndle)
                     json.dump(msgs.meta_data, file_hndle)
@@ -511,20 +511,20 @@ class AirSimEnv(gym.Env):
                 self.actions_in_step.append([action[0], action[1]])
                 collided = self.airgym.take_continious_action(action)
             else:
-                if(settings.profile):
+                collided = self.airgym.take_discrete_action(action)
+                self.actions_in_step.append(str(action))
+                
+            if(settings.profile):
                     self.this_time = time.time()
                     if(self.stepN > 1):
                         self.loop_rate_list.append(self.this_time - self.prev_time)
                     self.prev_time = time.time()
                     take_action_start = time.time()
-                collided = self.airgym.take_discrete_action(action)
-                if(settings.profile):
+            if(settings.profile):
                     take_action_end = time.time()
-                self.actions_in_step.append(str(action))
-                if(settings.profile):
+            if(settings.profile):
                     self.take_action_list.append(take_action_end - take_action_start)
                     clct_state_start = time.time()
-
             
             if(False): #hardcoded for performance testing
                 sample0 = time.time()
@@ -533,7 +533,7 @@ class AirSimEnv(gym.Env):
                 #self.depth = self.airgym.getScreenDepthVis(self.track)
                 sample1 = time.time()
                 print(f"track uav and goal position took {(sample1 - sample0)*1000} miliseconds")
-                self.concat_state = self.airgym.getConcatState(self.goal)
+                self.concat_state = self.airgym.getConcatState(self.track, self.goal)
                 sample2 = time.time()
                 print(f"collecting concatenated state took {(sample2 - sample1)*1000} miliseconds")
                 self.rgb = self.airgym.getScreenRGB()
@@ -547,7 +547,7 @@ class AirSimEnv(gym.Env):
                 now = self.airgym.drone_pos()
                 self.track = self.airgym.goal_direction(self.goal, now)
                 #self.depth = self.airgym.getScreenDepthVis(self.track)
-                self.concat_state = self.airgym.getConcatState(self.goal)
+                self.concat_state = self.airgym.getConcatState(self.track, self.goal)
                 self.rgb = self.airgym.getScreenRGB()
                 self.position = self.airgym.get_distance(self.goal)
                 self.velocity = self.airgym.drone_velocity()
@@ -625,7 +625,7 @@ class AirSimEnv(gym.Env):
         self.episodeInWindow +=1
         now = self.airgym.drone_pos()
         self.track = self.airgym.goal_direction(self.goal, now)
-        self.concat_state = self.airgym.getConcatState(self.goal)
+        self.concat_state = self.airgym.getConcatState(self.track, self.goal)
         #self.depth = self.airgym.getScreenDepthVis(self.track)
         self.rgb = self.airgym.getScreenRGB()
         self.position = self.airgym.get_distance(self.goal)

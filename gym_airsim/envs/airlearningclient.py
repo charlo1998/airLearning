@@ -1,5 +1,4 @@
 import airsim # sudo pip install airsim
-
 import numpy as np
 import math
 import time
@@ -40,22 +39,14 @@ class AirLearningClient(airsim.MultirotorClient):
 
         return ((math.degrees(track) - 180) % 360) - 180
 
-    def getConcatState(self, goal):
-
-        sample0 = time.time()
-        now = self.drone_pos()
-        sample1 = time.time()
-        print(f"uav position took {(sample1 - sample0)*1000} miliseconds")
-        track = self.goal_direction(goal, now)
-        sample2 = time.time()
-        print(f"track goal took {(sample2 - sample1)*1000} miliseconds")
+    def getConcatState(self, track, goal): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
+        test2 = time.perf_counter()
         encoded_depth = self.getScreenDepthVis(track)
-        sample3 = time.time()
-        print(f"getScreenDepthVis took {(sample3 - sample2)*1000} miliseconds")
+        test3 = time.perf_counter()
+        print(f"getScreenDepthVis took {(test3 - test2)*1000} miliseconds")
         encoded_depth_shape = encoded_depth.shape
-        encoded_depth_1d = encoded_depth.reshape(1, encoded_depth_shape[0]*encoded_depth_shape[1])
-        sample4 = time.time()
-        print(f"reshaping took {(sample4 - sample3)*1000} miliseconds")
+        encoded_depth_1d = encoded_depth.reshape(1, encoded_depth_shape[0] * encoded_depth_shape[1])
+
 
 
         #ToDo: Add RGB, velocity etc
@@ -74,7 +65,7 @@ class AirLearningClient(airsim.MultirotorClient):
         responses = self.client.simGetImages([airsim.ImageRequest("1", airsim.ImageType.Scene, False, False)])
         response = responses[0]
         img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8)
-        if((responses[0].width !=0 or responses[0].height!=0)):
+        if((responses[0].width != 0 or responses[0].height != 0)):
             img_rgba = img1d.reshape(response.height, response.width, 4)
             rgb = cv2.cvtColor(img_rgba, cv2.COLOR_BGRA2BGR)
             grey = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
@@ -100,16 +91,18 @@ class AirLearningClient(airsim.MultirotorClient):
     def getScreenDepthVis(self, track):
 
         responses = self.client.simGetImages([airsim.ImageRequest(0, airsim.ImageType.DepthPerspective, True, False)])
-        #responses = self.client.simGetImages([airsim.ImageRequest("0", airsim.ImageType.DepthVis,True, False)])
+        print(f"received {len(responses)} images from client")
+        #responses = self.client.simGetImages([airsim.ImageRequest("0",
+        #airsim.ImageType.DepthVis,True, False)])
 
         if(responses == None):
             print("Camera is not returning image!")
-            print("Image size:"+str(responses[0].height)+","+str(responses[0].width))
+            print("Image size:" + str(responses[0].height) + "," + str(responses[0].width))
         else:
             img1d = np.array(responses[0].image_data_float, dtype=np.float)
 
         img1d = 255 / np.maximum(np.ones(img1d.size), img1d)
-        if((responses[0].width!=0 or responses[0].height!=0)):
+        if((responses[0].width != 0 or responses[0].height != 0)):
             img2d = np.reshape(img1d, (responses[0].height, responses[0].width))
 
         else:
@@ -122,7 +115,8 @@ class AirLearningClient(airsim.MultirotorClient):
         factor = 10
         maxIntensity = 255.0  # depends on dtype of image data
 
-        # Decrease intensity such that dark pixels become much darker, bright pixels become slightly dark
+        # Decrease intensity such that dark pixels become much darker, bright
+        # pixels become slightly dark
         newImage1 = (maxIntensity) * (image / maxIntensity) ** factor
         newImage1 = array(newImage1, dtype=uint8)
 
@@ -218,7 +212,8 @@ class AirLearningClient(airsim.MultirotorClient):
                 vx = np.clip(action[0], -1.0, 1.0)
                 vy = np.clip(action[1], -1.0, 1.0)
                 #print("Vx, Vy--------------->"+str(vx)+", "+ str(vy))
-                #self.client.moveByAngleZAsync(float(pitch), float(roll), -6, float(yaw_rate), settings.duration_ppo).join()
+                #self.client.moveByAngleZAsync(float(pitch), float(roll), -6,
+                #float(yaw_rate), settings.duration_ppo).join()
                 self.client.moveByVelocityZAsync(float(vx), float(vy), -6, 0.5, 1, yaw_mode=airsim.YawMode(True, 0)).join()
             elif(settings.move_by_position):
                 pos = self.drone_pos()
@@ -234,9 +229,10 @@ class AirLearningClient(airsim.MultirotorClient):
         #self.client.moveByAngleThrottleAsync(0, 0,1,0,2).join()
 
         #TODO: Get the collision info and use that to reset the simuation.
-        #TODO: Put some sleep in between the calls so as not to crash on the same lines as DQN
+        #TODO: Put some sleep in between the calls so as not to crash on the
+        #same lines as DQN
     def straight(self, speed, duration):
-        pitch, roll, yaw  = self.client.getPitchRollYaw()
+        pitch, roll, yaw = self.client.getPitchRollYaw()
         vx = math.cos(yaw) * speed
         vy = math.sin(yaw) * speed
         self.client.moveByVelocityZAsync(vx, vy, self.z, duration, 1).join()
@@ -253,12 +249,12 @@ class AirLearningClient(airsim.MultirotorClient):
 
     def yaw_right(self, rate, duration):
         self.client.rotateByYawRateAsync(rate, duration).join()
-        print("yaw_right, rate:" + str(rate) + " duration:"+ str(duration))
+        print("yaw_right, rate:" + str(rate) + " duration:" + str(duration))
         start = time.time()
         return start, duration
 
     def yaw_left(self, rate, duration):
-        print("yaw_left, rate:" + str(rate) + " duration:"+ str(duration))
+        print("yaw_left, rate:" + str(rate) + " duration:" + str(duration))
         self.client.rotateByYawRateAsync(-rate, duration).join()
         start = time.time()
         return start, duration
@@ -273,8 +269,8 @@ class AirLearningClient(airsim.MultirotorClient):
         start = time.time()
         return start, duration
 
-    def move_forward_Speed(self, speed_x = 0.5, speed_y = 0.5, duration = 0.5):
-        pitch, roll, yaw  = self.client.getPitchRollYaw()
+    def move_forward_Speed(self, speed_x=0.5, speed_y=0.5, duration=0.5):
+        pitch, roll, yaw = self.client.getPitchRollYaw()
         vel = self.client.getVelocity()
         vx = math.cos(yaw) * speed_x - math.sin(yaw) * speed_y
         vy = math.sin(yaw) * speed_x + math.cos(yaw) * speed_y
@@ -284,18 +280,18 @@ class AirLearningClient(airsim.MultirotorClient):
         elif speed_x > 0.01:
             drivetrain = 0
             #yaw_mode = YawMode(is_rate= False, yaw_or_rate = 0)
-        self.client.moveByVelocityZAsync(vx = (vx +vel.x_val)/2 ,
-                             vy = (vy +vel.y_val)/2 , #do this to try and smooth the movement
+        self.client.moveByVelocityZAsync(vx = (vx + vel.x_val) / 2 ,
+                             vy = (vy + vel.y_val) / 2 , #do this to try and smooth the movement
                              z = self.z,
                              duration = duration,
-                             drivetrain = drivetrain,
-                            ).join()
+                             drivetrain = drivetrain,).join()
         start = time.time()
         return start, duration
 
     def take_discrete_action(self, action):
 
-       # check if copter is on level cause sometimes he goes up without a reason
+       # check if copter is on level cause sometimes he goes up without a
+       # reason
         """
         x = 0
         while self.client.getPosition().z_val < -7.0:
@@ -363,8 +359,10 @@ class AirLearningClient(airsim.MultirotorClient):
 
 
         collided = (self.client.getMultirotorState().trip_stats.collision_count > 0)
-        #print("collided:", self.client.getCollisionInfo().has_collided," timestamp:" ,self.client.getCollisionInfo().time_stamp)
-        #print("collided " + str(self.client.getMultirotorState().trip_stats.collision_count > 0))
+        #print("collided:", self.client.getCollisionInfo().has_collided,"
+        #timestamp:" ,self.client.getCollisionInfo().time_stamp)
+        #print("collided " +
+        #str(self.client.getMultirotorState().trip_stats.collision_count > 0))
 
         return collided
 

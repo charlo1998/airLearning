@@ -22,7 +22,7 @@ def runTask(task):
         if (task["algo"] in ["DDPG", "DQN", "PPO", "SAC", "DQN-B"]):
             if (task["algo"] == "DDPG"):
                 msgs.algo = "DDPG"
-                train_class = ddpg_airsim #ddpg not working?
+                train_class = ddpg_airsim #ddpg not working? issue when creating the actor network
             elif (task["algo"] == "PPO"):
                 msgs.algo = "PPO" #reeeeeeally slow?
                 train_class = ppo_airsim
@@ -33,7 +33,7 @@ def runTask(task):
                 train_class = dqn_baselines
                 msgs.algo = "DQN-B"
             elif (task["algo"] == "SAC"):
-                train_class = sac_airsim
+                train_class = sac_airsim #not available?
         else:
             print("this algorithm is not supported")
             exit(0)
@@ -47,6 +47,7 @@ def runTask(task):
         train_obj, env = train_class.setup(env_name=task["env_name"], \
                                            difficulty_level=task["difficulty_level"])
         print("starting training")
+        #train_class.train(train_obj, env, train_checkpoint = False) for checkpoints with dqn_airsim
         train_class.train(train_obj, env)
 
     if (task["task_type"] == "test"):
@@ -90,12 +91,12 @@ def main():
     task3 = {"algo": algo, "task_type": "test", "difficulty_level": "default", "env_name": "AirSimEnv-v42",
              "weights": model_weights_list_to_test}
     task4 = {"algo": algo, "task_type": "generate_csv", "data_file": "train_episodal_log.txt"}
-    task5 = {"algo": algo, "task_type": "plot_data", "data_file": "train_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"]], "plot_data_mode": "separate"}
+    task5 = {"algo": algo, "task_type": "plot_data", "data_file": "train_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}
     
     taskList.append(task1)
     taskList.append(task2)
     #taskList.append(task3)
-    taskList.append(task4)
+    #taskList.append(task4)
     taskList.append(task5)
 
     for task_el in taskList:

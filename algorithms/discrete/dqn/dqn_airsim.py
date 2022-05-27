@@ -16,7 +16,7 @@ from rl.memory import SequentialMemory
 from rl.processors import MultiInputProcessor
 from callbacks import *
 import settings
-from gym_airsim.envs.airlearningclient import *
+from gym_airsim.envs.airlearningclient import * #why the *
 
 def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     #parser = argparse.ArgumentParser()
@@ -151,7 +151,8 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
 
 def train(dqn, env, train_checkpoint=False):
     msgs.mode = 'train'
-    checkpoint_file = "checkpoints\\DQN\\level-3\\dqn_level_3_weights_154000.hf5"
+    #checkpoint_file = "checkpoints\\DQN\\level-3\\dqn_level_3_weights_154000.hf5"
+    checkpoint_file = "dqn_level_3_.hf5"
     if train_checkpoint:
         try:
             dqn.load_weights(checkpoint_file)
@@ -164,15 +165,17 @@ def train(dqn, env, train_checkpoint=False):
     # Ctrl + C.
 
     log_filename = 'dqn_level_3_log.json'
-    weights_filename = 'dqn_level_3_{}.hf5'
     callbacks = [FileLogger(log_filename, interval=settings.logging_interval)]
 
     callbacks += [CheckPointLogger()]
     callbacks += [DataLogger()]
+    #note: the render doesn't seem to be implemented, so we can't visualize the training?
     dqn.fit(env, callbacks=callbacks, nb_steps=settings.training_steps_cap, nb_max_episode_steps=settings.nb_max_episodes_steps,  visualize=False, verbose=0, log_interval=settings.logging_interval)
 
     # After training is done, we save the final weights.
+    weights_filename = 'dqn_level_3_{}.hf5'
     dqn.save_weights(weights_filename.format(""), overwrite=True)
+
 
 def test(dqn, env, file_path):
     # dqn.load_weights('checkpoints/DQN/level-3/dqn_level_3_weights_117000.hf5'.format(args.env_name))

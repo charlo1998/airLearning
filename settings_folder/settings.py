@@ -196,7 +196,7 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 # ---------------------------
 # training params
 # ---------------------------
-training_steps_cap = 8000
+training_steps_cap = 15000
 nb_steps_warmup = 300
 episode_count_cap = 100000
 policy = "shallow"
