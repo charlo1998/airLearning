@@ -225,6 +225,7 @@ class AirSimEnv(gym.Env):
         else:
             r = r + distance_correction
         return r, distance_now
+
     def ddpg_add_noise_action(self, actions):
         noise_t = np.zeros([1, self.action_space.shape[0]])
         a_t = np.zeros([1, self.action_space.shape[0]])
@@ -246,6 +247,7 @@ class AirSimEnv(gym.Env):
         actions_with_noise = [a_t[0][0], a_t[0][1], throttle, a_t[0][2], duration]
 
         return actions_with_noise
+
     def ppo_call_back_emulator(self):
             if (msgs.mode == 'train'):
                 append_log_file(self.episodeN, "verbose")
@@ -518,6 +520,7 @@ class AirSimEnv(gym.Env):
                     self.this_time = time.time()
                     if(self.stepN > 1):
                         self.loop_rate_list.append(self.this_time - self.prev_time)
+                        print(f"loop rate: {self.this_time - self.prev_time}")
                     self.prev_time = time.time()
                     take_action_start = time.time()
             if(settings.profile):
@@ -544,11 +547,13 @@ class AirSimEnv(gym.Env):
                 sample4 = time.time()
                 print(f"collecting pose and speed took {(sample4 - sample3)*1000} miliseconds")
             else:
-                now = self.airgym.drone_pos()
-                self.track = self.airgym.goal_direction(self.goal, now)
-                #self.depth = self.airgym.getScreenDepthVis(self.track)
-                self.concat_state = self.airgym.getConcatState(self.track, self.goal)
-                self.rgb = self.airgym.getScreenRGB()
+                if(msgs.algo == "DQN-B" or "SAC" or "PPO"):
+                    now = self.airgym.drone_pos()
+                    self.track = self.airgym.goal_direction(self.goal, now)
+                    self.concat_state = self.airgym.getConcatState(self.track, self.goal)
+                elif(msgs.algo == "DQN" or "DDPG"):    
+                    self.depth = self.airgym.getScreenDepthVis(self.track)
+                #self.rgb = self.airgym.getScreenRGB()
                 self.position = self.airgym.get_distance(self.goal)
                 self.velocity = self.airgym.drone_velocity()
 

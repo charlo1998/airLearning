@@ -196,7 +196,7 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 # ---------------------------
 # training params
 # ---------------------------
-training_steps_cap = 15000
+training_steps_cap = 25000
 nb_steps_warmup = 300
 episode_count_cap = 100000
 policy = "shallow"
@@ -205,7 +205,7 @@ curriculum_learning = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = 4*100  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = 100  # note that if number of zones are x, #pay attention
 # then model get tested testing_nb_episodes_per_model/x
 # times per zone
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)

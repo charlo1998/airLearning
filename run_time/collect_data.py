@@ -47,8 +47,10 @@ def runTask(task):
         train_obj, env = train_class.setup(env_name=task["env_name"], \
                                            difficulty_level=task["difficulty_level"])
         print("starting training")
-        #train_class.train(train_obj, env, train_checkpoint = False) for checkpoints with dqn_airsim
-        train_class.train(train_obj, env)
+        if task["algo"] == "DQN":
+            train_class.train(train_obj, env, train_checkpoint = True)
+        elif task["algo"] == "DQN-B":
+            train_class.train(train_obj, env)
 
     if (task["task_type"] == "test"):
 
@@ -81,7 +83,8 @@ def runTask(task):
 
 def main():
     taskList = []
-    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model.pkl"]
+    #model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model.pkl"] #baselines
+    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/dqn_level_3_.hf5"] #keras rl
 
     algo = "DQN"
 

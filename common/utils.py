@@ -12,6 +12,14 @@ import pandas as pd
 import subprocess
 
 def parse_data(file_name):
+    with open(file_name, 'a+') as f:
+        f.seek(0,0)
+        lines = f.readlines()
+        if lines[-1] != '}':
+            print("added } at log eof!")
+            f.write("\n}")
+        else:
+            print("already well formatted")
     if (file_name == ''):
         file_hndl = open(os.path.join(settings.proj_root_path, "data", msgs.algo, msgs.mode + "_episodal_log.txt"), "r")
     else:
@@ -64,14 +72,6 @@ def plot_data(file, data_to_inquire, mode="separate"):
 
 
 def generate_csv(file):
-    with open(file, 'a+') as f:
-        f.seek(0,0)
-        lines = f.readlines()
-        if lines[-1] != '}':
-            print("added } at log eof!")
-            f.write("\n}")
-        else:
-            print("already well formatted")
     data = parse_data(file)
     data_frame = pd.DataFrame(data)
     data_frame.to_csv(file.replace("txt", "csv"), index=False)
