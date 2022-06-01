@@ -126,7 +126,7 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
 
     # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
     # even the metrics!
-    memory = SequentialMemory(limit=100000, window_length=WINDOW_LENGTH)  # reduce memmory
+    memory = SequentialMemory(limit=settings.buffer_size, window_length=WINDOW_LENGTH)  # reduce memmory
     processor = MultiInputProcessor(nb_inputs=3)
 
     # Select a policy. We use eps-greedy action selection, which means that a random action is selected

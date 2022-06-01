@@ -44,7 +44,7 @@ chk_p_name_style_baselines = "0.pkl"
 max_chck_pt_per_zone = 5  # pay attention
 
 logging_interval = 100
-checkpoint_interval = 10000
+checkpoint_interval = 15000
 
 # ---------------------------
 # zoning
@@ -141,7 +141,6 @@ move_by_position = False
 # DDPG parameters
 # ---------------------------
 
-buffer_size = 100000  #replay buffer
 batch_size = 64  # ToDo: Determine what this value is
 gamma = 0.99
 tau = 0.001  # Target Network HyperParameters
@@ -158,6 +157,7 @@ epsilon = 1
 # DQN parameters
 # ---------------------------
 double_dqn = False
+#actions durations and speeds
 mv_fw_dur = 0.01875
 mv_fw_spd_1 = 1
 mv_fw_spd_2 = 2
@@ -197,10 +197,11 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 # ---------------------------
 # training params
 # ---------------------------
-training_steps_cap = 25000
-nb_steps_warmup = 300
+buffer_size = 5000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
+training_steps_cap = 15000
+nb_steps_warmup = 2000
 episode_count_cap = 100000
-policy = "shallow"
+policy = "shallow" #"shallow" or "deep"
 curriculum_learning = True
 
 # ---------------------------
