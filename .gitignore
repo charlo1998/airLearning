@@ -3,3 +3,4 @@
 machine_dependent_settings.py
 *.hf5
 *~
+data/
