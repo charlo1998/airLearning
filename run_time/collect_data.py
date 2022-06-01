@@ -84,12 +84,12 @@ def runTask(task):
 def main():
     taskList = []
     #model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model.pkl"] #baselines
-    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/dqn_level_3_.hf5"] #keras rl
+    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/dqn_level_3_8000.hf5"] #keras rl
 
     algo = "DQN"
 
     task1 = {"task_type": "start_game"}
-    task2 = {"algo": algo, "task_type": "train", "difficulty_level": "default", "env_name": "AirSimEnv-v42",
+    task2 = {"algo": algo, "task_type": "train", "difficulty_level": "medium", "env_name": "AirSimEnv-v42",
              "weights": model_weights_list_to_test}
     task3 = {"algo": algo, "task_type": "test", "difficulty_level": "default", "env_name": "AirSimEnv-v42",
              "weights": model_weights_list_to_test}

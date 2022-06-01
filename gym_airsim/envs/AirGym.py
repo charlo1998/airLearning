@@ -551,7 +551,8 @@ class AirSimEnv(gym.Env):
                     now = self.airgym.drone_pos()
                     self.track = self.airgym.goal_direction(self.goal, now)
                     self.concat_state = self.airgym.getConcatState(self.track, self.goal)
-                elif(msgs.algo == "DQN" or "DDPG"):    
+                elif(msgs.algo == "DQN" or "DDPG"):
+                    self.track = self.airgym.goal_direction(self.goal, now)
                     self.depth = self.airgym.getScreenDepthVis(self.track)
                 #self.rgb = self.airgym.getScreenRGB()
                 self.position = self.airgym.get_distance(self.goal)
@@ -560,6 +561,7 @@ class AirSimEnv(gym.Env):
             if(settings.profile):
                 clct_state_end = time.time()
                 self.clct_state_list.append(clct_state_end - clct_state_start)
+                print(f"collecting state took {(clct_state_end - clct_state_start)*1000} miliseconds")
             self.speed = np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2)
             #print("Speed:"+str(self.speed))
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))

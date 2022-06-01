@@ -44,7 +44,7 @@ chk_p_name_style_baselines = "0.pkl"
 max_chck_pt_per_zone = 5  # pay attention
 
 logging_interval = 100
-checkpoint_interval = 50000
+checkpoint_interval = 10000
 
 # ---------------------------
 # zoning
@@ -89,7 +89,7 @@ medium_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                     "Seed": list(range(0, 5000)),
                     "VelocityRange": [[0, 3]],
                     "Name": ["Name"],
-                    "NumberOfObjects": list(range(0, 1))}
+                    "NumberOfObjects": list(range(5, 8))}
 
 hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "MinimumDistance": [4],
@@ -189,7 +189,8 @@ backup_folder_name_style = "bu_0"  # the backup obj will create a file with this
 # general params
 # ---------------------------
 list_algo = ["DQN", "DDPG"]  # a new algo needs to be added to this list for backup to back up its results
-nb_max_episodes_steps = 750  # pay attention
+nb_max_episodes_steps = 750  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
+#This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
 success_distance_to_goal = 3
 slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
