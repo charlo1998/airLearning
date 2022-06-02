@@ -91,7 +91,7 @@ class AirLearningClient(airsim.MultirotorClient):
     def getScreenDepthVis(self, track):
 
         responses = self.client.simGetImages([airsim.ImageRequest(0, airsim.ImageType.DepthPerspective, True, False)])
-        print(f"received {len(responses)} images from client")
+        #print(f"received {len(responses)} images from client")
         #responses = self.client.simGetImages([airsim.ImageRequest("0",
         #airsim.ImageType.DepthVis,True, False)])
 

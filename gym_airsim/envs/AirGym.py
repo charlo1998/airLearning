@@ -547,12 +547,11 @@ class AirSimEnv(gym.Env):
                 sample4 = time.time()
                 print(f"collecting pose and speed took {(sample4 - sample3)*1000} miliseconds")
             else:
-                if(msgs.algo == "DQN-B" or "SAC" or "PPO"):
-                    now = self.airgym.drone_pos()
-                    self.track = self.airgym.goal_direction(self.goal, now)
+                now = self.airgym.drone_pos()
+                self.track = self.airgym.goal_direction(self.goal, now)
+                if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO"):
                     self.concat_state = self.airgym.getConcatState(self.track, self.goal)
-                elif(msgs.algo == "DQN" or "DDPG"):
-                    self.track = self.airgym.goal_direction(self.goal, now)
+                elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                     self.depth = self.airgym.getScreenDepthVis(self.track)
                 #self.rgb = self.airgym.getScreenRGB()
                 self.position = self.airgym.get_distance(self.goal)
