@@ -48,7 +48,7 @@ def runTask(task):
                                            difficulty_level=task["difficulty_level"])
         print("starting training")
         if task["algo"] == "DQN":
-            train_class.train(train_obj, env, train_checkpoint = True)
+            train_class.train(train_obj, env, train_checkpoint = False)
         elif task["algo"] == "DQN-B":
             train_class.train(train_obj, env)
 
