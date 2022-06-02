@@ -632,14 +632,15 @@ class AirSimEnv(gym.Env):
         now = self.airgym.drone_pos()
         self.track = self.airgym.goal_direction(self.goal, now)
         self.concat_state = self.airgym.getConcatState(self.track, self.goal)
-        #self.depth = self.airgym.getScreenDepthVis(self.track)
+        self.depth = self.airgym.getScreenDepthVis(self.track)
         self.rgb = self.airgym.getScreenRGB()
         self.position = self.airgym.get_distance(self.goal)
         self.velocity = self.airgym.drone_velocity()
         msgs.cur_zone_number = self.cur_zone_number_buff  #which delays the update for cur_zone_number
 
     def reset(self): #was_reset, which means it wasn't imported with a import * (don't know where it was imported yet
-        print("called reset method from airSim env")
+        print(f"finished episode {self.episodeN}")
+        print(f"total step count: {self.total_step_count_for_experiment}")
         try:
             if(settings.profile):
                 if(self.stepN>1):
