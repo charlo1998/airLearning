@@ -307,31 +307,31 @@ class AirLearningClient(airsim.MultirotorClient):
         """
 
         if action == 0:
-            start, duration = self.straight(settings.mv_fw_spd_5, settings.mv_fw_dur)
+            start, duration = self.straight(settings.mv_fw_spd_5, settings.mv_fw_dur*3)
         if action == 1:
-            start, duration = self.straight(settings.mv_fw_spd_4, settings.mv_fw_dur)
+            start, duration = self.straight(settings.mv_fw_spd_5, settings.mv_fw_dur)
         if action == 2:
-            start, duration = self.straight(settings.mv_fw_spd_3, settings.mv_fw_dur)
+            start, duration = self.straight(settings.mv_fw_spd_2, settings.mv_fw_dur*3)
         if action == 3:
             start, duration = self.straight(settings.mv_fw_spd_2, settings.mv_fw_dur)
         if action == 4:
             start, duration = self.straight(settings.mv_fw_spd_1, settings.mv_fw_dur)
         if action == 5:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_5, settings.mv_fw_spd_5, settings.mv_fw_dur)
+            start, duration = self.move_forward_Speed(settings.mv_fw_spd_5, settings.mv_fw_spd_5, settings.mv_fw_dur*3)
         if action == 6:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_4, settings.mv_fw_spd_4, settings.mv_fw_dur)
+            start, duration = self.move_forward_Speed(settings.mv_fw_spd_5, settings.mv_fw_spd_5, settings.mv_fw_dur)
         if action == 7:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_3, settings.mv_fw_spd_3, settings.mv_fw_dur)
+            start, duration = self.move_forward_Speed(settings.mv_fw_spd_2, settings.mv_fw_spd_2, settings.mv_fw_dur*3)
         if action == 8:
             start, duration = self.move_forward_Speed(settings.mv_fw_spd_2, settings.mv_fw_spd_2, settings.mv_fw_dur)
         if action == 9:
             start, duration = self.move_forward_Speed(settings.mv_fw_spd_1, settings.mv_fw_spd_1, settings.mv_fw_dur)
         if action == 10:
-            start, duration = self.backup(settings.mv_fw_spd_5, settings.mv_fw_dur)
+            start, duration = self.backup(settings.mv_fw_spd_5, settings.mv_fw_dur*3)
         if action == 11:
-            start, duration = self.backup(settings.mv_fw_spd_4, settings.mv_fw_dur)
+            start, duration = self.backup(settings.mv_fw_spd_5, settings.mv_fw_dur)
         if action == 12:
-            start, duration = self.backup(settings.mv_fw_spd_3, settings.mv_fw_dur)
+            start, duration = self.backup(settings.mv_fw_spd_2, settings.mv_fw_dur*3)
         if action == 13:
             start, duration = self.backup(settings.mv_fw_spd_2, settings.mv_fw_dur)
         if action == 14:
