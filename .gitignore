@@ -4,3 +4,5 @@ machine_dependent_settings.py
 *.hf5
 *~
 data/
+
+run_time/dqn_level_3_log.json
