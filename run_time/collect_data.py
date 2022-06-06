@@ -89,7 +89,7 @@ def main():
     algo = "DQN"
 
     task1 = {"task_type": "start_game"}
-    task2 = {"algo": algo, "task_type": "train", "difficulty_level": "medium", "env_name": "AirSimEnv-v42",
+    task2 = {"algo": algo, "task_type": "train", "difficulty_level": "default", "env_name": "AirSimEnv-v42",
              "weights": model_weights_list_to_test}
     task3 = {"algo": algo, "task_type": "test", "difficulty_level": "default", "env_name": "AirSimEnv-v42",
              "weights": model_weights_list_to_test}
@@ -98,9 +98,9 @@ def main():
     
     taskList.append(task1)
     taskList.append(task2)
-    #taskList.append(task3)
-    #taskList.append(task4)
-    taskList.append(task5)
+    #taskList.append(task3) #test
+    #taskList.append(task4) #generate_csv
+    taskList.append(task5) #plot
 
     for task_el in taskList:
         runTask(task_el)

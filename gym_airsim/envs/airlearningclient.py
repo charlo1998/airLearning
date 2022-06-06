@@ -40,10 +40,7 @@ class AirLearningClient(airsim.MultirotorClient):
         return ((math.degrees(track) - 180) % 360) - 180
 
     def getConcatState(self, track, goal): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
-        test2 = time.perf_counter()
         encoded_depth = self.getScreenDepthVis(track)
-        test3 = time.perf_counter()
-        print(f"getScreenDepthVis took {(test3 - test2)*1000} miliseconds")
         encoded_depth_shape = encoded_depth.shape
         encoded_depth_1d = encoded_depth.reshape(1, encoded_depth_shape[0] * encoded_depth_shape[1])
 
@@ -249,12 +246,10 @@ class AirLearningClient(airsim.MultirotorClient):
 
     def yaw_right(self, rate, duration):
         self.client.rotateByYawRateAsync(rate, duration).join()
-        print("yaw_right, rate:" + str(rate) + " duration:" + str(duration))
         start = time.time()
         return start, duration
 
     def yaw_left(self, rate, duration):
-        print("yaw_left, rate:" + str(rate) + " duration:" + str(duration))
         self.client.rotateByYawRateAsync(-rate, duration).join()
         start = time.time()
         return start, duration

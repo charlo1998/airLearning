@@ -54,8 +54,8 @@ checkpoint_interval = 15000
 zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 4}  # pay attention
 
 # update_zone_success_threshold = 50
-acceptable_success_rate_to_update_zone = .3  # after what ration of success up the zone # pay attention
-update_zone_window = 1000  # the window within which the  update_zone_accpetable_success_rate
+acceptable_success_rate_to_update_zone = .3  # after what ratio of success up the zone # pay attention
+update_zone_window = 100  # the window within which the  update_zone_accpetable_success_rate
 # needs to be achieved. Note that at the begining of every
 # new window we zero out the achieved ratio
 
@@ -89,7 +89,7 @@ medium_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                     "Seed": list(range(0, 5000)),
                     "VelocityRange": [[0, 3]],
                     "Name": ["Name"],
-                    "NumberOfObjects": list(range(5, 8))}
+                    "NumberOfObjects": list(range(2,4))}
 
 hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "MinimumDistance": [4],

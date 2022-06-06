@@ -27,6 +27,9 @@ def parse_data(file_name):
     #print(f"parsing: {file_name}")
     data = json.load(file_hndl)
     data_clusterd_based_on_key = {}
+
+    data.pop('buffer size', None) #removing settings data from the training data to be parsed
+
     for episode, episode_data in data.items(): #loops through the episode and get the keys (ex. success rate, n step, etc.)
         for key, value in episode_data.items(): #loops through all the keys of an episode and get their values
             if not (key in data_clusterd_based_on_key.keys()):
@@ -82,6 +85,7 @@ def append_log_file(episodeN, log_mode="verbose"):
               "a+") as f:
         if (episodeN == 0):
             f.write('{\n')
+            f.write('"buffer size":' + str(settings.buffer_size) + ',\n')
         else:
             f.write(",\n")
         if (log_mode == "verbose"):
@@ -95,6 +99,7 @@ def append_log_file(episodeN, log_mode="verbose"):
                                                                                                              "\"True\"").replace(
                 "False", "\"False\""))
         f.close()
+
 
 
 def show_data_in_time():

@@ -520,7 +520,6 @@ class AirSimEnv(gym.Env):
                     self.this_time = time.time()
                     if(self.stepN > 1):
                         self.loop_rate_list.append(self.this_time - self.prev_time)
-                        print(f"loop rate: {self.this_time - self.prev_time}")
                     self.prev_time = time.time()
                     take_action_start = time.time()
             if(settings.profile):
@@ -560,7 +559,6 @@ class AirSimEnv(gym.Env):
             if(settings.profile):
                 clct_state_end = time.time()
                 self.clct_state_list.append(clct_state_end - clct_state_start)
-                print(f"collecting state took {(clct_state_end - clct_state_start)*1000} miliseconds")
             self.speed = np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2)
             #print("Speed:"+str(self.speed))
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
