@@ -559,11 +559,14 @@ class AirSimEnv(gym.Env):
             if(settings.profile):
                 clct_state_end = time.time()
                 self.clct_state_list.append(clct_state_end - clct_state_start)
+
+
+
             self.speed = np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2)
             #print("Speed:"+str(self.speed))
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             
-            if distance < settings.success_distance_to_goal:
+            if distance < settings.success_distance_to_goal: #we found the goal: 1000pts
                 self.success_count +=1
                 done = True
                 self.print_msg_of_inspiration()
@@ -573,19 +576,19 @@ class AirSimEnv(gym.Env):
                 # Todo: Add code for landing drone (Airsim API)
                 reward = 1000.0
                 #self.collect_data()
-            elif self.stepN >= settings.nb_max_episodes_steps:
+            elif self.stepN >= settings.nb_max_episodes_steps: #ran out of time/battery: -100pts
                 done = True
                 reward = -100.0
                 self.success = False
-            elif collided == True:
+            elif collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
-                reward = -100.0
+                reward = min(-(1000.0-self.stepN), -250)
                 self.success = False
             elif (now[2] < -15): # Penalize for flying away too high
                 done = True
                 reward = -100
                 self.success = False
-            else:
+            else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def)
                 reward, distance = self.computeReward(now)
                 done = False
                 self.success = False

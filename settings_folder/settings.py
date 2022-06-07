@@ -51,7 +51,7 @@ checkpoint_interval = 15000
 # ---------------------------
 # how many zones for each variable for the entire range. Note that frequency
 # of moving to a new zone is not determined here
-zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 4}  # pay attention
+zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 3}  # pay attention
 
 # update_zone_success_threshold = 50
 acceptable_success_rate_to_update_zone = .3  # after what ratio of success up the zone # pay attention
@@ -198,7 +198,7 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 # training params
 # ---------------------------
 buffer_size = 5000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
-training_steps_cap = 2500
+training_steps_cap = 5000
 nb_steps_warmup = 300 #iterations are really fast during this phase
 episode_count_cap = 100000
 policy = "shallow" #"shallow" or "deep"
@@ -207,11 +207,11 @@ curriculum_learning = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = 100  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = 3*100  # note that if number of zones are x, #pay attention
 # then model get tested testing_nb_episodes_per_model/x
 # times per zone
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)
-# assert(testing_nb_episodes_per_zone <testing_nb_episodes_per_model), "get the equality right ,darn it"
+#assert(testing_nb_episodes_per_zone <testing_nb_episodes_per_model), "get the equality right ,darn it"
 
 
 # ---------------------------
@@ -232,7 +232,7 @@ use_preloaded_json = False
 meta_data_folder = "C:\workspace\zone2"
 
 #--------------------------------
-# profiling (of the env.step fnc?) check if other fnc are profiled
+# profiling (of the env.step fnc)
 #--------------------------------
 
 profile = True

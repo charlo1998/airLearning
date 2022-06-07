@@ -84,7 +84,7 @@ def runTask(task):
 def main():
     taskList = []
     #model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model.pkl"] #baselines
-    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/dqn_level_3_8000.hf5"] #keras rl
+    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/dqn_level_3_.hf5"] #keras rl
 
     algo = "DQN"
 
@@ -97,8 +97,8 @@ def main():
     task5 = {"algo": algo, "task_type": "plot_data", "data_file": "train_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}
     
     taskList.append(task1)
-    taskList.append(task2)
-    #taskList.append(task3) #test
+    #taskList.append(task2) #train
+    taskList.append(task3) #test
     #taskList.append(task4) #generate_csv
     taskList.append(task5) #plot
 
