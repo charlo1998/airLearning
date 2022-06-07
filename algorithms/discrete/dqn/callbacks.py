@@ -409,11 +409,9 @@ class CheckPointLogger(Callback):
 		self.check_point_obj = file_handling.CheckPoint()
 		self.stepN = 0
 
-	def on_episode_end(self, episode, logs={}):
-		self.episodeN += 1
 
-	def on_step_end(self, step, logs={}):
-		if (msgs.mode == 'train' and not settings.curriculum_learning):
+	def on_step_end(self, step, logs={}): #saves weight at each checkpoint
+		if (msgs.mode == 'train'):
 			if ((self.stepN != 0) and (self.stepN % settings.checkpoint_interval == 0)):
 				weight_file_name = os.path.join(self.check_point_obj.get_data_path(), str(self.stepN) + "_.hf5")
 				self.model.save_weights(weight_file_name, overwrite=True)
@@ -421,7 +419,7 @@ class CheckPointLogger(Callback):
 					json.dump(msgs.meta_data, file_hndle)
 		self.stepN += 1
 
-	def on_episode_end(self, step, logs={}):
+	def on_episode_end(self, step, logs={}): #saves weight after an episode if currriculum_learning is true
 		if (msgs.mode == 'train'):
 			if not (msgs.success):
 				self.episodeN += 1
