@@ -430,8 +430,9 @@ class CheckPointLogger(Callback):
 				with open(weight_file_name + "_meta_data", "w") as file_hndle:
 					json.dump(msgs.meta_data, file_hndle)
 		elif (msgs.mode == 'test'):
-			with open(msgs.weight_file_under_test + "_test" + str(self.episodeN) + "_meta_data", "w") as file_hndle:
-				json.dump(msgs.meta_data, file_hndle)
+			if (self.episodeN % (settings.curriculum_learning / setting.max_zone) == 0):
+				with open(msgs.weight_file_under_test.replace('.hf5', '') + "_test" + str(self.episodeN) + "_meta_data", "w") as file_hndle:
+					json.dump(msgs.meta_data, file_hndle)
 		else:
 			print("this mode" + msgs.mode + "is not supported")
 			exit(0)
