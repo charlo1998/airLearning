@@ -94,11 +94,11 @@ def main():
     task3 = {"algo": algo, "task_type": "test", "difficulty_level": "default", "env_name": "AirSimEnv-v42",
              "weights": model_weights_list_to_test}
     task4 = {"algo": algo, "task_type": "generate_csv", "data_file": "train_episodal_log.txt"}
-    task5 = {"algo": algo, "task_type": "plot_data", "data_file": "train_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}
+    task5 = {"algo": algo, "task_type": "plot_data", "data_file": "test_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}
     
-    taskList.append(task1)
+    #taskList.append(task1)
     #taskList.append(task2) #train
-    taskList.append(task3) #test
+    #taskList.append(task3) #test
     #taskList.append(task4) #generate_csv
     taskList.append(task5) #plot
 

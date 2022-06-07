@@ -399,7 +399,9 @@ class AirSimEnv(gym.Env):
         else:
             raise Exception(msgs.mode + "is not supported as a mode")
 
-    def possible_to_meet_success_rate(self):
+    def possible_to_meet_success_rate(self): 
+        #Computes what is the best success ratio if all the episodes in the current window are successes
+        #if this ratio is inferior to the acceptable rate (ex. 50%), the window is restarted.
         best_success_rate_can_achieve_now =  float(((settings.update_zone_window - self.episodeInWindow) +\
                                                     self.success_count_within_window)/settings.update_zone_window)
         acceptable_success_rate =  settings.acceptable_success_rate_to_update_zone
