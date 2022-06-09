@@ -328,7 +328,7 @@ class AirSimEnv(gym.Env):
                 exit(0)
 
     def update_success_rate(self):
-        self.success_ratio_within_window = float(np.sum(self.success_history)/settings.update_zone_window)
+        self.success_ratio_within_window = float(sum(self.success_history)/settings.update_zone_window)
 
     def update_zone_if_necessary(self):
         if (msgs.mode == 'train'):
@@ -361,7 +361,7 @@ class AirSimEnv(gym.Env):
         msgs.episodal_log_dic_verbose.clear()
         msgs.episodal_log_dic["cur_zone_number"] = msgs.cur_zone_number
         msgs.episodal_log_dic["success_ratio_within_window"] = self.success_ratio_within_window
-        msgs.episodal_log_dic["success_history"] = self.success_history[-1]
+        msgs.episodal_log_dic["success_history"] = sum(self.success_history)
         msgs.episodal_log_dic["success"] = msgs.success
         msgs.episodal_log_dic["stepN"] = self.stepN
         msgs.episodal_log_dic["episodeN"] = self.episodeN
@@ -551,11 +551,10 @@ class AirSimEnv(gym.Env):
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             
             if distance < settings.success_distance_to_goal: #we found the goal: 1000pts
-                self.success_count +=1
                 done = True
                 print("-----------success, be happy!--------")
                 self.success = True
-                update_history(1)
+                self.update_history(1)
                 msgs.success = True
                 # Todo: Add code for landing drone (Airsim API)
                 reward = 1000.0
@@ -564,22 +563,22 @@ class AirSimEnv(gym.Env):
                 done = True
                 reward = -100.0
                 self.success = False
-                update_history(0)
+                self.update_history(0)
             elif collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
                 reward = min(-(1000.0-self.stepN), -250)
                 self.success = False
-                update_history(0)
+                self.update_history(0)
             elif (now[2] < -15): # Penalize for flying away too high
                 done = True
                 reward = -100
                 self.success = False
-                update_history(0)
+                self.update_history(0)
             else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def)
                 reward, distance = self.computeReward(now)
                 done = False
                 self.success = False
-                update_history(0)
+                self.update_history(0)
 
             #Todo: penalize for more crazy and unstable actions
 

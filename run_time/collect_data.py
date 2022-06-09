@@ -87,17 +87,17 @@ def main():
     model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/dqn_level_3_.hf5"] #keras rl
 
     algo = "DQN"
+    task_type = "train"
 
     task1 = {"task_type": "start_game"}
-    task2 = {"algo": algo, "task_type": "train", "difficulty_level": "default", "env_name": "AirSimEnv-v42",
+    task2 = {"algo": algo, "task_type": task_type, "difficulty_level": "default", "env_name": "AirSimEnv-v42",
              "weights": model_weights_list_to_test}
-    task3 = {"algo": algo, "task_type": "test", "difficulty_level": "default", "env_name": "AirSimEnv-v42",
-             "weights": model_weights_list_to_test}
-    task4 = {"algo": algo, "task_type": "generate_csv", "data_file": "train_episodal_log.txt"}
-    task5 = {"algo": algo, "task_type": "plot_data", "data_file": "test_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}
+
+    task4 = {"algo": algo, "task_type": "generate_csv", "data_file": task_type + "_episodal_log.txt"}
+    task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}
     
-    #taskList.append(task1)
-    #taskList.append(task2) #train
+    taskList.append(task1)
+    taskList.append(task2) #train
     #taskList.append(task3) #test
     #taskList.append(task4) #generate_csv
     taskList.append(task5) #plot
