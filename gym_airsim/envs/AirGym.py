@@ -88,8 +88,7 @@ class AirSimEnv(gym.Env):
         self.log_dic = {}
         #self.cur_zone_number = 0
         self.cur_zone_number_buff = 0
-        self.success_count = 0
-        self.success_count_within_window = 0
+        self.success_history = []
         self.success_ratio_within_window = 0
         self.episodeNInZone = 0 #counts the numbers of the episodes per Zone
                                 #,hence gets reset upon moving on to new zone
@@ -329,7 +328,7 @@ class AirSimEnv(gym.Env):
                 exit(0)
 
     def update_success_rate(self):
-        self.success_ratio_within_window = float(self.success_count_within_window/settings.update_zone_window)
+        self.success_ratio_within_window = float(np.sum(self.success_history)/settings.update_zone_window)
 
     def update_zone_if_necessary(self):
         if (msgs.mode == 'train'):
@@ -356,20 +355,13 @@ class AirSimEnv(gym.Env):
             print("this mode " + str(msgs.mode) + "is not defined. only train and test defined")
             exit(0)
 
-    def print_msg_of_inspiration(self):
-        if (self.success_count_within_window %2 == 0):
-            print("---------------:) :) :) Success, Be Happy (: (: (:------------ !!!\n")
-        elif (self.success_count_within_window %3 == 0):
-            print("---------------:) :) :) Success, Shake Your Butt (: (: (:------------ !!!\n")
-        else:
-            print("---------------:) :) :) Success, Oh Yeah! (: (: (:------------ !!!\n")
 
     def populate_episodal_log_dic(self):
         msgs.episodal_log_dic.clear()
         msgs.episodal_log_dic_verbose.clear()
         msgs.episodal_log_dic["cur_zone_number"] = msgs.cur_zone_number
         msgs.episodal_log_dic["success_ratio_within_window"] = self.success_ratio_within_window
-        msgs.episodal_log_dic["success_count_within_window"] = self.success_count_within_window
+        msgs.episodal_log_dic["success_history"] = self.success_history[-1]
         msgs.episodal_log_dic["success"] = msgs.success
         msgs.episodal_log_dic["stepN"] = self.stepN
         msgs.episodal_log_dic["episodeN"] = self.episodeN
@@ -403,7 +395,7 @@ class AirSimEnv(gym.Env):
         #Computes what is the best success ratio if all the episodes in the current window are successes
         #if this ratio is inferior to the acceptable rate (ex. 50%), the window is restarted.
         best_success_rate_can_achieve_now =  float(((settings.update_zone_window - self.episodeInWindow) +\
-                                                    self.success_count_within_window)/settings.update_zone_window)
+                                                    sum(self.success_history[self.episodeInWindow:]))/settings.update_zone_window)
         acceptable_success_rate =  settings.acceptable_success_rate_to_update_zone
         if (best_success_rate_can_achieve_now < acceptable_success_rate):
             return False
@@ -425,12 +417,10 @@ class AirSimEnv(gym.Env):
 
     def start_new_window(self):
         self.window_restart_ctr = 0
-        self.success_count_within_window = 0
         self.episodeInWindow = 0
 
     def restart_cur_window(self):
         self.window_restart_ctr +=1
-        self.success_count_within_window = 0
         self.episodeInWindow = 0
         if (self.window_restart_ctr > settings.window_restart_ctr_threshold):
             self.window_restart_ctr = 0
@@ -471,14 +461,6 @@ class AirSimEnv(gym.Env):
 
         self.allLogs['distance'] = [float(np.sqrt(np.power((self.goal[0]), 2) + np.power(self.goal[1], 2)))]
 
-
-
-    """"
-    def on_step_end(self):
-        self.success_ratio_within_window = float(self.success_count_within_window/settings.update_zone_window)
-        self.check_for_zone_update()
-        msgs.meta_data= {**(msgs.meta_data), **self.game_config_handler.cur_game_config.get_all_items()}
-    """
 
     def step(self, action): #changed from _step
         
@@ -571,9 +553,9 @@ class AirSimEnv(gym.Env):
             if distance < settings.success_distance_to_goal: #we found the goal: 1000pts
                 self.success_count +=1
                 done = True
-                self.print_msg_of_inspiration()
-                self.success_count_within_window +=1
+                print("-----------success, be happy!--------")
                 self.success = True
+                update_history(1)
                 msgs.success = True
                 # Todo: Add code for landing drone (Airsim API)
                 reward = 1000.0
@@ -582,18 +564,22 @@ class AirSimEnv(gym.Env):
                 done = True
                 reward = -100.0
                 self.success = False
+                update_history(0)
             elif collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
                 reward = min(-(1000.0-self.stepN), -250)
                 self.success = False
+                update_history(0)
             elif (now[2] < -15): # Penalize for flying away too high
                 done = True
                 reward = -100
                 self.success = False
+                update_history(0)
             else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def)
                 reward, distance = self.computeReward(now)
                 done = False
                 self.success = False
+                update_history(0)
 
             #Todo: penalize for more crazy and unstable actions
 
@@ -620,6 +606,13 @@ class AirSimEnv(gym.Env):
             self.game_handler.restart_game()
             self.airgym = AirLearningClient()
             return self.prev_state, 0, True, self.prev_info
+
+    def update_history(self, result):
+        if (len(self.success_history) < settings.update_zone_window):
+            self.success_history.append(1)
+        else:
+            self.success_history.pop(0)
+            self.success_history.append(result)
 
     def addToLog(self, key, value):
         if key not in self.allLogs:
