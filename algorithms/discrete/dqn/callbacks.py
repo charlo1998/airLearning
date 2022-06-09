@@ -413,9 +413,9 @@ class CheckPointLogger(Callback):
 	def on_step_end(self, step, logs={}): #saves weight at each checkpoint
 		if (msgs.mode == 'train'):
 			if ((self.stepN != 0) and (self.stepN % settings.checkpoint_interval == 0)):
-				weight_file_name = os.path.join(self.check_point_obj.get_data_path(), str(self.stepN) + "_.hf5")
-				self.model.save_weights(weight_file_name, overwrite=True)
-				with open(weight_file_name + "_meta_data", "w") as file_hndle:
+				weight_file_name = os.path.join(self.check_point_obj.get_data_path(), "checkpoint_" + str(self.stepN))
+				self.model.save_weights(weight_file_name  + "_.hf5", overwrite=True)
+				with open(weight_file_name + "_meta_data.txt", "w") as file_hndle:
 					json.dump(msgs.meta_data, file_hndle)
 		self.stepN += 1
 
@@ -427,11 +427,11 @@ class CheckPointLogger(Callback):
 			if settings.curriculum_learning:
 				weight_file_name = self.check_point_obj.find_file_to_check_point(msgs.cur_zone_number)
 				self.model.save_weights(weight_file_name, overwrite=True)
-				with open(weight_file_name + "_meta_data", "w") as file_hndle:
+				with open(weight_file_name + "_meta_data.txt", "w") as file_hndle:
 					json.dump(msgs.meta_data, file_hndle)
 		elif (msgs.mode == 'test'):
 			if (self.episodeN % (settings.curriculum_learning / setting.max_zone) == 0):
-				with open(msgs.weight_file_under_test.replace('.hf5', '') + "_test" + str(self.episodeN) + "_meta_data", "w") as file_hndle:
+				with open(msgs.weight_file_under_test.replace('.hf5', '') + "_test" + str(self.episodeN) + "_meta_data.txt", "w") as file_hndle:
 					json.dump(msgs.meta_data, file_hndle)
 		else:
 			print("this mode" + msgs.mode + "is not supported")

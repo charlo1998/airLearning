@@ -436,6 +436,7 @@ class AirSimEnv(gym.Env):
             self.restart_cur_window()
 
     def on_episode_end(self):
+        self.update_history(self.success)
         self.update_success_rate()
         if(os.name=="nt"):
             msgs.meta_data = {**self.game_config_handler.cur_game_config.get_all_items()}
@@ -550,11 +551,10 @@ class AirSimEnv(gym.Env):
             #print("Speed:"+str(self.speed))
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             
-            if distance < settings.success_distance_to_goal: #we found the goal: 1000pts
+            if distance < settings.success_distance_to_goal: #we found the goal: 1000ptso
                 done = True
                 print("-----------success, be happy!--------")
                 self.success = True
-                self.update_history(1)
                 msgs.success = True
                 # Todo: Add code for landing drone (Airsim API)
                 reward = 1000.0
@@ -563,22 +563,18 @@ class AirSimEnv(gym.Env):
                 done = True
                 reward = -100.0
                 self.success = False
-                self.update_history(0)
             elif collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
                 reward = min(-(1000.0-self.stepN), -250)
                 self.success = False
-                self.update_history(0)
             elif (now[2] < -15): # Penalize for flying away too high
                 done = True
                 reward = -100
                 self.success = False
-                self.update_history(0)
             else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def)
                 reward, distance = self.computeReward(now)
                 done = False
                 self.success = False
-                self.update_history(0)
 
             #Todo: penalize for more crazy and unstable actions
 
@@ -608,7 +604,7 @@ class AirSimEnv(gym.Env):
 
     def update_history(self, result):
         if (len(self.success_history) < settings.update_zone_window):
-            self.success_history.append(1)
+            self.success_history.append(result)
         else:
             self.success_history.pop(0)
             self.success_history.append(result)
