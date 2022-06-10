@@ -429,8 +429,8 @@ class CheckPointLogger(Callback):
 				self.model.save_weights(weight_file_name, overwrite=True)
 				with open(weight_file_name + "_meta_data.txt", "w") as file_hndle:
 					json.dump(msgs.meta_data, file_hndle)
-		elif (msgs.mode == 'test'):
-			if (self.episodeN % (settings.curriculum_learning / setting.max_zone) == 0):
+		elif (msgs.mode == 'test'): 
+			if (self.episodeN % (settings.curriculum_learning / settings.max_zone) == 0):
 				with open(msgs.weight_file_under_test.replace('.hf5', '') + "_test" + str(self.episodeN) + "_meta_data.txt", "w") as file_hndle:
 					json.dump(msgs.meta_data, file_hndle)
 		else:
