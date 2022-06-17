@@ -344,7 +344,6 @@ class AirSimEnv(gym.Env):
                 else:
                     self.passed_all_zones = True
                 self.update_zone("End")
-                #self.success_count = e
         elif (msgs.mode == 'test'):
             if (self.episodeN % settings.testing_nb_episodes_per_zone == 0):
                 if not(self.cur_zone_number_buff  == (settings.max_zone - 1)):
@@ -668,6 +667,8 @@ class AirSimEnv(gym.Env):
 
     def update_zone(self, *args):
         #all_keys = self.game_config_handler.game_config_range.find_all_keys()
+        print("Zone updated! resetting success history")
+        self.success_history = []
         self.game_config_handler.update_zone(*args)
         self.episodeNInZone = 0
 
