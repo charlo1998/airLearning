@@ -8,3 +8,4 @@ data/
 run_time/dqn_level_3_log.json
 
 run_time/
+!run_time/settings.json

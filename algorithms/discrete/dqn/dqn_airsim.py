@@ -135,7 +135,7 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     # (low eps). We also set a dedicated eps value that is used during testing. Note that we set it to 0.05c
     # so that the agent still performs some random actions. This ensures that the agent cannot get stuck.
     policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=0.0,
-                                  nb_steps=100000)
+                                  nb_steps=1000000)
 
     dqn = DQNAgent(model=model, processor=processor, nb_actions=nb_actions, memory=memory, nb_steps_warmup=settings.nb_steps_warmup,
                    enable_double_dqn=settings.double_dqn,
@@ -152,7 +152,7 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
 def train(dqn, env, train_checkpoint=False):
     msgs.mode = 'train'
     #checkpoint_file = "checkpoints\\DQN\\level-3\\dqn_level_3_weights_154000.hf5"
-    checkpoint_file = "dqn_level_3_.hf5"
+    checkpoint_file = "C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/dqn_level_3_.hf5"
     if train_checkpoint:
         try:
             dqn.load_weights(checkpoint_file)
