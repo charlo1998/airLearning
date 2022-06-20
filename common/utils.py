@@ -12,7 +12,7 @@ import pandas as pd
 import subprocess
 
 def parse_data(file_name):
-    with open(file_name, 'a+') as f:
+    with open(file_name  , 'a+') as f:
         f.seek(0,0)
         lines = f.readlines()
         if lines[-1] != '}':
@@ -20,6 +20,7 @@ def parse_data(file_name):
             f.write("\n}")
         else:
             print("already well formatted")
+
     if (file_name == ''):
         file_hndl = open(os.path.join(settings.proj_root_path, "data", msgs.algo, msgs.mode + "_episodal_log.txt"), "r")
     else:
@@ -29,6 +30,8 @@ def parse_data(file_name):
     data_clusterd_based_on_key = {}
 
     data.pop('buffer size', None) #removing settings data from the training data to be parsed
+    data.pop('ClockSpeed', None)
+    data.pop('loaded from checkpoint', None)
 
     for episode, episode_data in data.items(): #loops through the episode and get the keys (ex. success rate, n step, etc.)
         for key, value in episode_data.items(): #loops through all the keys of an episode and get their values
@@ -86,8 +89,15 @@ def append_log_file(episodeN, log_mode="verbose"):
         if (episodeN == 0):
             f.write('{\n')
             f.write('"buffer size":' + str(settings.buffer_size) + ',\n')
+            f.write('"loaded from checkpoint":' + str(settings.use_checkpoint).lower() + ',\n')
+            file_hndl = open("C:/Users/charl/Documents/AirSim/settings.json", "r")
+            #print(f"parsing: {file_name}")
+            UnrealSettings = json.load(file_hndl)
+            f.write('"ClockSpeed":' + str(UnrealSettings['ClockSpeed']) + ',\n')
         else:
             f.write(",\n")
+
+
         if (log_mode == "verbose"):
             f.write(
                 '"' + str(episodeN) + '"' + ":" + str(msgs.episodal_log_dic_verbose).replace("\'", "\"").replace("True",

@@ -48,7 +48,7 @@ def runTask(task):
                                            difficulty_level=task["difficulty_level"])
         print("starting training")
         if task["algo"] == "DQN":
-            train_class.train(train_obj, env, train_checkpoint = False)
+            train_class.train(train_obj, env, train_checkpoint = settings.use_checkpoint)
         elif task["algo"] == "DQN-B":
             train_class.train(train_obj, env)
 
@@ -97,8 +97,8 @@ def main():
     task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}
     
     taskList.append(task1)
-    taskList.append(task2) #train
-    #taskList.append(task3) #test
+    taskList.append(task2) #train/test
+
     #taskList.append(task4) #generate_csv
     taskList.append(task5) #plot
 
