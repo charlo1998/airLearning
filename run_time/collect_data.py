@@ -97,7 +97,12 @@ def main():
     task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}
     
     taskList.append(task1)
-    taskList.append(task2) #train/test
+
+    if task_type == "train":
+        for i in range(settings.runs_to_do):
+            taskList.append(task2) #train
+    else:
+        taskList.append(task2) #do no do multiple runs for test
 
     #taskList.append(task4) #generate_csv
     taskList.append(task5) #plot

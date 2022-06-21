@@ -396,7 +396,8 @@ class DataLogger(Callback):
 
 	def on_episode_end(self, step, logs={}):
 		
-		append_log_file(self.episodeN, "verbose")
+		if settings.verbose:
+			append_log_file(self.episodeN, "verbose")
 		append_log_file(self.episodeN, "")
 		self.episodeN += 1
 
@@ -413,8 +414,8 @@ class CheckPointLogger(Callback):
 	def on_step_end(self, step, logs={}): #saves weight at each checkpoint
 		if (msgs.mode == 'train'):
 			if ((self.stepN != 0) and (self.stepN % settings.checkpoint_interval == 0)):
-				weight_file_name = os.path.join(self.check_point_obj.get_data_path(), "checkpoint_" + str(self.stepN))
-				self.model.save_weights(weight_file_name  + "_.hf5", overwrite=True)
+				weight_file_name = os.path.join(self.check_point_obj.get_data_path(), "checkpoint_" + str(self.stepN) + "run_" + str(settings.i_run))
+				self.model.save_weights(weight_file_name  + ".hf5", overwrite=True)
 				with open(weight_file_name + "_meta_data.txt", "w") as file_hndle:
 					json.dump(msgs.meta_data, file_hndle)
 		self.stepN += 1

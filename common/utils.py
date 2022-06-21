@@ -55,19 +55,37 @@ def santize_data(file):
     f2.close()
     shutil.move(tmp, file)
 
+#def dict_mean(dict_list, data_to_inquire):
+#    mean_dict = {}
+#    keys_to_mean = []
+#    for key in dict_list[0].keys():
+#        mean_dict[key] = dict_list[0][key]
+#    for el in data_to_inquire:
+#        keys_to_mean.append(el[1])
+#    for key in keys_to_mean:
+#        #mean_dict[key] = np.mean([d[key] for d in dict_list], axis=0)
+#        mean_dict[key] = [d[key] for d in dict_list]
+#        print(mean_dict)
+#    return mean_dict
+
 
 def plot_data(file, data_to_inquire, mode="separate"):
     # santize_data(file)
-    data = parse_data(file)
-    #print(data)
-    #print(data_to_inquire)
+    #make a list of dictionnaries, loop using setting.runs_to_do and average the values
+    dataList = []
+    for i in range(settings.runs_to_do):
+        dataList.append(parse_data(file.replace("log", "log" + str(i))))
+    #print(dataList)
+    data = dataList #to do, average the values instead of plotting them all. warning: the runs have different length of episodes!
     for el in data_to_inquire:
-        #print(data['success_ratio_within_window'])
         #print(el)
-        plt.plot(data[el[0]], data[el[1]])
+        for i in range(settings.runs_to_do):
+            print(data[i][el[1]])
+            plt.plot(data[i][el[0]], data[i][el[1]])
+            assert (el[0] in data[i].keys())
         plt.xlabel(el[0])
         plt.ylabel(el[1])
-        assert (el[0] in data.keys())
+        
         plt.legend()
         plt.draw()
         plt.figure()
@@ -84,9 +102,9 @@ def generate_csv(file):
 
 
 def append_log_file(episodeN, log_mode="verbose"):
-    with open(os.path.join(settings.proj_root_path, "data", msgs.algo, msgs.mode + "_episodal_log" + log_mode + ".txt"),
+    with open(os.path.join(settings.proj_root_path, "data", msgs.algo, msgs.mode + "_episodal_log" + log_mode + str(settings.i_run) + ".txt"),
               "a+") as f:
-        if (episodeN == 0):
+        if (episodeN == 0): #starting a new training task, add settings 
             f.write('{\n')
             f.write('"buffer size":' + str(settings.buffer_size) + ',\n')
             f.write('"loaded from checkpoint":' + str(settings.use_checkpoint).lower() + ',\n')

@@ -614,6 +614,8 @@ class AirSimEnv(gym.Env):
         self.allLogs[key].append(value)
 
     def on_episode_start(self):
+        if self.episodeN == 0:
+            settings.i_run -= 1 #reduce run counter
         self.stepN = 0
         self.episodeN += 1
         self.episodeNInZone +=1

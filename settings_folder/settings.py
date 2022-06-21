@@ -44,7 +44,7 @@ chk_p_name_style_baselines = "0.pkl"
 max_chck_pt_per_zone = 5  # pay attention
 
 logging_interval = 100
-checkpoint_interval = 15000
+checkpoint_interval = 25000
 
 # ---------------------------
 # zoning
@@ -197,13 +197,16 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 # ---------------------------
 # training params
 # ---------------------------
+runs_to_do = 4
+i_run = 4 #this needs to be the same value as runs_to_do
 buffer_size = 5000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
 use_checkpoint = False
-training_steps_cap = 25000
+training_steps_cap = 7500
 nb_steps_warmup = 300 #iterations are really fast during this phase
 episode_count_cap = 100000
 policy = "shallow" #"shallow" or "deep"
 curriculum_learning = True
+verbose = False
 
 # ---------------------------
 # testing params

@@ -173,7 +173,7 @@ def train(dqn, env, train_checkpoint=False):
     dqn.fit(env, callbacks=callbacks, nb_steps=settings.training_steps_cap, nb_max_episode_steps=settings.nb_max_episodes_steps,  visualize=False, verbose=0, log_interval=settings.logging_interval)
 
     # After training is done, we save the final weights.
-    weights_filename = 'dqn_level_3_{}.hf5'
+    weights_filename = 'dqn_level_3_run' +str(settings.i_run) + '.hf5'
     dqn.save_weights(weights_filename.format(""), overwrite=True)
 
 
