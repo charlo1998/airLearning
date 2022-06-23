@@ -36,8 +36,9 @@ class AirLearningClient(airsim.MultirotorClient):
         pos_angle = math.degrees(pos_angle) % 360
 
         track = math.radians(pos_angle - yaw)
+        track = ((math.degrees(track) - 180) % 360) - 180
 
-        return ((math.degrees(track) - 180) % 360) - 180
+        return track
 
     def getConcatState(self, track, goal): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
         encoded_depth = self.getScreenDepthVis(track)
@@ -173,8 +174,9 @@ class AirLearningClient(airsim.MultirotorClient):
         xdistance = (goal[0] - now.x_val)
         ydistance = (goal[1] - now.y_val)
         euclidean = np.sqrt(np.power(xdistance,2) + np.power(ydistance,2))
+        angle = self.goal_direction(goal, now)
 
-        return np.array([xdistance, ydistance, euclidean])
+        return np.array([angle, euclidean])
 
     def get_velocity(self):
         return np.array([self.client.get_velocity().x_val, self.client.get_velocity().y_val, self.client.get_velocity().z_val])
