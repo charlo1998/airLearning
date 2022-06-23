@@ -174,7 +174,7 @@ class AirLearningClient(airsim.MultirotorClient):
         xdistance = (goal[0] - now.x_val)
         ydistance = (goal[1] - now.y_val)
         euclidean = np.sqrt(np.power(xdistance,2) + np.power(ydistance,2))
-        angle = self.goal_direction(goal, now)
+        angle = self.goal_direction(goal, [now.x_val, now.y_val])
 
         return np.array([angle, euclidean])
 

@@ -53,7 +53,7 @@ class AirSimEnv(gym.Env):
     def __init__(self):
         # left depth, center depth, right depth, yaw
         if(settings.concatenate_inputs):
-            STATE_POS = 3
+            STATE_POS = 2
             #STATE_VEL = 3
             STATE_DEPTH_H, STATE_DEPTH_W = 154, 256
             if(msgs.algo == "SAC"):
@@ -102,7 +102,7 @@ class AirSimEnv(gym.Env):
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
-        self.position = np.zeros((3,), dtype=np.float32)
+        self.position = np.zeros((2,), dtype=np.float32)
         self.velocity = np.zeros((3,), dtype=np.float32)
         self.speed = 0
         self.track = 0
@@ -537,9 +537,10 @@ class AirSimEnv(gym.Env):
                     self.concat_state = self.airgym.getConcatState(self.track, self.goal)
                 elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                     self.depth = self.airgym.getScreenDepthVis(self.track)
+                    self.position = self.airgym.get_distance(self.goal)
+                    self.velocity = self.airgym.drone_velocity()
                 #self.rgb = self.airgym.getScreenRGB()
-                self.position = self.airgym.get_distance(self.goal)
-                self.velocity = self.airgym.drone_velocity()
+                
 
             if(settings.profile):
                 clct_state_end = time.time()
