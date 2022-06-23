@@ -54,7 +54,7 @@ checkpoint_interval = 25000
 zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 3}  # pay attention
 
 # update_zone_success_threshold = 50
-acceptable_success_rate_to_update_zone = .3  # after what ratio of success up the zone # pay attention
+acceptable_success_rate_to_update_zone = .6  # after what ratio of success up the zone # pay attention
 update_zone_window = 100  # the window within which the  update_zone_accpetable_success_rate
 # needs to be achieved. Note that at the begining of every
 # new window we zero out the achieved ratio
@@ -194,14 +194,16 @@ nb_max_episodes_steps = 750  # pay attention, this could be changed to a constan
 # assert(nb_max_episodes_steps > 16 )
 success_distance_to_goal = 3
 slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
+
 # ---------------------------
 # training params
 # ---------------------------
-runs_to_do = 4
-i_run = 4 #this needs to be the same value as runs_to_do
+runs_to_do = 3
+i_run = 3 #this needs to be the same value as runs_to_do
+assert(runs_to_do == i_run)
 buffer_size = 5000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
 use_checkpoint = False
-training_steps_cap = 7500
+training_steps_cap = 2000
 nb_steps_warmup = 300 #iterations are really fast during this phase
 episode_count_cap = 100000
 policy = "shallow" #"shallow" or "deep"

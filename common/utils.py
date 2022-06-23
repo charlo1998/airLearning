@@ -80,7 +80,7 @@ def plot_data(file, data_to_inquire, mode="separate"):
     for el in data_to_inquire:
         #print(el)
         for i in range(settings.runs_to_do):
-            print(data[i][el[1]])
+            #print(data[i][el[1]])
             plt.plot(data[i][el[0]], data[i][el[1]])
             assert (el[0] in data[i].keys())
         plt.xlabel(el[0])

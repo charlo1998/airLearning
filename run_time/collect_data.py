@@ -3,8 +3,9 @@ import os
 os.sys.path.insert(0, os.path.abspath('../settings_folder'))
 
 import settings
-import ddpg_airsim
+
 import dqn_airsim
+import ddpg_airsim
 import dqn_baselines
 import ppo_airsim
 #import sac_airsim
@@ -86,7 +87,7 @@ def main():
     #model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model.pkl"] #baselines
     model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/dqn_level_3_.hf5"] #keras rl
 
-    algo = "DQN"
+    algo = "DQN-B"
     task_type = "train"
 
     task1 = {"task_type": "start_game"}

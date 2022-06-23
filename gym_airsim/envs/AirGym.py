@@ -309,7 +309,8 @@ class AirSimEnv(gym.Env):
             return
     def dqn_baselines_call_back_emulator(self):
             if (msgs.mode == 'train'):
-                append_log_file(self.episodeN-1, "verbose")
+                if (settings.verbose):
+                    append_log_file(self.episodeN-1, "verbose")
                 append_log_file(self.episodeN-1, "")
                 if not(msgs.success):
                     return
