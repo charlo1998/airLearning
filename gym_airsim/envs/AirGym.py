@@ -596,6 +596,7 @@ class AirSimEnv(gym.Env):
             if (done):
                 self.on_episode_end()
 
+
             return state, reward, done, info
         except Exception as e:
             print("------------------------- step failed ----------------  with"\

@@ -141,6 +141,7 @@ move_by_position = False
 # DDPG parameters
 # ---------------------------
 
+episode_count_cap = 5000
 batch_size = 64  # ToDo: Determine what this value is
 gamma = 0.99
 tau = 0.001  # Target Network HyperParameters
@@ -198,14 +199,13 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 # ---------------------------
 # training params
 # ---------------------------
-runs_to_do = 3
-i_run = 3 #this needs to be the same value as runs_to_do
+runs_to_do = 1
+i_run = 1 #this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 5000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
-use_checkpoint = False
-training_steps_cap = 2000
+use_checkpoint = True
+training_steps_cap = 750
 nb_steps_warmup = 300 #iterations are really fast during this phase
-episode_count_cap = 100000
 policy = "shallow" #"shallow" or "deep"
 curriculum_learning = True
 verbose = False
