@@ -471,6 +471,7 @@ class AirSimEnv(gym.Env):
 
         try:
             print("ENter Step"+str(self.stepN))
+            print(f"action taken: {action}")
             self.addToLog('action', action)
             self.stepN += 1
             self.total_step_count_for_experiment +=1
@@ -485,6 +486,13 @@ class AirSimEnv(gym.Env):
             if (excp_occured):
                 raise Exception("server exception happened") 
             """
+            if(settings.profile):
+                    self.this_time = time.time()
+                    if(self.stepN > 1):
+                        self.loop_rate_list.append(self.this_time - self.prev_time)
+                    self.prev_time = time.time()
+                    take_action_start = time.time()
+
             if(msgs.algo == "DDPG"):
                 #self.actions_in_step.append([action[0][0], action[0][1], action[0][2]])
                 self.actions_in_step.append([action[0], action[1], action[2]])
@@ -501,12 +509,7 @@ class AirSimEnv(gym.Env):
                 collided = self.airgym.take_discrete_action(action)
                 self.actions_in_step.append(str(action))
                 
-            if(settings.profile):
-                    self.this_time = time.time()
-                    if(self.stepN > 1):
-                        self.loop_rate_list.append(self.this_time - self.prev_time)
-                    self.prev_time = time.time()
-                    take_action_start = time.time()
+            
             if(settings.profile):
                     take_action_end = time.time()
             if(settings.profile):
@@ -537,7 +540,6 @@ class AirSimEnv(gym.Env):
                     self.concat_state = self.airgym.getConcatState(self.track, self.goal)
                 elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                     self.depth = self.airgym.getScreenDepthVis(self.track)
-                #self.rgb = self.airgym.getScreenRGB()
                 self.position = self.airgym.get_distance(self.goal)
                 self.velocity = self.airgym.drone_velocity()
 

@@ -179,6 +179,14 @@ def train(dqn, env, train_checkpoint=False):
     #note: the render doesn't seem to be implemented, so we can't visualize the training?
     dqn.fit(env, callbacks=callbacks, nb_steps=settings.training_steps_cap, nb_max_episode_steps=settings.nb_max_episodes_steps,  visualize=False, verbose=0, log_interval=settings.logging_interval)
 
+    #env loop rate logging
+    if settings.profile:
+        with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),
+            "w") as f:
+            f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
+            f.write("take_action_list:" + str(env.take_action_list) + "\n")
+            f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
+
     # After training is done, we save the final weights.
     weights_filename = 'saved_model/dqn_weights_run' +str(settings.i_run) + '.hf5'
     dqn.save_weights(weights_filename.format(""), overwrite=True)
