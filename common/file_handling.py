@@ -18,8 +18,8 @@ def find_list_of_files(data_dir):
 	file_list = []
 	for f in listdir(data_dir):
 		file_path = join(data_dir, f)
-		if isfile(file_path) and not ("~" in f) and not (".gitignore" == f) and not ("meta_data" in f) and not (
-				"test_res" in f) and not ("actor" in f):
+		if isfile(file_path) and not ("~" in f) and not (".gitignore" == f) and not ("data" in f) and not ("meta" in f) and not (
+				"test_res" in f) and not ("actor" in f) and not (".pb" in f) and not (".index" in f):
 			file_list.append(file_path)
 	return file_list
 
@@ -179,7 +179,7 @@ class CheckPoint():
 		if len(file_path_list) < self.max_chck_pt_per_zone:
 			return incr_file_name(find_file_or_dir(file_path_list, 'newest'))
 		else:
-			return (find_file_or_dir(file_path_list, 'oldest'))
+			return (find_file_or_dir(file_path_list, 'oldest')).replace('.ckpt', '').replace('.pkl','')
 
 	# import settings
 

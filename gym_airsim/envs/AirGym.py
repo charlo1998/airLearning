@@ -315,13 +315,14 @@ class AirSimEnv(gym.Env):
                 if not(msgs.success):
                     return
                 weight_file_name = self.check_point.find_file_to_check_point(msgs.cur_zone_number)
+                weight_file_name = os.path.splitext(weight_file_name)[0]
                 self.model.save(weight_file_name)
                 with open(weight_file_name+"_meta_data", "w") as file_hndle:
                     json.dump(msgs.meta_data, file_hndle)
             elif (msgs.mode == 'test'):
                 append_log_file(self.episodeN-1, "verbose")
                 append_log_file(self.episodeN-1, "")
-                with open(msgs.weight_file_under_test+"_test"+str(msgs.tst_inst_ctr) + "_meta_data", "w") as file_hndle:
+                with open(msgs.weight_file_under_test+"_test"+str(msgs.tst_inst_ctr) + "_meta_data.txt", "w") as file_hndle:
                     json.dump(msgs.meta_data, file_hndle)
                     json.dump(msgs.meta_data, file_hndle)
             else:
