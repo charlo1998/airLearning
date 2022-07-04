@@ -207,6 +207,8 @@ class AirSimEnv(gym.Env):
             return self.concat_state
         elif(msgs.algo == "DQN-B"):
             return self.concat_state
+        elif(msgs.algo == "A2C-B"):
+            return self.concat_state
         else:
             return self.depth, self.velocity, self.position
     
@@ -335,6 +337,7 @@ class AirSimEnv(gym.Env):
                 print("this mode " + str(msgs.mode) + "is not defined. only train and test defined")
                 exit(0)
 
+
     def update_success_rate(self):
         self.success_ratio_within_window = float(sum(self.success_history)/settings.update_zone_window)
 
@@ -455,7 +458,7 @@ class AirSimEnv(gym.Env):
             self.ppo_call_back_emulator()
         elif(msgs.algo == "SAC"):
             self.sac_call_back_emulator()
-        elif(msgs.algo == "DQN-B"):
+        elif(msgs.algo == "DQN-B" or msgs.algo == "A2C-B"):
             self.dqn_baselines_call_back_emulator()
 
         self.restart_window_if_necessary()
@@ -542,7 +545,7 @@ class AirSimEnv(gym.Env):
             else:
                 now = self.airgym.drone_pos()
                 self.track = self.airgym.goal_direction(self.goal, now)
-                if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO"):
+                if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B"):
                     self.concat_state = self.airgym.getConcatState(self.track, self.goal)
                 elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                     self.depth = self.airgym.getScreenDepthVis(self.track)

@@ -8,6 +8,7 @@ import dqn_airsim
 import ddpg_airsim
 import dqn_baselines
 import ppo_airsim
+import a2c_baselines
 #import sac_airsim
 from game_handler_class import *
 import msgs
@@ -22,7 +23,7 @@ def runTask(task):
     game_handler = GameHandler()
 
     if ("algo" in task.keys()):
-        if (task["algo"] in ["DDPG", "DQN", "PPO", "SAC", "DQN-B"]):
+        if (task["algo"] in ["DDPG", "DQN", "PPO", "A2C-B", "DQN-B"]):
             if (task["algo"] == "DDPG"):
                 msgs.algo = "DDPG"
                 train_class = ddpg_airsim #ddpg not working? issue when creating the actor network
@@ -35,8 +36,9 @@ def runTask(task):
             elif (task["algo"] == "DQN-B"):
                 train_class = dqn_baselines
                 msgs.algo = "DQN-B"
-            elif (task["algo"] == "SAC"):
-                train_class = sac_airsim #not available?
+            elif (task["algo"] == "A2C-B"):
+                train_class = a2c_baselines
+                msgs.algo = "A2C-B"
         else:
             print("this algorithm is not supported")
             exit(0)
@@ -52,7 +54,7 @@ def runTask(task):
         print("starting training")
         if task["algo"] == "DQN":
             train_class.train(train_obj, env, train_checkpoint = settings.use_checkpoint)
-        elif task["algo"] == "DQN-B":
+        elif task["algo"] == "DQN-B" or task["algo"] == "A2C-B":
             train_class.train(train_obj, env)
 
     if (task["task_type"] == "test"):
@@ -90,7 +92,7 @@ def main():
     #model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model.pkl"] #baselines
     model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/saved_model/dqn_weights_run0.hf5"] #keras rl
 
-    algo = "DQN-B"
+    algo = "A2C-B"
     task_type = "train"
 
     task1 = {"task_type": "start_game"}
