@@ -90,7 +90,7 @@ def main():
     #model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model.pkl"] #baselines
     model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/saved_model/dqn_weights_run0.hf5"] #keras rl
 
-    algo = "DQN"
+    algo = "DQN-B"
     task_type = "train"
 
     task1 = {"task_type": "start_game"}
