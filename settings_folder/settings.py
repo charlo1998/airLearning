@@ -44,18 +44,18 @@ chk_p_name_style_baselines = "0.pkl"
 max_chck_pt_per_zone = 5  # pay attention
 
 logging_interval = 100
-checkpoint_interval = 15000
+checkpoint_interval = 25000
 
 # ---------------------------
 # zoning
 # ---------------------------
 # how many zones for each variable for the entire range. Note that frequency
 # of moving to a new zone is not determined here
-zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 4}  # pay attention
+zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 3}  # pay attention
 
 # update_zone_success_threshold = 50
-acceptable_success_rate_to_update_zone = .3  # after what ration of success up the zone # pay attention
-update_zone_window = 1000  # the window within which the  update_zone_accpetable_success_rate
+acceptable_success_rate_to_update_zone = .6  # after what ratio of success up the zone # pay attention
+update_zone_window = 100  # the window within which the  update_zone_accpetable_success_rate
 # needs to be achieved. Note that at the begining of every
 # new window we zero out the achieved ratio
 
@@ -89,7 +89,7 @@ medium_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                     "Seed": list(range(0, 5000)),
                     "VelocityRange": [[0, 3]],
                     "Name": ["Name"],
-                    "NumberOfObjects": list(range(5, 8))}
+                    "NumberOfObjects": list(range(2,4))}
 
 hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "MinimumDistance": [4],
@@ -141,6 +141,7 @@ move_by_position = False
 # DDPG parameters
 # ---------------------------
 
+episode_count_cap = 5000
 batch_size = 64  # ToDo: Determine what this value is
 gamma = 0.99
 tau = 0.001  # Target Network HyperParameters
@@ -194,24 +195,29 @@ nb_max_episodes_steps = 750  # pay attention, this could be changed to a constan
 # assert(nb_max_episodes_steps > 16 )
 success_distance_to_goal = 3
 slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
+
 # ---------------------------
 # training params
 # ---------------------------
-buffer_size = 5000  #replay buffer: this affects critically the iteration speed as the buffer gets filled, then stabilizes
-training_steps_cap = 50000
-nb_steps_warmup = 300 #iterations are really fast during this phase
-episode_count_cap = 100000
+runs_to_do = 1
+i_run = 1 #this needs to be the same value as runs_to_do
+assert(runs_to_do == i_run)
+buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
+use_checkpoint = False
+training_steps_cap = 1000000
+nb_steps_warmup = 3000 #iterations are really fast during this phase
 policy = "shallow" #"shallow" or "deep"
 curriculum_learning = True
+verbose = False
 
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = 100  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = 3*100  # note that if number of zones are x, #pay attention
 # then model get tested testing_nb_episodes_per_model/x
 # times per zone
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)
-# assert(testing_nb_episodes_per_zone <testing_nb_episodes_per_model), "get the equality right ,darn it"
+#assert(testing_nb_episodes_per_zone <testing_nb_episodes_per_model), "get the equality right ,darn it"
 
 
 # ---------------------------
@@ -232,7 +238,7 @@ use_preloaded_json = False
 meta_data_folder = "C:\workspace\zone2"
 
 #--------------------------------
-# profiling (of the env.step fnc?) check if other fnc are profiled
+# profiling (of the env.step fnc)
 #--------------------------------
 
 profile = True
@@ -253,7 +259,7 @@ ue4_winY = 480
 concatenate_inputs = True
 encoded_depth = True
 position = True
-velocity = False
+velocity = True
 grey = False
 rgb = False
 

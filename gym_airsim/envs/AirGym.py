@@ -53,23 +53,28 @@ class AirSimEnv(gym.Env):
     def __init__(self):
         # left depth, center depth, right depth, yaw
         if(settings.concatenate_inputs):
-            STATE_POS = 3
-            #STATE_VEL = 3
+            if(settings.position and settings.velocity): #for ablation studies
+                STATE_POS = 3
+                STATE_VEL = 3
+            elif(settings.position):
+                STATE_POS = 3
+                STATE_VEL = 0
+            elif(settings.velocity):
+                STATE_POS = 0
+                STATE_VEL = 3
+            else:
+                STATE_POS = 0
+                STATE_VEL = 0
+            
             STATE_DEPTH_H, STATE_DEPTH_W = 154, 256
             if(msgs.algo == "SAC"):
-                self.observation_space = spaces.Box(low=-100000, high=1000000, shape=(( 1, STATE_POS + STATE_DEPTH_H * STATE_DEPTH_W)))
+                self.observation_space = spaces.Box(low=-100000, high=1000000, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
                 self.observation_space = spaces.Box(low=-100000, high=1000000,
-                                                    shape=((1, STATE_POS + STATE_DEPTH_H * STATE_DEPTH_W)))
+                                                    shape=((1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
         else:
             self.observation_space = spaces.Box(low=0, high=255, shape=(154, 256))
-            #self.observation_space = spaces.Box(low=0, high=255, shape=(144, 256, 3))
-        '''
-        self.observation_space = spaces.Dict({"rgb": spaces.Box(low = 0, high=255, shape=(144, 256, 3)),
-                                              "depth": spaces.Box(low = 0, high=255, shape=(144, 256,1)),
-                                              "velocity": spaces.Box(low=-10, high=10, shape=(3,)),
-                                              "position:":spaces.Box(low=np.Inf, high=np.NINF, shape=(4,))})
-        '''
+
         self.total_step_count_for_experiment = 0 # self explanatory
         self.ease_ctr = 0  #counting how many times we ease the randomization and tightened it
         self.window_restart_ctr = 0 # counts the number of time we have restarted the window due to not meeting
@@ -88,8 +93,7 @@ class AirSimEnv(gym.Env):
         self.log_dic = {}
         #self.cur_zone_number = 0
         self.cur_zone_number_buff = 0
-        self.success_count = 0
-        self.success_count_within_window = 0
+        self.success_history = []
         self.success_ratio_within_window = 0
         self.episodeNInZone = 0 #counts the numbers of the episodes per Zone
                                 #,hence gets reset upon moving on to new zone
@@ -99,7 +103,7 @@ class AirSimEnv(gym.Env):
         self.OU = OU()
         self.game_config_handler = GameConfigHandler()
         if(settings.concatenate_inputs):
-            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_DEPTH_H * STATE_DEPTH_W), dtype=np.uint8)
+            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W), dtype=np.uint8)
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
@@ -156,6 +160,7 @@ class AirSimEnv(gym.Env):
 
     def set_model(self, model):
         self.model = model
+
     def set_actor_critic(self, actor, critic):
         self.actor = actor
         self.critic = critic
@@ -310,18 +315,20 @@ class AirSimEnv(gym.Env):
             return
     def dqn_baselines_call_back_emulator(self):
             if (msgs.mode == 'train'):
-                append_log_file(self.episodeN-1, "verbose")
+                if (settings.verbose):
+                    append_log_file(self.episodeN-1, "verbose")
                 append_log_file(self.episodeN-1, "")
                 if not(msgs.success):
                     return
                 weight_file_name = self.check_point.find_file_to_check_point(msgs.cur_zone_number)
+                weight_file_name = os.path.splitext(weight_file_name)[0]
                 self.model.save(weight_file_name)
                 with open(weight_file_name+"_meta_data", "w") as file_hndle:
                     json.dump(msgs.meta_data, file_hndle)
             elif (msgs.mode == 'test'):
                 append_log_file(self.episodeN-1, "verbose")
                 append_log_file(self.episodeN-1, "")
-                with open(msgs.weight_file_under_test+"_test"+str(msgs.tst_inst_ctr) + "_meta_data", "w") as file_hndle:
+                with open(msgs.weight_file_under_test+"_test"+str(msgs.tst_inst_ctr) + "_meta_data.txt", "w") as file_hndle:
                     json.dump(msgs.meta_data, file_hndle)
                     json.dump(msgs.meta_data, file_hndle)
             else:
@@ -329,7 +336,7 @@ class AirSimEnv(gym.Env):
                 exit(0)
 
     def update_success_rate(self):
-        self.success_ratio_within_window = float(self.success_count_within_window/settings.update_zone_window)
+        self.success_ratio_within_window = float(sum(self.success_history)/settings.update_zone_window)
 
     def update_zone_if_necessary(self):
         if (msgs.mode == 'train'):
@@ -345,7 +352,6 @@ class AirSimEnv(gym.Env):
                 else:
                     self.passed_all_zones = True
                 self.update_zone("End")
-                #self.success_count = e
         elif (msgs.mode == 'test'):
             if (self.episodeN % settings.testing_nb_episodes_per_zone == 0):
                 if not(self.cur_zone_number_buff  == (settings.max_zone - 1)):
@@ -356,20 +362,13 @@ class AirSimEnv(gym.Env):
             print("this mode " + str(msgs.mode) + "is not defined. only train and test defined")
             exit(0)
 
-    def print_msg_of_inspiration(self):
-        if (self.success_count_within_window %2 == 0):
-            print("---------------:) :) :) Success, Be Happy (: (: (:------------ !!!\n")
-        elif (self.success_count_within_window %3 == 0):
-            print("---------------:) :) :) Success, Shake Your Butt (: (: (:------------ !!!\n")
-        else:
-            print("---------------:) :) :) Success, Oh Yeah! (: (: (:------------ !!!\n")
 
     def populate_episodal_log_dic(self):
         msgs.episodal_log_dic.clear()
         msgs.episodal_log_dic_verbose.clear()
         msgs.episodal_log_dic["cur_zone_number"] = msgs.cur_zone_number
         msgs.episodal_log_dic["success_ratio_within_window"] = self.success_ratio_within_window
-        msgs.episodal_log_dic["success_count_within_window"] = self.success_count_within_window
+        msgs.episodal_log_dic["success_history"] = sum(self.success_history)
         msgs.episodal_log_dic["success"] = msgs.success
         msgs.episodal_log_dic["stepN"] = self.stepN
         msgs.episodal_log_dic["episodeN"] = self.episodeN
@@ -399,9 +398,11 @@ class AirSimEnv(gym.Env):
         else:
             raise Exception(msgs.mode + "is not supported as a mode")
 
-    def possible_to_meet_success_rate(self):
+    def possible_to_meet_success_rate(self): 
+        #Computes what is the best success ratio if all the episodes in the current window are successes
+        #if this ratio is inferior to the acceptable rate (ex. 50%), the window is restarted.
         best_success_rate_can_achieve_now =  float(((settings.update_zone_window - self.episodeInWindow) +\
-                                                    self.success_count_within_window)/settings.update_zone_window)
+                                                    sum(self.success_history[self.episodeInWindow:]))/settings.update_zone_window)
         acceptable_success_rate =  settings.acceptable_success_rate_to_update_zone
         if (best_success_rate_can_achieve_now < acceptable_success_rate):
             return False
@@ -423,12 +424,10 @@ class AirSimEnv(gym.Env):
 
     def start_new_window(self):
         self.window_restart_ctr = 0
-        self.success_count_within_window = 0
         self.episodeInWindow = 0
 
     def restart_cur_window(self):
         self.window_restart_ctr +=1
-        self.success_count_within_window = 0
         self.episodeInWindow = 0
         if (self.window_restart_ctr > settings.window_restart_ctr_threshold):
             self.window_restart_ctr = 0
@@ -444,6 +443,7 @@ class AirSimEnv(gym.Env):
             self.restart_cur_window()
 
     def on_episode_end(self):
+        self.update_history(self.success)
         self.update_success_rate()
         if(os.name=="nt"):
             msgs.meta_data = {**self.game_config_handler.cur_game_config.get_all_items()}
@@ -470,14 +470,6 @@ class AirSimEnv(gym.Env):
         self.allLogs['distance'] = [float(np.sqrt(np.power((self.goal[0]), 2) + np.power(self.goal[1], 2)))]
 
 
-
-    """"
-    def on_step_end(self):
-        self.success_ratio_within_window = float(self.success_count_within_window/settings.update_zone_window)
-        self.check_for_zone_update()
-        msgs.meta_data= {**(msgs.meta_data), **self.game_config_handler.cur_game_config.get_all_items()}
-    """
-
     def step(self, action): #changed from _step
         
 		
@@ -486,6 +478,7 @@ class AirSimEnv(gym.Env):
 
         try:
             print("ENter Step"+str(self.stepN))
+            print(f"action taken: {action}")
             self.addToLog('action', action)
             self.stepN += 1
             self.total_step_count_for_experiment +=1
@@ -500,6 +493,13 @@ class AirSimEnv(gym.Env):
             if (excp_occured):
                 raise Exception("server exception happened") 
             """
+            if(settings.profile):
+                    self.this_time = time.time()
+                    if(self.stepN > 1):
+                        self.loop_rate_list.append(self.this_time - self.prev_time)
+                    self.prev_time = time.time()
+                    take_action_start = time.time()
+
             if(msgs.algo == "DDPG"):
                 #self.actions_in_step.append([action[0][0], action[0][1], action[0][2]])
                 self.actions_in_step.append([action[0], action[1], action[2]])
@@ -516,16 +516,9 @@ class AirSimEnv(gym.Env):
                 collided = self.airgym.take_discrete_action(action)
                 self.actions_in_step.append(str(action))
                 
-            if(settings.profile):
-                    self.this_time = time.time()
-                    if(self.stepN > 1):
-                        self.loop_rate_list.append(self.this_time - self.prev_time)
-                        print(f"loop rate: {self.this_time - self.prev_time}")
-                    self.prev_time = time.time()
-                    take_action_start = time.time()
+            
             if(settings.profile):
                     take_action_end = time.time()
-            if(settings.profile):
                     self.take_action_list.append(take_action_end - take_action_start)
                     clct_state_start = time.time()
             
@@ -553,41 +546,40 @@ class AirSimEnv(gym.Env):
                     self.concat_state = self.airgym.getConcatState(self.track, self.goal)
                 elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                     self.depth = self.airgym.getScreenDepthVis(self.track)
-                #self.rgb = self.airgym.getScreenRGB()
                 self.position = self.airgym.get_distance(self.goal)
                 self.velocity = self.airgym.drone_velocity()
 
             if(settings.profile):
                 clct_state_end = time.time()
                 self.clct_state_list.append(clct_state_end - clct_state_start)
-                print(f"collecting state took {(clct_state_end - clct_state_start)*1000} miliseconds")
+
+
+
             self.speed = np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2)
             #print("Speed:"+str(self.speed))
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             
-            if distance < settings.success_distance_to_goal:
-                self.success_count +=1
+            if distance < settings.success_distance_to_goal: #we found the goal: 1000ptso
                 done = True
-                self.print_msg_of_inspiration()
-                self.success_count_within_window +=1
+                print("-----------success, be happy!--------")
                 self.success = True
                 msgs.success = True
                 # Todo: Add code for landing drone (Airsim API)
                 reward = 1000.0
                 #self.collect_data()
-            elif self.stepN >= settings.nb_max_episodes_steps:
+            elif self.stepN >= settings.nb_max_episodes_steps: #ran out of time/battery: -100pts
                 done = True
                 reward = -100.0
                 self.success = False
-            elif collided == True:
+            elif collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
-                reward = -100.0
+                reward = min(-(1000.0-self.stepN), -250)
                 self.success = False
             elif (now[2] < -15): # Penalize for flying away too high
                 done = True
                 reward = -100
                 self.success = False
-            else:
+            else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def)
                 reward, distance = self.computeReward(now)
                 done = False
                 self.success = False
@@ -610,6 +602,7 @@ class AirSimEnv(gym.Env):
             if (done):
                 self.on_episode_end()
 
+
             return state, reward, done, info
         except Exception as e:
             print("------------------------- step failed ----------------  with"\
@@ -618,12 +611,21 @@ class AirSimEnv(gym.Env):
             self.airgym = AirLearningClient()
             return self.prev_state, 0, True, self.prev_info
 
+    def update_history(self, result):
+        if (len(self.success_history) < settings.update_zone_window):
+            self.success_history.append(result)
+        else:
+            self.success_history.pop(0)
+            self.success_history.append(result)
+
     def addToLog(self, key, value):
         if key not in self.allLogs:
             self.allLogs[key] = []
         self.allLogs[key].append(value)
 
     def on_episode_start(self):
+        if self.episodeN == 0:
+            settings.i_run -= 1 #reduce run counter
         self.stepN = 0
         self.episodeN += 1
         self.episodeNInZone +=1
@@ -677,6 +679,8 @@ class AirSimEnv(gym.Env):
 
     def update_zone(self, *args):
         #all_keys = self.game_config_handler.game_config_range.find_all_keys()
+        print("Zone updated! resetting success history")
+        self.success_history = []
         self.game_config_handler.update_zone(*args)
         self.episodeNInZone = 0
 

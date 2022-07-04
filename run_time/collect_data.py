@@ -3,8 +3,9 @@ import os
 os.sys.path.insert(0, os.path.abspath('../settings_folder'))
 
 import settings
-import ddpg_airsim
+
 import dqn_airsim
+import ddpg_airsim
 import dqn_baselines
 import ppo_airsim
 #import sac_airsim
@@ -18,6 +19,8 @@ def runTask(task):
     # decide on the algorithm
     # DQN-B is the stable-baselines version of DQN
     # DQN is the Keras-RL version of DQN
+    game_handler = GameHandler()
+
     if ("algo" in task.keys()):
         if (task["algo"] in ["DDPG", "DQN", "PPO", "SAC", "DQN-B"]):
             if (task["algo"] == "DDPG"):
@@ -48,7 +51,7 @@ def runTask(task):
                                            difficulty_level=task["difficulty_level"])
         print("starting training")
         if task["algo"] == "DQN":
-            train_class.train(train_obj, env, train_checkpoint = False)
+            train_class.train(train_obj, env, train_checkpoint = settings.use_checkpoint)
         elif task["algo"] == "DQN-B":
             train_class.train(train_obj, env)
 
@@ -64,12 +67,13 @@ def runTask(task):
             train_class.test(train_obj, env, weights)
 
     if (task["task_type"] == "start_game"):
-        game_handler = GameHandler()
         game_handler.start_game_in_editor()
 
     if (task["task_type"] == "restart_game"):
-        game_handler = GameHandler()
         game_handler.restart_game()
+
+    if (task["task_type"] == "kill_game"):
+        game_handler.kill_game_in_editor()
 
     if task["task_type"] == "generate_csv":
         msgs.algo = task["algo"]
@@ -84,23 +88,29 @@ def runTask(task):
 def main():
     taskList = []
     #model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model.pkl"] #baselines
-    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/dqn_level_3_8000.hf5"] #keras rl
+    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/saved_model/dqn_weights_run0.hf5"] #keras rl
 
-    algo = "DQN"
+    algo = "DQN-B"
+    task_type = "train"
 
     task1 = {"task_type": "start_game"}
-    task2 = {"algo": algo, "task_type": "train", "difficulty_level": "medium", "env_name": "AirSimEnv-v42",
+    task2 = {"algo": algo, "task_type": task_type, "difficulty_level": "default", "env_name": "AirSimEnv-v42",
              "weights": model_weights_list_to_test}
-    task3 = {"algo": algo, "task_type": "test", "difficulty_level": "default", "env_name": "AirSimEnv-v42",
-             "weights": model_weights_list_to_test}
-    task4 = {"algo": algo, "task_type": "generate_csv", "data_file": "train_episodal_log.txt"}
-    task5 = {"algo": algo, "task_type": "plot_data", "data_file": "train_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}
+    task3 = {"task_type": "kill_game"}
+    task4 = {"algo": algo, "task_type": "generate_csv", "data_file": task_type + "_episodal_log.txt"}
+    task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}
     
     taskList.append(task1)
-    taskList.append(task2)
-    #taskList.append(task3)
-    #taskList.append(task4)
-    taskList.append(task5)
+
+    if task_type == "train":
+        for i in range(settings.runs_to_do):
+            taskList.append(task2) #train
+    else:
+        taskList.append(task2) # don't do multiple runs for test
+
+    taskList.append(task3) #close airlearning
+    #taskList.append(task4) #generate_csv
+    taskList.append(task5) #plot
 
     for task_el in taskList:
         runTask(task_el)

@@ -5,6 +5,7 @@ machine_dependent_settings.py
 *~
 data/
 
-run_time/saved_model/
+run_time/dqn_level_3_log.json
 
-run_time/test_archive/
+run_time/
+!run_time/settings.json

@@ -3,6 +3,7 @@ import os, sys
 import numpy as np
 import tensorflow as tf
 import gym
+import pickle
 
 from keras.models import Sequential, Model
 from keras.layers import Dense, Flatten, Conv2D, concatenate, Input, Reshape
@@ -135,7 +136,7 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     # (low eps). We also set a dedicated eps value that is used during testing. Note that we set it to 0.05c
     # so that the agent still performs some random actions. This ensures that the agent cannot get stuck.
     policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=0.0,
-                                  nb_steps=100000)
+                                  nb_steps=1000000)
 
     dqn = DQNAgent(model=model, processor=processor, nb_actions=nb_actions, memory=memory, nb_steps_warmup=settings.nb_steps_warmup,
                    enable_double_dqn=settings.double_dqn,
@@ -152,13 +153,19 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
 def train(dqn, env, train_checkpoint=False):
     msgs.mode = 'train'
     #checkpoint_file = "checkpoints\\DQN\\level-3\\dqn_level_3_weights_154000.hf5"
-    checkpoint_file = "dqn_level_3_.hf5"
+    checkpoint_file = "C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/dqn_weights_run0.hf5"
     if train_checkpoint:
         try:
+            with open('saved_model/memory_run0.pickle', 'rb') as f:
+                memory = pickle.load(f)
+                dqn.memory = memory
+            with open('saved_model/processor_run0.pickle', 'rb') as f:
+                processor = pickle.load(f)
+                dqn.processor = processor
             dqn.load_weights(checkpoint_file)
             print("Loading checkpoint...\n")
         except (OSError):
-            logger.warning("File not found")
+            print("File not found")
 
     # Okay, now it's time to learn something! We could visualize the training here for show (now it is set to false), but this
     # slows down training quite a lot. You can always safely abort the training prematurely using
@@ -172,9 +179,27 @@ def train(dqn, env, train_checkpoint=False):
     #note: the render doesn't seem to be implemented, so we can't visualize the training?
     dqn.fit(env, callbacks=callbacks, nb_steps=settings.training_steps_cap, nb_max_episode_steps=settings.nb_max_episodes_steps,  visualize=False, verbose=0, log_interval=settings.logging_interval)
 
+    #env loop rate logging
+    if settings.profile:
+        with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),
+            "w") as f:
+            f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
+            f.write("take_action_list:" + str(env.take_action_list) + "\n")
+            f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
+
     # After training is done, we save the final weights.
-    weights_filename = 'dqn_level_3_{}.hf5'
+    weights_filename = 'saved_model/dqn_weights_run' +str(settings.i_run) + '.hf5'
     dqn.save_weights(weights_filename.format(""), overwrite=True)
+
+    #dqn.model.save('saved_model/dqn_model_run'+str(settings.i_run))
+
+    #print(dqn.get_config())
+    with open('saved_model/memory_run' +str(settings.i_run) + '.pickle', 'wb') as f:
+        pickle.dump(dqn.memory,f)
+    #with open('saved_model/policy_run' +str(settings.i_run), 'wb') as f:
+    #    pickle.dump(dqn.policy,f)
+    with open('saved_model/processor_run' +str(settings.i_run) + '.pickle', 'wb') as f:
+        pickle.dump(dqn.processor,f)
 
 
 def test(dqn, env, file_path):
