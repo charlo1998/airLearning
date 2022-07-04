@@ -39,6 +39,14 @@ def train(env, agent):
     # Train the agent
     agent.learn(total_timesteps=settings.training_steps_cap)
 
+    #env loop rate logging
+    if settings.profile:
+        with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),
+            "w") as f:
+            f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
+            f.write("take_action_list:" + str(env.take_action_list) + "\n")
+            f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
+
     agent.save("C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model") #todo: automate the path
 
 def test(env, agent, filepath):

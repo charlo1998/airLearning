@@ -53,23 +53,28 @@ class AirSimEnv(gym.Env):
     def __init__(self):
         # left depth, center depth, right depth, yaw
         if(settings.concatenate_inputs):
-            STATE_POS = 2
-            #STATE_VEL = 3
+            if(settings.position and settings.velocity): #for ablation studies
+                STATE_VEL = 3
+            elif(settings.position):
+                STATE_POS = 3
+                STATE_VEL = 0
+            elif(settings.velocity):
+                STATE_POS = 0
+                STATE_VEL = 3
+            else:
+                STATE_POS = 0
+                STATE_VEL = 0
+            
+                STATE_POS = 3
             STATE_DEPTH_H, STATE_DEPTH_W = 154, 256
             if(msgs.algo == "SAC"):
-                self.observation_space = spaces.Box(low=-100000, high=1000000, shape=(( 1, STATE_POS + STATE_DEPTH_H * STATE_DEPTH_W)))
+                self.observation_space = spaces.Box(low=-100000, high=1000000, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
                 self.observation_space = spaces.Box(low=-100000, high=1000000,
-                                                    shape=((1, STATE_POS + STATE_DEPTH_H * STATE_DEPTH_W)))
+                                                    shape=((1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
         else:
             self.observation_space = spaces.Box(low=0, high=255, shape=(154, 256))
-            #self.observation_space = spaces.Box(low=0, high=255, shape=(144, 256, 3))
-        '''
-        self.observation_space = spaces.Dict({"rgb": spaces.Box(low = 0, high=255, shape=(144, 256, 3)),
-                                              "depth": spaces.Box(low = 0, high=255, shape=(144, 256,1)),
-                                              "velocity": spaces.Box(low=-10, high=10, shape=(3,)),
-                                              "position:":spaces.Box(low=np.Inf, high=np.NINF, shape=(4,))})
-        '''
+
         self.total_step_count_for_experiment = 0 # self explanatory
         self.ease_ctr = 0  #counting how many times we ease the randomization and tightened it
         self.window_restart_ctr = 0 # counts the number of time we have restarted the window due to not meeting
@@ -98,7 +103,7 @@ class AirSimEnv(gym.Env):
         self.OU = OU()
         self.game_config_handler = GameConfigHandler()
         if(settings.concatenate_inputs):
-            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_DEPTH_H * STATE_DEPTH_W), dtype=np.uint8)
+            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W), dtype=np.uint8)
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
@@ -155,6 +160,7 @@ class AirSimEnv(gym.Env):
 
     def set_model(self, model):
         self.model = model
+
     def set_actor_critic(self, actor, critic):
         self.actor = actor
         self.critic = critic
@@ -315,13 +321,14 @@ class AirSimEnv(gym.Env):
                 if not(msgs.success):
                     return
                 weight_file_name = self.check_point.find_file_to_check_point(msgs.cur_zone_number)
+                weight_file_name = os.path.splitext(weight_file_name)[0]
                 self.model.save(weight_file_name)
                 with open(weight_file_name+"_meta_data", "w") as file_hndle:
                     json.dump(msgs.meta_data, file_hndle)
             elif (msgs.mode == 'test'):
                 append_log_file(self.episodeN-1, "verbose")
                 append_log_file(self.episodeN-1, "")
-                with open(msgs.weight_file_under_test+"_test"+str(msgs.tst_inst_ctr) + "_meta_data", "w") as file_hndle:
+                with open(msgs.weight_file_under_test+"_test"+str(msgs.tst_inst_ctr) + "_meta_data.txt", "w") as file_hndle:
                     json.dump(msgs.meta_data, file_hndle)
                     json.dump(msgs.meta_data, file_hndle)
             else:
@@ -471,6 +478,7 @@ class AirSimEnv(gym.Env):
 
         try:
             print("ENter Step"+str(self.stepN))
+            print(f"action taken: {action}")
             self.addToLog('action', action)
             self.stepN += 1
             self.total_step_count_for_experiment +=1
@@ -485,6 +493,13 @@ class AirSimEnv(gym.Env):
             if (excp_occured):
                 raise Exception("server exception happened") 
             """
+            if(settings.profile):
+                    self.this_time = time.time()
+                    if(self.stepN > 1):
+                        self.loop_rate_list.append(self.this_time - self.prev_time)
+                    self.prev_time = time.time()
+                    take_action_start = time.time()
+
             if(msgs.algo == "DDPG"):
                 #self.actions_in_step.append([action[0][0], action[0][1], action[0][2]])
                 self.actions_in_step.append([action[0], action[1], action[2]])
@@ -501,15 +516,9 @@ class AirSimEnv(gym.Env):
                 collided = self.airgym.take_discrete_action(action)
                 self.actions_in_step.append(str(action))
                 
-            if(settings.profile):
-                    self.this_time = time.time()
-                    if(self.stepN > 1):
-                        self.loop_rate_list.append(self.this_time - self.prev_time)
-                    self.prev_time = time.time()
-                    take_action_start = time.time()
+            
             if(settings.profile):
                     take_action_end = time.time()
-            if(settings.profile):
                     self.take_action_list.append(take_action_end - take_action_start)
                     clct_state_start = time.time()
             
@@ -537,10 +546,8 @@ class AirSimEnv(gym.Env):
                     self.concat_state = self.airgym.getConcatState(self.track, self.goal)
                 elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                     self.depth = self.airgym.getScreenDepthVis(self.track)
-                    self.position = self.airgym.get_distance(self.goal)
-                    self.velocity = self.airgym.drone_velocity()
-                #self.rgb = self.airgym.getScreenRGB()
-                
+                self.position = self.airgym.get_distance(self.goal)
+                self.velocity = self.airgym.drone_velocity()
 
             if(settings.profile):
                 clct_state_end = time.time()
@@ -594,6 +601,7 @@ class AirSimEnv(gym.Env):
             #self.on_step_end()
             if (done):
                 self.on_episode_end()
+
 
             return state, reward, done, info
         except Exception as e:
