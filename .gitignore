@@ -4,3 +4,7 @@ machine_dependent_settings.py
 *.hf5
 *~
 data/
+
+run_time/saved_model/
+
+run_time/test_archive/
