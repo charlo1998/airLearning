@@ -54,9 +54,10 @@ class AirSimEnv(gym.Env):
         # left depth, center depth, right depth, yaw
         if(settings.concatenate_inputs):
             if(settings.position and settings.velocity): #for ablation studies
+                STATE_POS = 2
                 STATE_VEL = 3
             elif(settings.position):
-                STATE_POS = 3
+                STATE_POS = 2
                 STATE_VEL = 0
             elif(settings.velocity):
                 STATE_POS = 0
@@ -64,8 +65,7 @@ class AirSimEnv(gym.Env):
             else:
                 STATE_POS = 0
                 STATE_VEL = 0
-            
-                STATE_POS = 3
+
             STATE_DEPTH_H, STATE_DEPTH_W = 154, 256
             if(msgs.algo == "SAC"):
                 self.observation_space = spaces.Box(low=-100000, high=1000000, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
