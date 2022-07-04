@@ -1,4 +1,4 @@
-from stable_baselines.common import make_vec_env
+
 
 import sys
 import gym
@@ -14,8 +14,8 @@ from multi_modal_policy import MultiInputPolicy
 from stable_baselines.common.policies import MlpPolicy
 from stable_baselines.common.policies import CnnPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
+#from stable_baselines.common import make_vec_env #this yields an error
 from stable_baselines import A2C
-from stable_baselines.deepq.policies import MultiInputPolicy
 
 
 from keras.backend.tensorflow_backend import set_session
@@ -34,7 +34,7 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     vec_env = DummyVecEnv([lambda: env])  # The algorithms require a vectorized environment to run
     # Parallel environments
     #env = make_vec_env('CartPole-v1', n_envs=4)
-    agent = A2C(MlpPolicy, env, verbose=1)
+    agent = A2C(MlpPolicy, vec_env, verbose=1)
     env.set_model(agent)
 
     return env, agent
@@ -51,7 +51,7 @@ def train(env, agent):
             f.write("take_action_list:" + str(env.take_action_list) + "\n")
             f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
 
-    agent.save("C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C/model") #todo: automate the path
+    agent.save("C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model") #todo: automate the path
 
 def test(env, agent, filepath):
     model = A2C.load(filepath)

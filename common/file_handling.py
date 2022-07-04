@@ -174,7 +174,7 @@ class CheckPoint():
 				return join(dir_path, settings.chk_p_name_style_baselines)
 			elif(msgs.algo == "DQN-B"):
 				return join(dir_path, settings.chk_p_name_style_baselines)
-            elif(msgs.algo == "A2C-B"):
+			elif(msgs.algo == "A2C-B"):
 				return join(dir_path, settings.chk_p_name_style_baselines)
 			else:
 				return join(dir_path, settings.chk_p_name_style)

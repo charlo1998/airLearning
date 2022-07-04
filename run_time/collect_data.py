@@ -3,7 +3,7 @@ import os
 os.sys.path.insert(0, os.path.abspath('../settings_folder'))
 
 import settings
-
+import msgs
 import dqn_airsim
 import ddpg_airsim
 import dqn_baselines
@@ -11,7 +11,7 @@ import ppo_airsim
 import a2c_baselines
 #import sac_airsim
 from game_handler_class import *
-import msgs
+
 import file_handling
 from utils import *
 
