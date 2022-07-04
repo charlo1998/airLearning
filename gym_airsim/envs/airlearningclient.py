@@ -44,17 +44,27 @@ class AirLearningClient(airsim.MultirotorClient):
         encoded_depth_shape = encoded_depth.shape
         encoded_depth_1d = encoded_depth.reshape(1, encoded_depth_shape[0] * encoded_depth_shape[1])
 
-
-
         #ToDo: Add RGB, velocity etc
-        if(settings.position):
+        if(settings.position): #This is for ablation purposes
             pos = self.get_distance(goal)
-            concat_state = np.concatenate((encoded_depth_1d, pos), axis = None)
-            concat_state_shape = concat_state.shape
-            concat_state = concat_state.reshape(1, concat_state_shape[0])
-            concat_state = np.expand_dims(concat_state, axis=0)
+
+        if(settings.velocity): #This is for ablation purposes
+            vel = self.drone_velocity()
         else:
             concat_state = encoded_depth_1d
+
+        if(settings.position and settings.velocity):
+            concat_state = np.concatenate((encoded_depth_1d, pos, vel), axis = None)
+        elif(settings.position):
+            concat_state = np.concatenate((encoded_depth_1d, pos), axis = None)
+        elif(settings.velocity):
+            concat_state = np.concatenate((encoded_depth_1d, pos), axis = None)
+        else:
+            concat_state = encoded_depth_1d
+
+        concat_state_shape = concat_state.shape
+        concat_state = concat_state.reshape(1, concat_state_shape[0])
+        concat_state = np.expand_dims(concat_state, axis=0)
 
         return concat_state
 

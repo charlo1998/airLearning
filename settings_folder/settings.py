@@ -202,10 +202,10 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 runs_to_do = 1
 i_run = 1 #this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
-buffer_size = 5000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
-use_checkpoint = True
-training_steps_cap = 750
-nb_steps_warmup = 300 #iterations are really fast during this phase
+buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
+use_checkpoint = False
+training_steps_cap = 1000000
+nb_steps_warmup = 3000 #iterations are really fast during this phase
 policy = "shallow" #"shallow" or "deep"
 curriculum_learning = True
 verbose = False
@@ -259,7 +259,7 @@ ue4_winY = 480
 concatenate_inputs = True
 encoded_depth = True
 position = True
-velocity = False
+velocity = True
 grey = False
 rgb = False
 
