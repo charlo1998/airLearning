@@ -8,7 +8,7 @@ import dqn_airsim
 import ddpg_airsim
 import dqn_baselines
 import ppo_airsim
-import a2c_baselines
+from algorithms.discrete import a2c_baselines
 #import sac_airsim
 from game_handler_class import *
 
@@ -55,7 +55,7 @@ def runTask(task):
         if task["algo"] == "DQN":
             train_class.train(train_obj, env, train_checkpoint = settings.use_checkpoint)
         elif task["algo"] == "DQN-B" or task["algo"] == "A2C-B":
-            train_class.train(train_obj, env)
+            train_class.train(train_obj, env, checkpoint = model_to_checkpoint)
 
     if (task["task_type"] == "test"):
 
@@ -89,11 +89,12 @@ def runTask(task):
 
 def main():
     taskList = []
-    #model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model.pkl"] #baselines
-    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/saved_model/dqn_weights_run0.hf5"] #keras rl
+    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"] #baselines
+    #model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/saved_model/dqn_weights_run0.hf5"] #keras rl
+    model_to_checkpoint = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"
 
     algo = "A2C-B"
-    task_type = "train"
+    task_type = "test"
 
     task1 = {"task_type": "start_game"}
     task2 = {"algo": algo, "task_type": task_type, "difficulty_level": "default", "env_name": "AirSimEnv-v42",

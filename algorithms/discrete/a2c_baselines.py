@@ -39,7 +39,9 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
 
     return env, agent
 
-def train(env, agent):
+def train(env, agent, checkpoint="C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"):
+    if settings.checkpoint:
+        agent = A2C.load(checkpoint)
     # Train the agent
     agent.learn(total_timesteps=settings.training_steps_cap)
 
@@ -53,12 +55,19 @@ def train(env, agent):
 
     agent.save("C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model") #todo: automate the path
 
-def test(env, agent, filepath):
+def test(env, agent, filepath = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"):
+    msgs.mode = 'test'
+    msgs.weight_file_under_test = filepath
+
     model = A2C.load(filepath)
-    obs = env.reset()
+    
+    
     for i in range(settings.testing_nb_episodes_per_model):
-        action, _states = model.predict(obs)
-        obs, rewards, dones, info = env.step(action)
+        obs = env.reset()
+        done = False
+        while not done:
+            action, _states = model.predict(obs)
+            obs, rewards, done, info = env.step(action)
 
 
 
