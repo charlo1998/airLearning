@@ -55,7 +55,7 @@ def runTask(task):
         if task["algo"] == "DQN":
             train_class.train(train_obj, env, train_checkpoint = settings.use_checkpoint)
         elif task["algo"] == "DQN-B" or task["algo"] == "A2C-B":
-            train_class.train(train_obj, env, checkpoint = model_to_checkpoint)
+            train_class.train(train_obj, env, checkpoint = task["checkpoint"]) #only will use the checkpoint if settings.checkpoint = True
 
     if (task["task_type"] == "test"):
 
@@ -89,8 +89,11 @@ def runTask(task):
 
 def main():
     taskList = []
+
+    #put weights to test in a list as we can test multiple in one task
     model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"] #baselines
     #model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/saved_model/dqn_weights_run0.hf5"] #keras rl
+    
     model_to_checkpoint = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"
 
     algo = "A2C-B"
@@ -98,7 +101,7 @@ def main():
 
     task1 = {"task_type": "start_game"}
     task2 = {"algo": algo, "task_type": task_type, "difficulty_level": "default", "env_name": "AirSimEnv-v42",
-             "weights": model_weights_list_to_test}
+             "weights": model_weights_list_to_test, "checkpoint": model_to_checkpoint}
     task3 = {"task_type": "kill_game"}
     task4 = {"algo": algo, "task_type": "generate_csv", "data_file": task_type + "_episodal_log.txt"}
     task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}

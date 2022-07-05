@@ -40,8 +40,10 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     return env, agent
 
 def train(env, agent, checkpoint="C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"):
-    if settings.checkpoint:
+    if settings.use_checkpoint:
+        print(f"loading checkpoint {checkpoint}")
         agent = A2C.load(checkpoint)
+        agent.env = DummyVecEnv([lambda: env])
     # Train the agent
     agent.learn(total_timesteps=settings.training_steps_cap)
 
