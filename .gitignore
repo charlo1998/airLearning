@@ -4,7 +4,7 @@ machine_dependent_settings.py
 *.hf5
 *~
 data/
-!data/env/visualize.py
+!*/data/env/visualize.py
 
 run_time/dqn_level_3_log.json
 
