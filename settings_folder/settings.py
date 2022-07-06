@@ -159,6 +159,10 @@ epsilon = 1
 # ---------------------------
 double_dqn = False
 policy = "shallow" #"shallow" or "deep"
+
+# ---------------------------
+# Discrete action space parameters
+# ---------------------------
 #actions durations and speeds
 mv_fw_dur = 0.01875
 mv_fw_spd_1 = 1
