@@ -51,11 +51,11 @@ checkpoint_interval = 25000
 # ---------------------------
 # how many zones for each variable for the entire range. Note that frequency
 # of moving to a new zone is not determined here
-zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 3}  # pay attention
+zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 2}  # pay attention
 
 # update_zone_success_threshold = 50
 acceptable_success_rate_to_update_zone = .6  # after what ratio of success up the zone # pay attention
-update_zone_window = 100  # the window within which the  update_zone_accpetable_success_rate
+update_zone_window = 50  # the window within which the  update_zone_accpetable_success_rate
 # needs to be achieved. Note that at the begining of every
 # new window we zero out the achieved ratio
 
@@ -158,6 +158,7 @@ epsilon = 1
 # DQN parameters
 # ---------------------------
 double_dqn = False
+policy = "shallow" #"shallow" or "deep"
 #actions durations and speeds
 mv_fw_dur = 0.01875
 mv_fw_spd_1 = 1
@@ -199,21 +200,20 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 # ---------------------------
 # training params
 # ---------------------------
-runs_to_do = 2
-i_run = 2 #this needs to be the same value as runs_to_do
+runs_to_do = 1
+i_run = 1 #this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
 use_checkpoint = False
-training_steps_cap = 5000
+training_steps_cap = 800
 nb_steps_warmup = 3000 #iterations are really fast during this phase
-policy = "shallow" #"shallow" or "deep"
 curriculum_learning = True
 verbose = False
 
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = 3*100  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = 2*150  # note that if number of zones are x, #pay attention
 # then model get tested testing_nb_episodes_per_model/x
 # times per zone
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)
