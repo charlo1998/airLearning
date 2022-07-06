@@ -678,6 +678,8 @@ class AirSimEnv(gym.Env):
                     , e , " error")
             self.game_handler.restart_game()
             self.airgym = AirLearningClient()
+            self.on_episode_start()
+            print("done on episode start")
             return self.prev_state
 
     def update_zone(self, *args):
