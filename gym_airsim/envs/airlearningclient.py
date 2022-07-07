@@ -311,63 +311,35 @@ class AirLearningClient(airsim.MultirotorClient):
         duration = 0
         """
 
-        if action == 0:
-            start, duration = self.straight(settings.mv_fw_spd_5, settings.mv_fw_dur*3)
-        if action == 1:
-            start, duration = self.straight(settings.mv_fw_spd_5, settings.mv_fw_dur)
-        if action == 2:
-            start, duration = self.straight(settings.mv_fw_spd_2, settings.mv_fw_dur*3)
-        if action == 3:
-            start, duration = self.straight(settings.mv_fw_spd_2, settings.mv_fw_dur)
-        if action == 4:
-            start, duration = self.straight(settings.mv_fw_spd_1, settings.mv_fw_dur)
-        if action == 5:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_5, settings.mv_fw_spd_5, settings.mv_fw_dur*3)
-        if action == 6:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_5, settings.mv_fw_spd_5, settings.mv_fw_dur)
-        if action == 7:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_2, settings.mv_fw_spd_2, settings.mv_fw_dur*3)
-        if action == 8:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_2, settings.mv_fw_spd_2, settings.mv_fw_dur)
-        if action == 9:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_1, settings.mv_fw_spd_1, settings.mv_fw_dur)
-        if action == 10:
-            start, duration = self.backup(settings.mv_fw_spd_5, settings.mv_fw_dur*3)
-        if action == 11:
-            start, duration = self.backup(settings.mv_fw_spd_5, settings.mv_fw_dur)
-        if action == 12:
-            start, duration = self.backup(settings.mv_fw_spd_2, settings.mv_fw_dur*3)
-        if action == 13:
-            start, duration = self.backup(settings.mv_fw_spd_2, settings.mv_fw_dur)
-        if action == 14:
-            start, duration = self.backup(settings.mv_fw_spd_1, settings.mv_fw_dur)
-        if action == 15:
-            start, duration = self.yaw_right(settings.yaw_rate_1_1, settings.rot_dur)
-        if action == 16:
-            start, duration = self.yaw_right(settings.yaw_rate_1_2, settings.rot_dur)
-        if action == 17:
-            start, duration = self.yaw_right(settings.yaw_rate_1_4, settings.rot_dur)
-        if action == 18:
-            start, duration = self.yaw_right(settings.yaw_rate_1_8, settings.rot_dur)
-        if action == 19:
-            start, duration = self.yaw_right(settings.yaw_rate_1_16, settings.rot_dur)
-        if action == 20:
-            start, duration = self.yaw_right(settings.yaw_rate_2_1, settings.rot_dur)
-        if action == 21:
-            start, duration = self.yaw_right(settings.yaw_rate_2_2, settings.rot_dur)
-        if action == 22:
-            start, duration = self.yaw_right(settings.yaw_rate_2_4, settings.rot_dur)
-        if action == 23:
-            start, duration = self.yaw_right(settings.yaw_rate_2_8, settings.rot_dur)
-        if action == 24:
-            start, duration = self.yaw_right(settings.yaw_rate_2_16, settings.rot_dur)
+        """
+        discretation of the action duration: (e^((action//root)/(root-1))*10 - 9)*mv_fw_dur
+        the constants 10 and 9 are chosen to fix the range of the function to [1,18].
+        the actual duration is then interpolated in an exponential function that passes through these boundaries.
+        """
+        root = np.sqrt(settings.action_discretization)
+        
+        if action < settings.action_discretization * 1 :
+            #go straight
+            start, duration = self.straight(settings.mv_fw_spd_5/((action % root)+1), settings.mv_fw_dur*(np.exp((action//root)/(root-1))*10-9))
+        elif action < settings.action_discretization * 2:
+            #go back
+            action = action % root
+            start, duration = self.backup(settings.mv_fw_spd_5/((action % root)+1), settings.mv_fw_dur*(np.exp((action//root)/(root-1))*10-9))
+        elif action < settings.action_discretization * 3:
+            #turn right
+            action = action % root
+            start, duration = self.yaw_right(settings.yaw_rate_1_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*10-9))
+        elif action < settings.action_discretization * 4:
+            #turn left
+            action = action % root
+            start, duration = self.yaw_right(settings.yaw_rate_2_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*10-9))
+
+        #go diagonally. this was removed as the drone can just turn then go straight
+        #if action == 5:
+        #    start, duration = self.move_forward_Speed(settings.mv_fw_spd_5, settings.mv_fw_spd_5, settings.mv_fw_dur*3)
 
 
         collided = (self.client.getMultirotorState().trip_stats.collision_count > 0)
-        #print("collided:", self.client.getCollisionInfo().has_collided,"
-        #timestamp:" ,self.client.getCollisionInfo().time_stamp)
-        #print("collided " +
-        #str(self.client.getMultirotorState().trip_stats.collision_count > 0))
 
         return collided
 

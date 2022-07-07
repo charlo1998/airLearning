@@ -143,7 +143,8 @@ class AirSimEnv(gym.Env):
                                        np.array([+5.0, +5.0]),
                                        dtype=np.float32)
         else:
-            self.action_space = spaces.Discrete(25)
+            self.nb_action_types = 4
+            self.action_space = spaces.Discrete(self.nb_action_types * settings.action_discretization)
 
         self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End"))
         self.episodeN = 0

@@ -164,24 +164,17 @@ policy = "shallow" #"shallow" or "deep"
 # Discrete action space parameters
 # ---------------------------
 #actions durations and speeds
+action_discretization = 16 #this needs to be a square number and greater than one!
+assert(action_discretization > 1)
+assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
 mv_fw_dur = 0.01875
-mv_fw_spd_1 = 1
-mv_fw_spd_2 = 2
-mv_fw_spd_3 = 3
-mv_fw_spd_4 = 4
 mv_fw_spd_5 = 5
 rot_dur = 0.01875
 # yaw_rate = (180/180)*math.pi #in degree
 yaw_rate_1_1 = 108.  # FOV of front camera
-yaw_rate_1_2 = yaw_rate_1_1 * 0.5  # yaw right by this angle
-yaw_rate_1_4 = yaw_rate_1_2 * 0.5
-yaw_rate_1_8 = yaw_rate_1_4 * 0.5
-yaw_rate_1_16 = yaw_rate_1_8 * 0.5
+
 yaw_rate_2_1 = -216.  # -2 time the FOV of front camera
-yaw_rate_2_2 = yaw_rate_2_1 * 0.5  # yaw left by this angle
-yaw_rate_2_4 = yaw_rate_2_2 * 0.5
-yaw_rate_2_8 = yaw_rate_2_4 * 0.5
-yaw_rate_2_16 = yaw_rate_2_8 * 0.5
+
 
 # ---------------------------
 # back up params
