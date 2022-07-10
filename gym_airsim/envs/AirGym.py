@@ -344,7 +344,7 @@ class AirSimEnv(gym.Env):
     def update_zone_if_necessary(self):
         if (msgs.mode == 'train'):
             #TODO update_zone should be more general, i.e. called for other vars
-            if self.success_rate_met():
+            if self.success_rate_met() and not self.passed_all_zones:
                 self.start_new_window()
                 if (self.ease_ctr > 0):
                     self.tight_randomization()
@@ -525,32 +525,14 @@ class AirSimEnv(gym.Env):
                     self.take_action_list.append(take_action_end - take_action_start)
                     clct_state_start = time.time()
             
-            if(False): #hardcoded for performance testing
-                sample0 = time.time()
-                now = self.airgym.drone_pos()
-                self.track = self.airgym.goal_direction(self.goal, now)
-                #self.depth = self.airgym.getScreenDepthVis(self.track)
-                sample1 = time.time()
-                print(f"track uav and goal position took {(sample1 - sample0)*1000} miliseconds")
+            now = self.airgym.drone_pos()
+            self.track = self.airgym.goal_direction(self.goal, now)
+            if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B"):
                 self.concat_state = self.airgym.getConcatState(self.track, self.goal)
-                sample2 = time.time()
-                print(f"collecting concatenated state took {(sample2 - sample1)*1000} miliseconds")
-                self.rgb = self.airgym.getScreenRGB()
-                sample3 = time.time()
-                print(f"collecting screen RGB took {(sample3 - sample2)*1000} miliseconds")
-                self.position = self.airgym.get_distance(self.goal)
-                self.velocity = self.airgym.drone_velocity()
-                sample4 = time.time()
-                print(f"collecting pose and speed took {(sample4 - sample3)*1000} miliseconds")
-            else:
-                now = self.airgym.drone_pos()
-                self.track = self.airgym.goal_direction(self.goal, now)
-                if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B"):
-                    self.concat_state = self.airgym.getConcatState(self.track, self.goal)
-                elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
-                    self.depth = self.airgym.getScreenDepthVis(self.track)
-                self.position = self.airgym.get_distance(self.goal)
-                self.velocity = self.airgym.drone_velocity()
+            elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
+                self.depth = self.airgym.getScreenDepthVis(self.track)
+            self.position = self.airgym.get_distance(self.goal)
+            self.velocity = self.airgym.drone_velocity()
 
             if(settings.profile):
                 clct_state_end = time.time()
