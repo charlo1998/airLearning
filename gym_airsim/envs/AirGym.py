@@ -71,7 +71,7 @@ class AirSimEnv(gym.Env):
                 self.observation_space = spaces.Box(low=-100000, high=1000000, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
                 self.observation_space = spaces.Box(low=-100000, high=1000000,
-                                                    shape=((1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
+                                                    shape=((1, STATE_POS + STATE_VEL)))
         else:
             self.observation_space = spaces.Box(low=0, high=255, shape=(154, 256))
 
@@ -103,7 +103,7 @@ class AirSimEnv(gym.Env):
         self.OU = OU()
         self.game_config_handler = GameConfigHandler()
         if(settings.concatenate_inputs):
-            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W), dtype=np.uint8)
+            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL), dtype=np.uint8)
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
