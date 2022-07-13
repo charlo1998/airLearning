@@ -71,7 +71,7 @@ class AirSimEnv(gym.Env):
                 self.observation_space = spaces.Box(low=-100000, high=1000000, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
                 self.observation_space = spaces.Box(low=-100000, high=1000000,
-                                                    shape=((1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
+                                                    shape=((1, STATE_POS + STATE_VEL)))
         else:
             self.observation_space = spaces.Box(low=0, high=255, shape=(154, 256))
 
@@ -103,7 +103,7 @@ class AirSimEnv(gym.Env):
         self.OU = OU()
         self.game_config_handler = GameConfigHandler()
         if(settings.concatenate_inputs):
-            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W), dtype=np.uint8)
+            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL), dtype=np.uint8)
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
@@ -404,10 +404,15 @@ class AirSimEnv(gym.Env):
     def possible_to_meet_success_rate(self): 
         #Computes what is the best success ratio if all the episodes in the current window are successes
         #if this ratio is inferior to the acceptable rate (ex. 50%), the window is restarted.
-        best_success_rate_can_achieve_now =  float(((settings.update_zone_window - self.episodeInWindow) +\
-                                                    sum(self.success_history[self.episodeInWindow:]))/settings.update_zone_window)
+        if self.episodeInWindow < 50:
+            best_success_rate_can_achieve_now =  float(((settings.update_zone_window - self.episodeInWindow) +\
+                                                        sum(self.success_history[-self.episodeInWindow:]))/settings.update_zone_window)
+        else:
+            best_success_rate_can_achieve_now = float(sum(self.success_history))
+
         acceptable_success_rate =  settings.acceptable_success_rate_to_update_zone
         if (best_success_rate_can_achieve_now < acceptable_success_rate):
+            print("cannot reach acceptable success rate, resetting window.")
             return False
         else:
             return True
@@ -426,11 +431,13 @@ class AirSimEnv(gym.Env):
         self.total_streched_ctr +=1
 
     def start_new_window(self):
+        print("Started new window")
         self.window_restart_ctr = 0
         self.episodeInWindow = 0
 
     def restart_cur_window(self):
         self.window_restart_ctr +=1
+        print("Re-started current window")
         self.episodeInWindow = 0
         if (self.window_restart_ctr > settings.window_restart_ctr_threshold):
             self.window_restart_ctr = 0
@@ -480,8 +487,8 @@ class AirSimEnv(gym.Env):
         msgs.meta_data = {}
 
         try:
-            print("ENter Step"+str(self.stepN))
-            print(f"action taken: {action}")
+            #print("ENter Step"+str(self.stepN))
+            #print(f"action taken: {action}")
             self.addToLog('action', action)
             self.stepN += 1
             self.total_step_count_for_experiment +=1

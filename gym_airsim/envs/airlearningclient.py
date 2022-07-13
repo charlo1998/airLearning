@@ -55,7 +55,7 @@ class AirLearningClient(airsim.MultirotorClient):
             concat_state = encoded_depth_1d
 
         if(settings.position and settings.velocity):
-            concat_state = np.concatenate((encoded_depth_1d, pos, vel), axis = None)
+            concat_state = np.concatenate((pos, vel), axis = None)
         elif(settings.position):
             concat_state = np.concatenate((encoded_depth_1d, pos), axis = None)
         elif(settings.velocity):
