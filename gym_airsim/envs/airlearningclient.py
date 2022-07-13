@@ -191,6 +191,33 @@ class AirLearningClient(airsim.MultirotorClient):
     def get_velocity(self):
         return np.array([self.client.get_velocity().x_val, self.client.get_velocity().y_val, self.client.get_velocity().z_val])
 
+    #def get_laser_pointer(self):
+    #    distance_sensor_data = self.client.getDistanceSensorData(distance_sensor_name = "distance1", vehicle_name = "drone1")
+    #    print(distance_sensor_data)
+
+    def get_SS_state(self):
+        ## -- laser ranger -- ##
+        lidarData = self.client.getLidarData(lidar_name="Lidar1",vehicle_name="Drone1")
+        points = np.array(lidarData.point_cloud, dtype=np.dtype('f4'))
+        points = np.reshape(points, (int(points.shape[0]/3), 3))
+        X = points[:,0]
+        Y = points[:,1]
+
+        upper_ind = np.where(Y>0)[0]
+        lower_ind = np.where(Y<0)[0]
+        left_ind = np.where(X<0)[0]
+        right_ind = np.where(X>0)[0]
+
+        #laser_right_ind = right_ind[np.argmin(np.absolute(Y[right_ind]))]
+        #laser_left_ind = left_ind[np.argmin(np.absolute(Y[left_ind]))]
+        #laser_lower_ind = lower_ind[np.argmin(np.absolute(X[lower_ind]))]
+        #laser_upper_ind = upper_ind[np.argmin(np.absolute(X[upper_ind]))]
+
+        #output = np.absolute([Y[laser_upper_ind],X[laser_right_ind],Y[laser_lower_ind],X[laser_left_ind]])
+        output = [upper_ind, lower_ind, left_ind, right_ind]
+
+        return output   
+
     def AirSim_reset(self):
         self.client.reset()
         time.sleep(0.2)
@@ -204,6 +231,10 @@ class AirLearningClient(airsim.MultirotorClient):
         self.client, connection_established = self.client.resetUnreal()
         return connection_established
 
+
+
+
+    #----------------actions---------------------------
     def take_continious_action(self, action):
 
         if(msgs.algo == 'DDPG'):
