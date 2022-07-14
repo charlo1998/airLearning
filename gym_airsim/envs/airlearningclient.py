@@ -237,6 +237,7 @@ class AirLearningClient(airsim.MultirotorClient):
             points = np.reshape(points, (int(points.shape[0]/3), 3))
         else:
             print("lidar not seeing anything ?!")
+            return 0
 
         X = points[:,0]
         Y = points[:,1]

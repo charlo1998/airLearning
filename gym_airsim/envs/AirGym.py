@@ -537,7 +537,6 @@ class AirSimEnv(gym.Env):
             self.airgym.get_laser_state()
             if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B"):
                 self.concat_state = self.airgym.getConcatState(self.track, self.goal)
-                print(self.concat_state)
             elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                 self.depth = self.airgym.getScreenDepthVis(self.track)
             self.position = self.airgym.get_distance(self.goal)

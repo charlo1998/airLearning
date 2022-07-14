@@ -164,13 +164,13 @@ policy = "shallow" #"shallow" or "deep"
 # Discrete action space parameters
 # ---------------------------
 #actions durations and speeds
-mv_fw_dur = 0.01875
+mv_fw_dur = 0.03
 mv_fw_spd_1 = 1
 mv_fw_spd_2 = 2
 mv_fw_spd_3 = 3
 mv_fw_spd_4 = 4
 mv_fw_spd_5 = 5
-rot_dur = 0.01875
+rot_dur = 0.03
 # yaw_rate = (180/180)*math.pi #in degree
 yaw_rate_1_1 = 108.  # FOV of front camera
 yaw_rate_1_2 = yaw_rate_1_1 * 0.5  # yaw right by this angle
@@ -204,12 +204,12 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 # ---------------------------
 # training params
 # ---------------------------
-runs_to_do = 1
-i_run = 1 #this needs to be the same value as runs_to_do
+runs_to_do = 3
+i_run = 3 #this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
 use_checkpoint = False
-training_steps_cap = 60000
+training_steps_cap = 1100
 nb_steps_warmup = 3000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = False
