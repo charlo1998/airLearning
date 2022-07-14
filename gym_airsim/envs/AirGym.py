@@ -66,14 +66,14 @@ class AirSimEnv(gym.Env):
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DEPTH_H, STATE_DEPTH_W = 154, 256
+            STATE_DISTANCES = 3
             if(msgs.algo == "SAC"):
                 self.observation_space = spaces.Box(low=-100000, high=1000000, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
                 self.observation_space = spaces.Box(low=-100000, high=1000000,
-                                                    shape=((1, STATE_POS + STATE_VEL)))
+                                                    shape=((1, STATE_POS + STATE_VEL + STATE_DISTANCES)))
         else:
-            self.observation_space = spaces.Box(low=0, high=255, shape=(154, 256))
+            self.observation_space = spaces.Box(low=0, high=255, shape=(STATE_DISTANCES))
 
         self.total_step_count_for_experiment = 0 # self explanatory
         self.ease_ctr = 0  #counting how many times we ease the randomization and tightened it
@@ -103,7 +103,7 @@ class AirSimEnv(gym.Env):
         self.OU = OU()
         self.game_config_handler = GameConfigHandler()
         if(settings.concatenate_inputs):
-            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL), dtype=np.uint8)
+            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL + STATE_DISTANCES), dtype=np.uint8)
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
@@ -534,8 +534,10 @@ class AirSimEnv(gym.Env):
             
             now = self.airgym.drone_pos()
             self.track = self.airgym.goal_direction(self.goal, now)
+            self.airgym.get_laser_state()
             if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B"):
                 self.concat_state = self.airgym.getConcatState(self.track, self.goal)
+                print(self.concat_state)
             elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                 self.depth = self.airgym.getScreenDepthVis(self.track)
             self.position = self.airgym.get_distance(self.goal)
@@ -571,7 +573,7 @@ class AirSimEnv(gym.Env):
                 done = True
                 reward = -100
                 self.success = False
-            else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def)
+            else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def of computeReward)
                 reward, distance = self.computeReward(now)
                 done = False
                 self.success = False

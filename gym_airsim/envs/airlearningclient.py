@@ -41,9 +41,7 @@ class AirLearningClient(airsim.MultirotorClient):
         return track
 
     def getConcatState(self, track, goal): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
-        encoded_depth = self.getScreenDepthVis(track)
-        encoded_depth_shape = encoded_depth.shape
-        encoded_depth_1d = encoded_depth.reshape(1, encoded_depth_shape[0] * encoded_depth_shape[1])
+        distances = self.get_laser_state()
 
         #ToDo: Add RGB, velocity etc
         if(settings.position): #This is for ablation purposes
@@ -51,17 +49,15 @@ class AirLearningClient(airsim.MultirotorClient):
 
         if(settings.velocity): #This is for ablation purposes
             vel = self.drone_velocity()
-        else:
-            concat_state = encoded_depth_1d
 
         if(settings.position and settings.velocity):
-            concat_state = np.concatenate((pos, vel), axis = None)
+            concat_state = np.concatenate((distances, pos, vel), axis = None)
         elif(settings.position):
-            concat_state = np.concatenate((encoded_depth_1d, pos), axis = None)
+            concat_state = np.concatenate((distances, pos), axis = None)
         elif(settings.velocity):
-            concat_state = np.concatenate((encoded_depth_1d, pos), axis = None)
+            concat_state = np.concatenate((distances, pos), axis = None)
         else:
-            concat_state = encoded_depth_1d
+            concat_state = distances
 
         concat_state_shape = concat_state.shape
         concat_state = concat_state.reshape(1, concat_state_shape[0])
@@ -195,28 +191,60 @@ class AirLearningClient(airsim.MultirotorClient):
     #    distance_sensor_data = self.client.getDistanceSensorData(distance_sensor_name = "distance1", vehicle_name = "drone1")
     #    print(distance_sensor_data)
 
-    def get_SS_state(self):
+    def get_laser_state(self):
+        """
+        lidar parameters are set in the settings.json files in documents/airsim. they are the following:
+        "Lidarfront": {
+       		"SensorType": 6, #the type corresponding to the LiDaR sensor
+        	"Enabled" : true,
+        	"NumberOfChannels": 3, #the number of lasers (we need a laser for each horizontal swipe to have vertical FOV)
+        	"RotationsPerSecond": 20, #frequency of sensing
+    		"PointsPerSecond": 100000, #the number of points taken in an horizontal swipe of the lidar (1 rotation).
+                #PointsPerSecond is not affected by the FOV, so anything outside the FOV seems to be wasted.
+    		"X": 0, "Y": 0, "Z": -1, #position relative to the vehicule
+       		"Roll": 0, "Pitch": 0, "Yaw" : 0,   orientation relative to the vehicule
+    		"VerticalFOVUpper": 10,
+    		"VerticalFOVLower": -30,
+       		"HorizontalFOVStart": -5,
+       		"HorizontalFOVEnd": 5,
+       		"DrawDebugPoints": true, #set to true to see in unreal what is being observed
+       		"DataFrame": "SensorLocalFrame"
+    		}
+        """
+
         ## -- laser ranger -- ##
-        lidarData = self.client.getLidarData(lidar_name="Lidar1",vehicle_name="Drone1")
-        points = np.array(lidarData.point_cloud, dtype=np.dtype('f4'))
-        points = np.reshape(points, (int(points.shape[0]/3), 3))
+        lidarDatafront = self.client.getLidarData(lidar_name="Lidarfront",vehicle_name="Drone1")
+        lidarDataleft = self.client.getLidarData(lidar_name="Lidarleft",vehicle_name="Drone1")
+        lidarDataright = self.client.getLidarData(lidar_name="Lidarright",vehicle_name="Drone1")
+        
+        
+        front = self.process_lidar(lidarDatafront.point_cloud)
+        left = self.process_lidar(lidarDataleft.point_cloud)
+        right = self.process_lidar(lidarDataright.point_cloud)
+        
+        #print(f"front lidar: {front}")
+
+        output = [front, left, right]
+
+        return np.array(output)   
+
+    def process_lidar(self, lidarPointcloud):
+        """
+        processes a lidar point clouds into coordinates and finds closest point.
+        """
+        points = np.array(lidarPointcloud, dtype=np.dtype('f4'))
+        if not (points.shape[0] == 1):
+            points = np.reshape(points, (int(points.shape[0]/3), 3))
+        else:
+            print("lidar not seeing anything ?!")
+
         X = points[:,0]
         Y = points[:,1]
+        Z = points[:,2]
+        
+        distance = min(X)
 
-        upper_ind = np.where(Y>0)[0]
-        lower_ind = np.where(Y<0)[0]
-        left_ind = np.where(X<0)[0]
-        right_ind = np.where(X>0)[0]
-
-        #laser_right_ind = right_ind[np.argmin(np.absolute(Y[right_ind]))]
-        #laser_left_ind = left_ind[np.argmin(np.absolute(Y[left_ind]))]
-        #laser_lower_ind = lower_ind[np.argmin(np.absolute(X[lower_ind]))]
-        #laser_upper_ind = upper_ind[np.argmin(np.absolute(X[upper_ind]))]
-
-        #output = np.absolute([Y[laser_upper_ind],X[laser_right_ind],Y[laser_lower_ind],X[laser_left_ind]])
-        output = [upper_ind, lower_ind, left_ind, right_ind]
-
-        return output   
+        return distance
 
     def AirSim_reset(self):
         self.client.reset()
@@ -327,22 +355,6 @@ class AirLearningClient(airsim.MultirotorClient):
         return start, duration
 
     def take_discrete_action(self, action):
-
-       # check if copter is on level cause sometimes he goes up without a
-       # reason
-        """
-        x = 0
-        while self.client.getPosition().z_val < -7.0:
-            self.client.moveToZAsync(-6, 3).join()
-            time.sleep(1)
-            print(self.client.getPosition().z_val, "and", x)
-            x = x + 1
-            if x > 10:
-                return True
-
-        start = time.time()
-        duration = 0
-        """
 
         if action == 0:
             start, duration = self.straight(settings.mv_fw_spd_5, settings.mv_fw_dur)
