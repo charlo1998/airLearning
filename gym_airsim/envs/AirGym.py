@@ -54,10 +54,10 @@ class AirSimEnv(gym.Env):
         # left depth, center depth, right depth, yaw
         if(settings.concatenate_inputs):
             if(settings.position and settings.velocity): #for ablation studies
-                STATE_POS = 3
+                STATE_POS = 2
                 STATE_VEL = 3
             elif(settings.position):
-                STATE_POS = 3
+                STATE_POS = 2
                 STATE_VEL = 0
             elif(settings.velocity):
                 STATE_POS = 0
@@ -65,15 +65,15 @@ class AirSimEnv(gym.Env):
             else:
                 STATE_POS = 0
                 STATE_VEL = 0
-            
-            STATE_DEPTH_H, STATE_DEPTH_W = 154, 256
+
+            STATE_DISTANCES = 3
             if(msgs.algo == "SAC"):
                 self.observation_space = spaces.Box(low=-100000, high=1000000, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
                 self.observation_space = spaces.Box(low=-100000, high=1000000,
-                                                    shape=((1, STATE_POS + STATE_VEL)))
+                                                    shape=((1, STATE_POS + STATE_VEL + STATE_DISTANCES)))
         else:
-            self.observation_space = spaces.Box(low=0, high=255, shape=(154, 256))
+            self.observation_space = spaces.Box(low=0, high=255, shape=(STATE_DISTANCES))
 
         self.total_step_count_for_experiment = 0 # self explanatory
         self.ease_ctr = 0  #counting how many times we ease the randomization and tightened it
@@ -103,11 +103,11 @@ class AirSimEnv(gym.Env):
         self.OU = OU()
         self.game_config_handler = GameConfigHandler()
         if(settings.concatenate_inputs):
-            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL), dtype=np.uint8)
+            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL + STATE_DISTANCES), dtype=np.uint8)
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
-        self.position = np.zeros((3,), dtype=np.float32)
+        self.position = np.zeros((2,), dtype=np.float32)
         self.velocity = np.zeros((3,), dtype=np.float32)
         self.speed = 0
         self.track = 0
@@ -344,7 +344,7 @@ class AirSimEnv(gym.Env):
     def update_zone_if_necessary(self):
         if (msgs.mode == 'train'):
             #TODO update_zone should be more general, i.e. called for other vars
-            if self.success_rate_met():
+            if self.success_rate_met() and not self.passed_all_zones:
                 self.start_new_window()
                 if (self.ease_ctr > 0):
                     self.tight_randomization()
@@ -404,10 +404,15 @@ class AirSimEnv(gym.Env):
     def possible_to_meet_success_rate(self): 
         #Computes what is the best success ratio if all the episodes in the current window are successes
         #if this ratio is inferior to the acceptable rate (ex. 50%), the window is restarted.
-        best_success_rate_can_achieve_now =  float(((settings.update_zone_window - self.episodeInWindow) +\
-                                                    sum(self.success_history[self.episodeInWindow:]))/settings.update_zone_window)
+        if self.episodeInWindow < 50:
+            best_success_rate_can_achieve_now =  float(((settings.update_zone_window - self.episodeInWindow) +\
+                                                        sum(self.success_history[-self.episodeInWindow:]))/settings.update_zone_window)
+        else:
+            best_success_rate_can_achieve_now = float(sum(self.success_history))
+
         acceptable_success_rate =  settings.acceptable_success_rate_to_update_zone
         if (best_success_rate_can_achieve_now < acceptable_success_rate):
+            print("cannot reach acceptable success rate, resetting window.")
             return False
         else:
             return True
@@ -426,11 +431,13 @@ class AirSimEnv(gym.Env):
         self.total_streched_ctr +=1
 
     def start_new_window(self):
+        print("Started new window")
         self.window_restart_ctr = 0
         self.episodeInWindow = 0
 
     def restart_cur_window(self):
         self.window_restart_ctr +=1
+        print("Re-started current window")
         self.episodeInWindow = 0
         if (self.window_restart_ctr > settings.window_restart_ctr_threshold):
             self.window_restart_ctr = 0
@@ -480,8 +487,8 @@ class AirSimEnv(gym.Env):
         msgs.meta_data = {}
 
         try:
-            print("ENter Step"+str(self.stepN))
-            print(f"action taken: {action}")
+            #print("ENter Step"+str(self.stepN))
+            #print(f"action taken: {action}")
             self.addToLog('action', action)
             self.stepN += 1
             self.total_step_count_for_experiment +=1
@@ -525,32 +532,16 @@ class AirSimEnv(gym.Env):
                     self.take_action_list.append(take_action_end - take_action_start)
                     clct_state_start = time.time()
             
-            if(False): #hardcoded for performance testing
-                sample0 = time.time()
-                now = self.airgym.drone_pos()
-                self.track = self.airgym.goal_direction(self.goal, now)
-                #self.depth = self.airgym.getScreenDepthVis(self.track)
-                sample1 = time.time()
-                print(f"track uav and goal position took {(sample1 - sample0)*1000} miliseconds")
+            now = self.airgym.drone_pos()
+            self.track = self.airgym.goal_direction(self.goal, now)
+            self.airgym.get_laser_state()
+            if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B"):
                 self.concat_state = self.airgym.getConcatState(self.track, self.goal)
-                sample2 = time.time()
-                print(f"collecting concatenated state took {(sample2 - sample1)*1000} miliseconds")
-                self.rgb = self.airgym.getScreenRGB()
-                sample3 = time.time()
-                print(f"collecting screen RGB took {(sample3 - sample2)*1000} miliseconds")
-                self.position = self.airgym.get_distance(self.goal)
-                self.velocity = self.airgym.drone_velocity()
-                sample4 = time.time()
-                print(f"collecting pose and speed took {(sample4 - sample3)*1000} miliseconds")
-            else:
-                now = self.airgym.drone_pos()
-                self.track = self.airgym.goal_direction(self.goal, now)
-                if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B"):
-                    self.concat_state = self.airgym.getConcatState(self.track, self.goal)
-                elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
-                    self.depth = self.airgym.getScreenDepthVis(self.track)
-                self.position = self.airgym.get_distance(self.goal)
-                self.velocity = self.airgym.drone_velocity()
+                print(self.concat_state)
+            elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
+                self.depth = self.airgym.getScreenDepthVis(self.track)
+            self.position = self.airgym.get_distance(self.goal)
+            self.velocity = self.airgym.drone_velocity()
 
             if(settings.profile):
                 clct_state_end = time.time()
@@ -582,7 +573,7 @@ class AirSimEnv(gym.Env):
                 done = True
                 reward = -100
                 self.success = False
-            else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def)
+            else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def of computeReward)
                 reward, distance = self.computeReward(now)
                 done = False
                 self.success = False
