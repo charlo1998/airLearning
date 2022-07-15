@@ -345,7 +345,6 @@ class AirSimEnv(gym.Env):
         if (msgs.mode == 'train'):
             #TODO update_zone should be more general, i.e. called for other vars
             if self.success_rate_met() and not self.passed_all_zones:
-                self.start_new_window()
                 if (self.ease_ctr > 0):
                     self.tight_randomization()
                     return
@@ -354,6 +353,8 @@ class AirSimEnv(gym.Env):
                     self.cur_zone_number_buff +=1
                 else:
                     self.passed_all_zones = True
+                    return
+                self.start_new_window()
                 self.update_zone("End")
         elif (msgs.mode == 'test'):
             if (self.episodeN % settings.testing_nb_episodes_per_zone == 0):
