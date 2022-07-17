@@ -68,6 +68,31 @@ def santize_data(file):
 #        print(mean_dict)
 #    return mean_dict
 
+def average(data):
+    new_data = [[0],[0]]
+    bucket_size = int(settings.training_steps_cap/100)
+    i_step = 0
+    while i_step < settings.training_steps_cap:
+        xbucket_avg = []
+        ybucket_avg = []
+        for k in range(settings.runs_to_do):
+            #finding all values in current bucket
+            xbucket = [x for x in data[k]["total_step_count_for_experiment"] if (i_step <= x <= i_step + bucket_size)]
+            idx = [data[k]["total_step_count_for_experiment"].index(x) for x in xbucket]
+            ybucket = [data[k]["total_reward"][i] for i in idx]
+            #avg the bucket into 1 value
+            xbucket = round(sum(xbucket)/len(xbucket))
+            ybucket = round(sum(ybucket)/len(ybucket))
+            #add the averagd value of all the runs into a list
+            xbucket_avg.append(xbucket)
+            ybucket_avg.append(ybucket)
+        #add the avg of all the runs in a list
+        new_data[0].append(round(sum(xbucket_avg)/len(xbucket_avg)))
+        new_data[1].append(round(sum(ybucket_avg)/len(ybucket_avg)))
+
+        i_step += bucket_size
+    return new_data
+
 
 def plot_data(file, data_to_inquire, mode="separate"):
     # santize_data(file)
@@ -78,11 +103,15 @@ def plot_data(file, data_to_inquire, mode="separate"):
     #print(dataList)
     data = dataList #to do, average the values instead of plotting them all. warning: the runs have different length of episodes!
     for el in data_to_inquire:
-        #print(el)
-        for i in range(settings.runs_to_do):
-            #print(data[i][el[1]])
-            plt.plot(data[i][el[0]], data[i][el[1]])
-            assert (el[0] in data[i].keys())
+        if (el[0] == "total_step_count_for_experiment"):
+            new_data = average(data)
+            plt.plot(new_data[0], new_data[1])
+            plt.title('averaged rewards as a function of the total timesteps')
+        else:
+            for i in range(settings.runs_to_do):
+                #print(data[i][el[1]])
+                plt.plot(data[i][el[0]], data[i][el[1]])
+                assert (el[0] in data[i].keys())
         plt.xlabel(el[0])
         plt.ylabel(el[1])
         

@@ -405,7 +405,7 @@ class AirSimEnv(gym.Env):
     def possible_to_meet_success_rate(self): 
         #Computes what is the best success ratio if all the episodes in the current window are successes
         #if this ratio is inferior to the acceptable rate (ex. 50%), the window is restarted.
-        if self.episodeInWindow < 50:
+        if self.episodeInWindow < settings.update_zone_window:
             best_success_rate_can_achieve_now =  float(((settings.update_zone_window - self.episodeInWindow) +\
                                                         sum(self.success_history[-self.episodeInWindow:]))/settings.update_zone_window)
         else:
