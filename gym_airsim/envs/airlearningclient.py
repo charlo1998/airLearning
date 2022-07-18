@@ -375,7 +375,7 @@ class AirLearningClient(airsim.MultirotorClient):
 
         """
         discretation of the action duration: (e^((action//root)/(root-1))*10 - 9)*mv_fw_dur
-        the constants 10 and 9 are chosen to fix the range of the function to [1,18].
+        the constants 10 and 9 are chosen to fix the range of the function to [1,18]*mv_fw_dur.
         the actual duration is then interpolated in an exponential function that passes through these boundaries.
         """
         root = np.sqrt(settings.action_discretization)
