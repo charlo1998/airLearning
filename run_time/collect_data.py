@@ -97,16 +97,16 @@ def main():
     model_to_checkpoint = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"
 
     algo = "A2C-B"
-    task_type = "test"
+    task_type = "train"
 
     task1 = {"task_type": "start_game"}
-    task2 = {"algo": algo, "task_type": task_type, "difficulty_level": "default", "env_name": "AirSimEnv-v42",
+    task2 = {"algo": algo, "task_type": task_type, "difficulty_level": "medium", "env_name": "AirSimEnv-v42",
              "weights": model_weights_list_to_test, "checkpoint": model_to_checkpoint}
     task3 = {"task_type": "kill_game"}
     task4 = {"algo": algo, "task_type": "generate_csv", "data_file": task_type + "_episodal_log.txt"}
     task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}
     
-    taskList.append(task1)
+    taskList.append(task1) #start gane
 
     if task_type == "train":
         for i in range(settings.runs_to_do):
@@ -114,7 +114,7 @@ def main():
     else:
         taskList.append(task2) # don't do multiple runs for test
 
-    taskList.append(task3) #close airlearning
+    taskList.append(task3) #close game
     #taskList.append(task4) #generate_csv
     taskList.append(task5) #plot
 
