@@ -69,8 +69,8 @@ def santize_data(file):
 #    return mean_dict
 
 def average(data):
-    new_data = [[0],[0]]
-    bucket_size = int(settings.training_steps_cap/100)
+    new_data = [[0],[0],[0]]
+    bucket_size = int(settings.training_steps_cap/50)
     i_step = 0
     while i_step < settings.training_steps_cap:
         xbucket_avg = []
@@ -89,6 +89,7 @@ def average(data):
         #add the avg of all the runs in a list
         new_data[0].append(round(sum(xbucket_avg)/len(xbucket_avg)))
         new_data[1].append(round(sum(ybucket_avg)/len(ybucket_avg)))
+        new_data[2].append(np.std(ybucket_avg, axis=0))
 
         i_step += bucket_size
     return new_data
@@ -106,6 +107,7 @@ def plot_data(file, data_to_inquire, mode="separate"):
         if (el[0] == "total_step_count_for_experiment"):
             new_data = average(data)
             plt.plot(new_data[0], new_data[1])
+            plt.fill_between(new_data[0], new_data[1] + np.array(new_data[2]), new_data[1] - np.array(new_data[2]), alpha=0.1)
             plt.title('averaged rewards as a function of the total timesteps')
         else:
             for i in range(settings.runs_to_do):
