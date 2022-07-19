@@ -510,7 +510,7 @@ class AirSimEnv(gym.Env):
                     if(self.stepN > 1):
                         self.loop_rate_list.append(self.this_time - self.prev_time)
                     self.prev_time = time.time()
-                    take_action_start = time.time()
+                    take_action_start = time.perf_counter()
 
             if(msgs.algo == "DDPG"):
                 #self.actions_in_step.append([action[0][0], action[0][1], action[0][2]])
@@ -530,7 +530,7 @@ class AirSimEnv(gym.Env):
                 
             
             if(settings.profile):
-                    take_action_end = time.time()
+                    take_action_end = time.perf_counter()
                     self.take_action_list.append(take_action_end - take_action_start)
                     clct_state_start = time.time()
             

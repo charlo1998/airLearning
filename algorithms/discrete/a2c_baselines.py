@@ -16,8 +16,6 @@ from stable_baselines.common.policies import CnnPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
 #from stable_baselines.common import make_vec_env #this yields an error
 from stable_baselines import A2C
-
-
 from keras.backend.tensorflow_backend import set_session
 
 def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
@@ -54,6 +52,12 @@ def train(env, agent, checkpoint="C:/Users/charl/workspace/airlearning/airlearni
             f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
             f.write("take_action_list:" + str(env.take_action_list) + "\n")
             f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
+
+        action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(settings.i_run) + ".txt")
+        with open(action_duration_file, "w") as f:
+            f.write(str(env.take_action_list))
+
+        
 
     agent.save("C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model") #todo: automate the path
 
