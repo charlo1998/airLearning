@@ -167,7 +167,7 @@ policy = "shallow" #"shallow" or "deep"
 action_discretization = 16 #this needs to be a square number and greater than one!
 assert(action_discretization > 1)
 assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
-mv_fw_dur = 0.01875
+mv_fw_dur = 0.03
 mv_fw_spd_5 = 5
 rot_dur = 0.03
 # yaw_rate = (180/180)*math.pi #in degree
@@ -197,12 +197,12 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 # ---------------------------
 # training params
 # ---------------------------
-runs_to_do = 3
-i_run = 3 #this needs to be the same value as runs_to_do
+runs_to_do = 1
+i_run = 1 #this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
 use_checkpoint = False
-training_steps_cap = 1100
+training_steps_cap = 150000
 nb_steps_warmup = 3000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = False
