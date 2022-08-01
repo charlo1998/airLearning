@@ -95,14 +95,14 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "MinimumDistance": [4],
                   "EnvType": ["Indoor"],
                   "EnvType": ["Indoor"],
-                  "ArenaSize": [[30, 30, 10]],
+                  "ArenaSize": [[40, 40, 10]],
                   "PlayerStart": [[0, 0, 0]],
-                  "NumberOfDynamicObjects": list(range(6, 10)),
+                  "NumberOfDynamicObjects": list(range(0, 1)),
                   "Walls1": [[255, 255, 10]],
                   "Seed": list(range(0, 5000)),
                   "VelocityRange": [[5, 25]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(10, 20))}
+                  "NumberOfObjects": list(range(7, 12))}
 
 # ------------------------------------------------------------
 #                               -game related-
@@ -197,12 +197,12 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 # ---------------------------
 # training params
 # ---------------------------
-runs_to_do = 1
-i_run = 1 #this needs to be the same value as runs_to_do
+runs_to_do = 2
+i_run =  2#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
 use_checkpoint = False
-training_steps_cap = 150000
+training_steps_cap = 200000
 nb_steps_warmup = 3000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = False
