@@ -164,12 +164,12 @@ policy = "shallow" #"shallow" or "deep"
 # Discrete action space parameters
 # ---------------------------
 #actions durations and speeds
-action_discretization = 16 #this needs to be a square number and greater than one!
+action_discretization = 36 #this needs to be a square number and greater than one!
 assert(action_discretization > 1)
 assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
-mv_fw_dur = 0.03
+mv_fw_dur = 0.15
 mv_fw_spd_5 = 5
-rot_dur = 0.03
+rot_dur = 0.15
 # yaw_rate = (180/180)*math.pi #in degree
 yaw_rate_1_1 = 108.  # FOV of front camera
 
@@ -197,10 +197,10 @@ slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at whi
 # ---------------------------
 # training params
 # ---------------------------
-runs_to_do = 2
-i_run =  2#this needs to be the same value as runs_to_do
+runs_to_do = 1
+i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
-buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled
+buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
 training_steps_cap = 200000
 nb_steps_warmup = 3000 #iterations are really fast during this phase
