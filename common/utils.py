@@ -155,8 +155,8 @@ def append_log_file(episodeN, log_mode="verbose"):
               "a+") as f:
         if (episodeN == 0): #starting a new training task, add settings 
             f.write('{\n')
-            f.write('"buffer size":' + str(settings.buffer_size) + ',\n')
             f.write('"loaded from checkpoint":' + str(settings.use_checkpoint).lower() + ',\n')
+            f.write('"difficulty":' + str(settings.difficulty).lower() + ',\n')
             file_hndl = open("C:/Users/charl/Documents/AirSim/settings.json", "r")
             #print(f"parsing: {file_name}")
             UnrealSettings = json.load(file_hndl)

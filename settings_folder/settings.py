@@ -104,6 +104,8 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "Name": ["Name"],
                   "NumberOfObjects": list(range(7, 12))}
 
+difficulty = "hard" #choose between easy (or default), medium, and hard
+
 # ------------------------------------------------------------
 #                               -game related-
 # ------------------------------------------------------------
