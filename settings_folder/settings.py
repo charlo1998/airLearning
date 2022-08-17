@@ -191,8 +191,8 @@ list_algo = ["DQN", "DDPG"]  # a new algo needs to be added to this list for bac
 nb_max_episodes_steps = 1000  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
-success_distance_to_goal = 3
-slow_down_activation_distance = 2 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
+success_distance_to_goal = 1
+slow_down_activation_distance = 3 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
 
 # ---------------------------
 # training params
