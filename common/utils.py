@@ -26,7 +26,7 @@ def parse_data(file_name):
     data = json.load(file_hndl)
     data_clusterd_based_on_key = {}
 
-    data.pop('buffer size', None) #removing settings data from the training data to be parsed
+    data.pop('difficulty', None) #removing settings data from the training data to be parsed
     data.pop('ClockSpeed', None)
     data.pop('loaded from checkpoint', None)
 
