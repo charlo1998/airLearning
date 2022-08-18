@@ -385,15 +385,15 @@ class AirLearningClient(airsim.MultirotorClient):
             start, duration = self.straight(settings.mv_fw_spd_5/((action % root)+1), settings.mv_fw_dur*(np.exp((action//root)/(root-1))*10-9))
         elif action < settings.action_discretization * 2:
             #go back
-            action = action % root
+            action = action % settings.action_discretization
             start, duration = self.backup(settings.mv_fw_spd_5/((action % root)+1), settings.mv_fw_dur*(np.exp((action//root)/(root-1))*10-9))
         elif action < settings.action_discretization * 3:
             #turn right
-            action = action % root
+            action = action % settings.action_discretization
             start, duration = self.yaw_right(settings.yaw_rate_1_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*10-9))
         elif action < settings.action_discretization * 4:
             #turn left
-            action = action % root
+            action = action % settings.action_discretization
             start, duration = self.yaw_right(settings.yaw_rate_2_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*10-9))
 
         #go diagonally. this was removed as the drone can just turn then go straight
