@@ -374,27 +374,27 @@ class AirLearningClient(airsim.MultirotorClient):
         """
 
         """
-        discretation of the action duration: (e^((action//root)/(root-1))*10 - 9)*mv_fw_dur
-        the constants 10 and 9 are chosen to fix the range of the function to [1,18]*mv_fw_dur.
+        discretation of the action duration: (e^((action//root)/(root-1))*15 - 14)*mv_fw_dur
+        the constants 10 and 9 are chosen to fix the range of the function to about [1,25]*mv_fw_dur.
         the actual duration is then interpolated in an exponential function that passes through these boundaries.
         """
         root = np.sqrt(settings.action_discretization)
         
         if action < settings.action_discretization * 1 :
             #go straight
-            start, duration = self.straight(settings.mv_fw_spd_5/((action % root)+1), settings.mv_fw_dur*(np.exp((action//root)/(root-1))*10-9))
+            start, duration = self.straight(settings.mv_fw_spd_5/((action % root)+1), settings.mv_fw_dur*(np.exp((action//root)/(root-1))*15 - 14))
         elif action < settings.action_discretization * 2:
             #go back
             action = action % settings.action_discretization
-            start, duration = self.backup(settings.mv_fw_spd_5/((action % root)+1), settings.mv_fw_dur*(np.exp((action//root)/(root-1))*10-9))
+            start, duration = self.backup(settings.mv_fw_spd_5/((action % root)+1), settings.mv_fw_dur*(np.exp((action//root)/(root-1))*15 - 14))
         elif action < settings.action_discretization * 3:
             #turn right
             action = action % settings.action_discretization
-            start, duration = self.yaw_right(settings.yaw_rate_1_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*10-9))
+            start, duration = self.yaw_right(settings.yaw_rate_1_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*15 - 14))
         elif action < settings.action_discretization * 4:
             #turn left
             action = action % settings.action_discretization
-            start, duration = self.yaw_right(settings.yaw_rate_2_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*10-9))
+            start, duration = self.yaw_right(settings.yaw_rate_2_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*15 - 14))
 
         #go diagonally. this was removed as the drone can just turn then go straight
         #if action == 5:

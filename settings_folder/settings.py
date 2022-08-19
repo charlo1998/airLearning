@@ -166,12 +166,23 @@ policy = "shallow" #"shallow" or "deep"
 # Discrete action space parameters
 # ---------------------------
 #actions durations and speeds
-action_discretization = 36 #this needs to be a square number and greater than one!
+"""
+action durations here correspond to simulated time, so if the clockspeed is 
+set to 2 in the airsim settings, an action of 50 ms here will take 25 ms.
+
+NOTE: the learning and other rl stuff takes about 10 ms with the A2C algorithm (for example).
+So the real frequency is always lower than the minimal action duration.
+Also, increasing the clockspeed virtually increases the latency of the agent
+(ex. the 10 ms becomes 20 ms in simulation time).
+however, a part of the latency is explained by a waiting time to collect the state, which is also sped up a little bit.
+this means the "percieved" latency doesn't increase linearly with the clockspeed, but increases nonetheless, slower than linearly.
+"""
+action_discretization = 16 #this needs to be a square number and greater than one!
 assert(action_discretization > 1)
 assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
-mv_fw_dur = 0.15
+mv_fw_dur = 0.02
 mv_fw_spd_5 = 5
-rot_dur = 0.15
+rot_dur = 0.02
 # yaw_rate = (180/180)*math.pi #in degree
 yaw_rate_1_1 = 108.  # FOV of front camera
 
@@ -193,8 +204,8 @@ list_algo = ["DQN", "DDPG"]  # a new algo needs to be added to this list for bac
 nb_max_episodes_steps = 1000  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
-success_distance_to_goal = 1
-slow_down_activation_distance = 3 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
+success_distance_to_goal = 2
+slow_down_activation_distance = 2.5 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
 
 # ---------------------------
 # training params
@@ -204,7 +215,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 200000
+training_steps_cap = 50000
 nb_steps_warmup = 3000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = False
