@@ -100,11 +100,11 @@ def main():
     task_type = "train"
 
     task1 = {"task_type": "start_game"}
-    task2 = {"algo": algo, "task_type": task_type, "difficulty_level": "hard", "env_name": "AirSimEnv-v42",
+    task2 = {"algo": algo, "task_type": task_type, "difficulty_level": settings.difficulty, "env_name": "AirSimEnv-v42",
              "weights": model_weights_list_to_test, "checkpoint": model_to_checkpoint}
     task3 = {"task_type": "kill_game"}
     task4 = {"algo": algo, "task_type": "generate_csv", "data_file": task_type + "_episodal_log.txt"}
-    task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"]], "plot_data_mode": "separate"}
+    task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"], ["episodeN", "stepN"]], "plot_data_mode": "separate"}
     
     taskList.append(task1) #start gane
 

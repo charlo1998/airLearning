@@ -16,10 +16,7 @@ def parse_data(file_name):
         f.seek(0,0)
         lines = f.readlines()
         if lines[-1] != '}':
-            print("added } at log eof!")
             f.write("\n}")
-        else:
-            print("already well formatted")
 
     if (file_name == ''):
         file_hndl = open(os.path.join(settings.proj_root_path, "data", msgs.algo, msgs.mode + "_episodal_log.txt"), "r")
@@ -29,7 +26,7 @@ def parse_data(file_name):
     data = json.load(file_hndl)
     data_clusterd_based_on_key = {}
 
-    data.pop('buffer size', None) #removing settings data from the training data to be parsed
+    data.pop('difficulty', None) #removing settings data from the training data to be parsed
     data.pop('ClockSpeed', None)
     data.pop('loaded from checkpoint', None)
 
@@ -71,6 +68,9 @@ def santize_data(file):
 def average(data):
     new_data = [[0],[0],[0]]
     bucket_size = int(settings.training_steps_cap/50)
+    if bucket_size < 1000:
+        print("bucket size too small! verifiy settings.training_steps_cap")
+        bucket_size = 1000
     i_step = 0
     while i_step < settings.training_steps_cap:
         xbucket_avg = []
@@ -81,8 +81,8 @@ def average(data):
             idx = [data[k]["total_step_count_for_experiment"].index(x) for x in xbucket]
             ybucket = [data[k]["total_reward"][i] for i in idx]
             #avg the bucket into 1 value
-            xbucket = round(sum(xbucket)/len(xbucket))
-            ybucket = round(sum(ybucket)/len(ybucket))
+            xbucket = round(sum(xbucket)/len(xbucket)) if (len(xbucket) > 0) else i_step
+            ybucket = round(sum(ybucket)/len(ybucket)) if (len(ybucket) > 0) else new_data[1][-1]
             #add the averagd value of all the runs into a list
             xbucket_avg.append(xbucket)
             ybucket_avg.append(ybucket)
@@ -101,6 +101,9 @@ def plot_data(file, data_to_inquire, mode="separate"):
     dataList = []
     for i in range(settings.runs_to_do):
         dataList.append(parse_data(file.replace("log", "log" + str(i))))
+        action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(i) + ".txt")
+        plot_histogram(action_duration_file)
+    plt.figure()
     #print(dataList)
     data = dataList #to do, average the values instead of plotting them all. warning: the runs have different length of episodes!
     for el in data_to_inquire:
@@ -132,13 +135,28 @@ def generate_csv(file):
     data_frame.to_csv(file.replace("txt", "csv"), index=False)
 
 
+def plot_histogram(file="C:/Users/charl/workspace/airlearning/airlearning-rl/data/env/env_log.txt"):
+    with open(file, 'r') as f:
+        take_action_list = f.read()
+
+    print("processing data")
+    take_action_out = take_action_list.strip("[ ]\n") #removing brackets and spaces
+    take_action_out = [float(value) for value in take_action_out.split(",")] #converting into list of floats
+
+    n, bins, patches = plt.hist(take_action_out, bins = 'auto')
+    plt.xlabel('action duration')
+    plt.ylabel('frequency')
+    maxfreq = n.max()
+    plt.ylim(ymax=np.ceil(maxfreq/10)*10 if maxfreq % 10 else maxfreq + 10)
+
+
 def append_log_file(episodeN, log_mode="verbose"):
     with open(os.path.join(settings.proj_root_path, "data", msgs.algo, msgs.mode + "_episodal_log" + log_mode + str(settings.i_run) + ".txt"),
               "a+") as f:
         if (episodeN == 0): #starting a new training task, add settings 
             f.write('{\n')
-            f.write('"buffer size":' + str(settings.buffer_size) + ',\n')
             f.write('"loaded from checkpoint":' + str(settings.use_checkpoint).lower() + ',\n')
+            f.write('"difficulty":' + '"' + str(settings.difficulty) + '"' + ',\n')
             file_hndl = open("C:/Users/charl/Documents/AirSim/settings.json", "r")
             #print(f"parsing: {file_name}")
             UnrealSettings = json.load(file_hndl)
@@ -158,6 +176,8 @@ def append_log_file(episodeN, log_mode="verbose"):
                                                                                                              "\"True\"").replace(
                 "False", "\"False\""))
         f.close()
+
+
 
 
 
