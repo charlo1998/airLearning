@@ -130,9 +130,10 @@ def plot_data(file, data_to_inquire, mode="separate"):
 
 
 def generate_csv(file):
-    data = parse_data(file)
-    data_frame = pd.DataFrame(data)
-    data_frame.to_csv(file.replace("txt", "csv"), index=False)
+    for i in range(settings.runs_to_do):
+        data = parse_data(file.replace("log", "log" + str(i)))
+        data_frame = pd.DataFrame(data)
+        data_frame.to_csv(file.replace("log", "log" + str(i)).replace("txt", "csv"), index=False)
 
 
 def plot_histogram(file="C:/Users/charl/workspace/airlearning/airlearning-rl/data/env/env_log.txt"):
