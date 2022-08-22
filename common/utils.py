@@ -99,14 +99,16 @@ def plot_data(file, data_to_inquire, mode="separate"):
     # santize_data(file)
     #make a list of dictionnaries, loop using setting.runs_to_do and average the values
     dataList = []
+    plt.figure()
     for i in range(settings.runs_to_do):
         dataList.append(parse_data(file.replace("log", "log" + str(i))))
         action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(i) + ".txt")
         plot_histogram(action_duration_file)
-    plt.figure()
+    
     #print(dataList)
     data = dataList #to do, average the values instead of plotting them all. warning: the runs have different length of episodes!
     for el in data_to_inquire:
+        plt.figure()
         if (el[0] == "total_step_count_for_experiment"):
             new_data = average(data)
             plt.plot(new_data[0], new_data[1])
@@ -118,11 +120,9 @@ def plot_data(file, data_to_inquire, mode="separate"):
                 plt.plot(data[i][el[0]], data[i][el[1]])
                 assert (el[0] in data[i].keys())
         plt.xlabel(el[0])
-        plt.ylabel(el[1])
-        
+        plt.ylabel(el[1])  
         plt.legend()
         plt.draw()
-        plt.figure()
     if (mode == "separate"):
         plt.show()
     # plt.draw()
