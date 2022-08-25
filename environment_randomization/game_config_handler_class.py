@@ -102,9 +102,11 @@ class GameConfigHandler:
             # corner cases
             if el in ["Indoor", "GameSetting"]:  # make sure to not touch indoor, cause it'll mess up the keys within it
                 continue
-            # print(el + str(self.game_config_zones.get_item(el)))
+            
             low_bnd = self.game_config_zones.get_item(el)[0]
             up_bnd = self.game_config_zones.get_item(el)[1]
+            #print(el + str(self.game_config_zones.get_item(el)))
+            #print(low_bnd)
 
             range_val = self.game_config_range.get_item(el)[low_bnd:up_bnd]
             random_val = random.choice(range_val)

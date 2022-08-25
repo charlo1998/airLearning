@@ -115,8 +115,9 @@ def main():
         taskList.append(task2) # don't do multiple runs for test
 
     taskList.append(task3) #close game
-    #taskList.append(task4) #generate_csv
+    
     taskList.append(task5) #plot
+    taskList.append(task4) #generate_csv
 
     for task_el in taskList:
         runTask(task_el)

@@ -100,7 +100,7 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "NumberOfDynamicObjects": list(range(0, 1)),
                   "Walls1": [[255, 255, 10]],
                   "Seed": list(range(0, 5000)),
-                  "VelocityRange": [[5, 25]],
+                  "VelocityRange": [[5, 15]],
                   "Name": ["Name"],
                   "NumberOfObjects": list(range(7, 12))}
 
@@ -222,12 +222,12 @@ slow_down_activation_distance = 2.5 * success_distance_to_goal  # detrmines at w
 # ---------------------------
 # training params
 # ---------------------------
-runs_to_do = 1
-i_run =  1#this needs to be the same value as runs_to_do
+runs_to_do = 2
+i_run =  2#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 50000
+training_steps_cap = 100000
 nb_steps_warmup = 3000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = False
