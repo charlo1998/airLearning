@@ -216,15 +216,16 @@ class AirLearningClient(airsim.MultirotorClient):
         lidarDatafront = self.client.getLidarData(lidar_name="Lidarfront",vehicle_name="Drone1")
         lidarDataleft = self.client.getLidarData(lidar_name="Lidarleft",vehicle_name="Drone1")
         lidarDataright = self.client.getLidarData(lidar_name="Lidarright",vehicle_name="Drone1")
+        lidarDataback = self.client.getLidarData(lidar_name="Lidarback",vehicle_name="Drone1")
         
         
         front = self.process_lidar(lidarDatafront.point_cloud)
         left = self.process_lidar(lidarDataleft.point_cloud)
         right = self.process_lidar(lidarDataright.point_cloud)
-        
-        #print(f"front lidar: {front}")
+        back = self.process_lidar(lidarDataback.point_cloud)
 
-        output = [front, left, right]
+        output = [front, left, right, back]
+        #print(output)
 
         return np.array(output)   
 
@@ -243,7 +244,7 @@ class AirLearningClient(airsim.MultirotorClient):
         Y = points[:,1]
         Z = points[:,2]
         
-        distance = min(X)
+        distance = min(np.sqrt(X**2+Y**2))
 
         return distance
 
