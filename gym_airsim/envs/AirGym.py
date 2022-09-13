@@ -556,14 +556,15 @@ class AirSimEnv(gym.Env):
             self.speed = np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2)
             #print("Speed:"+str(self.speed))
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
+            #print(distance)
             
             if distance < settings.success_distance_to_goal: #we found the goal: 1000ptso
                 done = True
                 print("-----------success, be happy!--------")
                 self.success = True
                 msgs.success = True
-                print(self.goal)
-                print(now)
+                #print(self.goal)
+                #print(now)
                 # Todo: Add code for landing drone (Airsim API)
                 reward = 1000.0
                 #self.collect_data()
@@ -691,8 +692,8 @@ class AirSimEnv(gym.Env):
     # it's time
     def randomize_env(self):
         vars_to_randomize = []
-        for k, v in settings.environment_change_frequency.items():
-            if (self.episodeN+1) %  v == 0:
+        for k, v in settings.environment_change_frequency.items(): #get the variable/frequency pairs
+            if (self.episodeN+1) %  v == 0: #if they are due to randomize, pass them to the sample function
                 vars_to_randomize.append(k)
 
         if (len(vars_to_randomize) > 0):

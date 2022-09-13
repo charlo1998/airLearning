@@ -92,25 +92,25 @@ class GameConfigHandler:
 
     # sampling within the entire range
     def sample(self, *arg):
-        all_keys = self.game_config_range.find_all_keys()
+        all_keys = self.game_config_range.find_all_keys() #find all configurable variables in the Json envgen file (ex. seed, numberOfObject, End's position)
         if (len(arg) == 0):
             arg = all_keys
 
-        for el in arg:
+        for el in arg: #for all the passed variables
             assert (el in all_keys), str(el) + " is not a key in the json file"
 
             # corner cases
             if el in ["Indoor", "GameSetting"]:  # make sure to not touch indoor, cause it'll mess up the keys within it
                 continue
             
+            #go fetch the determined range of that variable and uniformly choose
             low_bnd = self.game_config_zones.get_item(el)[0]
             up_bnd = self.game_config_zones.get_item(el)[1]
-            #print(el + str(self.game_config_zones.get_item(el)))
-            #print(low_bnd)
 
             range_val = self.game_config_range.get_item(el)[low_bnd:up_bnd]
             random_val = random.choice(range_val)
             self.cur_game_config.set_item(el, random_val)
+            print(f"sampled: {el} ({random_val})")
 
         # end
         if "End" in arg and self.game_config_range.get_item("End")[0] == "Mutable":
@@ -120,6 +120,7 @@ class GameConfigHandler:
                                               self.game_config_zones.get_item("End")[0], \
                                               self.zone_dic["End"]))
 
+        #write the new settings in the envgen json file
         outputfile = self.input_file_addr
         output_file_handle = open(outputfile, "w")
         json.dump(self.cur_game_config.config_data, output_file_handle)
@@ -133,6 +134,8 @@ class GameConfigHandler:
         if(settings.use_preloaded_json):
             outputfile = next(self.meta_data_files_in_order)
             utils.copy_json_to_server(outputfile)
+
+
     def increment_zone(self, key):
         low_bnd = self.game_config_zones.get_item(key)[0]
         up_bnd = self.game_config_zones.get_item(key)[1]
