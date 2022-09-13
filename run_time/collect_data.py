@@ -86,6 +86,10 @@ def runTask(task):
         data_file = os.path.join(settings.proj_root_path, "data", task["algo"], task["data_file"])
         plot_data(data_file, task["data_to_plot"], task["plot_data_mode"])
 
+    if task["task_type"] == "plot_trajectories":
+        data_file = os.path.join(settings.proj_root_path, "data", task["algo"], task["data_file"])
+        plot_trajectories(data_file)
+
 
 def main():
     taskList = []
@@ -97,7 +101,7 @@ def main():
     model_to_checkpoint = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"
 
     algo = "A2C-B"
-    task_type = "train"
+    task_type = "test"
 
     task1 = {"task_type": "start_game"}
     task2 = {"algo": algo, "task_type": task_type, "difficulty_level": settings.difficulty, "env_name": "AirSimEnv-v42",
@@ -105,15 +109,16 @@ def main():
     task3 = {"task_type": "kill_game"}
     task4 = {"algo": algo, "task_type": "generate_csv", "data_file": task_type + "_episodal_log.txt"}
     task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio_within_window"], ["total_step_count_for_experiment", "total_reward"], ["episodeN", "stepN"]], "plot_data_mode": "separate"}
-    
-    taskList.append(task1) #start gane
+    task6 = {"algo": algo, "task_type": "plot_trajectories", "data_file": task_type + "_episodal_logverbose0.txt"}
 
+
+    taskList.append(task1) #start gane
     if task_type == "train":
         for i in range(settings.runs_to_do):
             taskList.append(task2) #train
     else:
         taskList.append(task2) # don't do multiple runs for test
-
+        taskList.append(task6) #plot trejectories
     taskList.append(task3) #close game
     
     taskList.append(task5) #plot
