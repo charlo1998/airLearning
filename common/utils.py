@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import shutil
 import pandas as pd
 import subprocess
+import ast
 
 def parse_data(file_name):
     with open(file_name  , 'a+') as f:
@@ -64,6 +65,61 @@ def santize_data(file):
 #        mean_dict[key] = [d[key] for d in dict_list]
 #        print(mean_dict)
 #    return mean_dict
+
+def plot_trajectories(file):
+    
+    data = parse_data(file)
+    assert(len(data['stepN']) > 20)
+    nbOfSteps = 0
+    #plot the first 10 episodes
+    plt.figure()
+    for i in range(10): #this is the number of trajectories to plot
+        xcoord = []
+        ycoord = []
+        episodeLength = data['stepN'][i]
+        #converting string into list of floats
+        coords = [x.strip('[]').split(' ') for x in data["position_in_each_step"][i][nbOfSteps:nbOfSteps+episodeLength]] #since the positions are appended, we need to remove the first nbOfSteps elements
+        coords = [list(filter(None, x)) for x in coords]
+        #print(len(coords))
+        for coord in coords:
+            positions = ([float(x) for x in coord])
+            xcoord.append(positions[0])
+            ycoord.append(positions[1])
+
+        nbOfSteps += episodeLength
+        plt.plot(xcoord, ycoord)
+
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title("first 10 episodes")
+    plt.xlim([-50, 50])
+    plt.ylim([-50, 50])
+
+    #plot the last 10 episodes
+    nbOfSteps = data['total_step_count_for_experiment'][-11] #remove the steps before the last 10 episodes
+    plt.figure()
+    for i in range(-10,0): #this is the number of trajectories to plot
+        xcoord = []
+        ycoord = []
+        episodeLength = data['stepN'][i]
+        #converting string into list of floats
+        coords = [x.strip('[]').split(' ') for x in data["position_in_each_step"][i][nbOfSteps:nbOfSteps+episodeLength]] #since the positions are appended, we need to remove the first nbOfSteps elements
+        coords = [list(filter(None, x)) for x in coords]
+        #print(len(coords))
+        for coord in coords:
+            positions = ([float(x) for x in coord])
+            xcoord.append(positions[0])
+            ycoord.append(positions[1])
+
+        nbOfSteps += episodeLength
+        plt.plot(xcoord, ycoord)
+
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title("last 10 episodes")
+    plt.xlim([-50, 50])
+    plt.ylim([-50, 50])
+    plt.show()
 
 def average(data):
     new_data = [[0],[0],[0]]
@@ -247,6 +303,10 @@ def get_random_end_point(arena_size, split_index, total_num_of_splits):
     idx1_up_pos_bndry = (split_index + 1) * idx1_quanta
     idx2_up_pos_bndry = (split_index + 1) * idx2_quanta
 
+    print(split_index)
+    print(total_num_of_splits)
+    print(idx0_up_pos_bndry)
+
     if (settings.end_randomization_mode == "inclusive"):
         idx0_low_pos_bndry = 0
         idx1_low_pos_bndry = 0
@@ -310,8 +370,6 @@ def get_random_end_point(arena_size, split_index, total_num_of_splits):
 
     return [rnd_idx0, rnd_idx1, grounded_idx2]
 
-
-# return [rnd_idx0, rnd_idx1, rnd_idx2]
 
 
 def get_lib_addr():
