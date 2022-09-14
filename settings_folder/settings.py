@@ -95,14 +95,14 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "MinimumDistance": [4],
                   "EnvType": ["Indoor"],
                   "EnvType": ["Indoor"],
-                  "ArenaSize": [[40, 40, 10]],
+                  "ArenaSize": [[50, 50, 10]],
                   "PlayerStart": [[0, 0, 0]],
                   "NumberOfDynamicObjects": list(range(0, 1)),
                   "Walls1": [[255, 255, 10]],
                   "Seed": list(range(0, 5000)),
-                  "VelocityRange": [[5, 25]],
+                  "VelocityRange": [[5, 15]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(7, 12))}
+                  "NumberOfObjects": list(range(10, 16))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -123,7 +123,7 @@ max_zone = zone_dic["End"]  # should be equal to mutable or total number of zone
 end_randomization_mode = "inclusive"  # whether each level of difficulty should be inclusive (including the previous level) or exclusive
 
 # how frequently to update the environment this is based on epides
-environment_change_frequency = {"Seed": 1, "NumberOfObjects": 10, "End": 1}
+environment_change_frequency = {"Seed": 1, "NumberOfObjects": 10, "End": 1} #the keywords are the variables to randomize, and the int associated is the number of episodes before randomization (i.e. 1 means every episode, etc.)
 
 # ------------------------------------------------------------
 #                               -Drone related-
@@ -180,13 +180,25 @@ this means the "percieved" latency doesn't increase linearly with the clockspeed
 action_discretization = 16 #this needs to be a square number and greater than one!
 assert(action_discretization > 1)
 assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
-mv_fw_dur = 0.02
+mv_fw_dur = 0.15
+rot_dur = 0.15
+# yaw_rate = (180/180)*math.pi #in degree
+mv_fw_spd_1 = 1
+mv_fw_spd_2 = 2
+mv_fw_spd_3 = 3
+mv_fw_spd_4 = 4
 mv_fw_spd_5 = 5
-rot_dur = 0.02
 # yaw_rate = (180/180)*math.pi #in degree
 yaw_rate_1_1 = 108.  # FOV of front camera
-
+yaw_rate_1_2 = yaw_rate_1_1 * 0.5  # yaw right by this angle
+yaw_rate_1_4 = yaw_rate_1_2 * 0.5
+yaw_rate_1_8 = yaw_rate_1_4 * 0.5
+yaw_rate_1_16 = yaw_rate_1_8 * 0.5
 yaw_rate_2_1 = -216.  # -2 time the FOV of front camera
+yaw_rate_2_2 = yaw_rate_2_1 * 0.5  # yaw left by this angle
+yaw_rate_2_4 = yaw_rate_2_2 * 0.5
+yaw_rate_2_8 = yaw_rate_2_4 * 0.5
+yaw_rate_2_16 = yaw_rate_2_8 * 0.5
 
 
 # ---------------------------
@@ -204,7 +216,7 @@ list_algo = ["DQN", "DDPG"]  # a new algo needs to be added to this list for bac
 nb_max_episodes_steps = 1000  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
-success_distance_to_goal = 2
+success_distance_to_goal = 0.6
 slow_down_activation_distance = 2.5 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
 
 # ---------------------------

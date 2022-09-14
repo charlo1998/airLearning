@@ -66,7 +66,7 @@ class AirSimEnv(gym.Env):
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DISTANCES = 3
+            STATE_DISTANCES = 4
             if(msgs.algo == "SAC"):
                 self.observation_space = spaces.Box(low=-100000, high=1000000, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
@@ -109,6 +109,7 @@ class AirSimEnv(gym.Env):
         self.grey = np.zeros((144, 256), dtype=np.uint8)
         self.position = np.zeros((2,), dtype=np.float32)
         self.velocity = np.zeros((3,), dtype=np.float32)
+        self.distances = np.zeros(4)
         self.speed = 0
         self.track = 0
         self.prev_state = self.state()
@@ -143,8 +144,7 @@ class AirSimEnv(gym.Env):
                                        np.array([+5.0, +5.0]),
                                        dtype=np.float32)
         else:
-            self.nb_action_types = 4
-            self.action_space = spaces.Discrete(self.nb_action_types * settings.action_discretization)
+            self.action_space = spaces.Discrete(25)
 
         self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End"))
         self.episodeN = 0
@@ -536,13 +536,16 @@ class AirSimEnv(gym.Env):
             
             now = self.airgym.drone_pos()
             self.track = self.airgym.goal_direction(self.goal, now)
-            self.airgym.get_laser_state()
+            
             if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B"):
                 self.concat_state = self.airgym.getConcatState(self.track, self.goal)
             elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                 self.depth = self.airgym.getScreenDepthVis(self.track)
-            self.position = self.airgym.get_distance(self.goal)
-            self.velocity = self.airgym.drone_velocity()
+            else:
+                print("not an implemented algo")
+                self.distances = self.airgym.get_laser_state()
+                self.position = self.airgym.get_distance(self.goal)
+                self.velocity = self.airgym.drone_velocity()
 
             if(settings.profile):
                 clct_state_end = time.time()
@@ -553,12 +556,15 @@ class AirSimEnv(gym.Env):
             self.speed = np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2)
             #print("Speed:"+str(self.speed))
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
+            #print(distance)
             
             if distance < settings.success_distance_to_goal: #we found the goal: 1000ptso
                 done = True
                 print("-----------success, be happy!--------")
                 self.success = True
                 msgs.success = True
+                #print(self.goal)
+                #print(now)
                 # Todo: Add code for landing drone (Airsim API)
                 reward = 1000.0
                 #self.collect_data()
@@ -590,6 +596,7 @@ class AirSimEnv(gym.Env):
             info = {"x_pos":now[0], "y_pos":now[1]}
 
             state = self.state()
+            #print(state)
             self.prev_state = state
             self.prev_info = info
 
@@ -685,8 +692,8 @@ class AirSimEnv(gym.Env):
     # it's time
     def randomize_env(self):
         vars_to_randomize = []
-        for k, v in settings.environment_change_frequency.items():
-            if (self.episodeN+1) %  v == 0:
+        for k, v in settings.environment_change_frequency.items(): #get the variable/frequency pairs
+            if (self.episodeN+1) %  v == 0: #if they are due to randomize, pass them to the sample function
                 vars_to_randomize.append(k)
 
         if (len(vars_to_randomize) > 0):

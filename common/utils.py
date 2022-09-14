@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import shutil
 import pandas as pd
 import subprocess
+import ast
 
 def parse_data(file_name):
     with open(file_name  , 'a+') as f:
@@ -65,6 +66,61 @@ def santize_data(file):
 #        print(mean_dict)
 #    return mean_dict
 
+def plot_trajectories(file):
+    
+    data = parse_data(file)
+    assert(len(data['stepN']) > 20)
+    nbOfSteps = 0
+    #plot the first 10 episodes
+    plt.figure()
+    for i in range(10): #this is the number of trajectories to plot
+        xcoord = []
+        ycoord = []
+        episodeLength = data['stepN'][i]
+        #converting string into list of floats
+        coords = [x.strip('[]').split(' ') for x in data["position_in_each_step"][i][nbOfSteps:nbOfSteps+episodeLength]] #since the positions are appended, we need to remove the first nbOfSteps elements
+        coords = [list(filter(None, x)) for x in coords]
+        #print(len(coords))
+        for coord in coords:
+            positions = ([float(x) for x in coord])
+            xcoord.append(positions[0])
+            ycoord.append(positions[1])
+
+        nbOfSteps += episodeLength
+        plt.plot(xcoord, ycoord)
+
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title("first 10 episodes")
+    plt.xlim([-50, 50])
+    plt.ylim([-50, 50])
+
+    #plot the last 10 episodes
+    nbOfSteps = data['total_step_count_for_experiment'][-11] #remove the steps before the last 10 episodes
+    plt.figure()
+    for i in range(-10,0): #this is the number of trajectories to plot
+        xcoord = []
+        ycoord = []
+        episodeLength = data['stepN'][i]
+        #converting string into list of floats
+        coords = [x.strip('[]').split(' ') for x in data["position_in_each_step"][i][nbOfSteps:nbOfSteps+episodeLength]] #since the positions are appended, we need to remove the first nbOfSteps elements
+        coords = [list(filter(None, x)) for x in coords]
+        #print(len(coords))
+        for coord in coords:
+            positions = ([float(x) for x in coord])
+            xcoord.append(positions[0])
+            ycoord.append(positions[1])
+
+        nbOfSteps += episodeLength
+        plt.plot(xcoord, ycoord)
+
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title("last 10 episodes")
+    plt.xlim([-50, 50])
+    plt.ylim([-50, 50])
+    plt.show()
+
 def average(data):
     new_data = [[0],[0],[0]]
     bucket_size = int(settings.training_steps_cap/50)
@@ -99,14 +155,16 @@ def plot_data(file, data_to_inquire, mode="separate"):
     # santize_data(file)
     #make a list of dictionnaries, loop using setting.runs_to_do and average the values
     dataList = []
+    plt.figure()
     for i in range(settings.runs_to_do):
         dataList.append(parse_data(file.replace("log", "log" + str(i))))
         action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(i) + ".txt")
         plot_histogram(action_duration_file)
-    plt.figure()
+    
     #print(dataList)
     data = dataList #to do, average the values instead of plotting them all. warning: the runs have different length of episodes!
     for el in data_to_inquire:
+        plt.figure()
         if (el[0] == "total_step_count_for_experiment"):
             new_data = average(data)
             plt.plot(new_data[0], new_data[1])
@@ -118,11 +176,9 @@ def plot_data(file, data_to_inquire, mode="separate"):
                 plt.plot(data[i][el[0]], data[i][el[1]])
                 assert (el[0] in data[i].keys())
         plt.xlabel(el[0])
-        plt.ylabel(el[1])
-        
+        plt.ylabel(el[1])  
         plt.legend()
         plt.draw()
-        plt.figure()
     if (mode == "separate"):
         plt.show()
     # plt.draw()
@@ -130,9 +186,10 @@ def plot_data(file, data_to_inquire, mode="separate"):
 
 
 def generate_csv(file):
-    data = parse_data(file)
-    data_frame = pd.DataFrame(data)
-    data_frame.to_csv(file.replace("txt", "csv"), index=False)
+    for i in range(settings.runs_to_do):
+        data = parse_data(file.replace("log", "log" + str(i)))
+        data_frame = pd.DataFrame(data)
+        data_frame.to_csv(file.replace("log", "log" + str(i)).replace("txt", "csv"), index=False)
 
 
 def plot_histogram(file="C:/Users/charl/workspace/airlearning/airlearning-rl/data/env/env_log.txt"):
@@ -246,6 +303,10 @@ def get_random_end_point(arena_size, split_index, total_num_of_splits):
     idx1_up_pos_bndry = (split_index + 1) * idx1_quanta
     idx2_up_pos_bndry = (split_index + 1) * idx2_quanta
 
+    print(split_index)
+    print(total_num_of_splits)
+    print(idx0_up_pos_bndry)
+
     if (settings.end_randomization_mode == "inclusive"):
         idx0_low_pos_bndry = 0
         idx1_low_pos_bndry = 0
@@ -309,8 +370,6 @@ def get_random_end_point(arena_size, split_index, total_num_of_splits):
 
     return [rnd_idx0, rnd_idx1, grounded_idx2]
 
-
-# return [rnd_idx0, rnd_idx1, rnd_idx2]
 
 
 def get_lib_addr():
