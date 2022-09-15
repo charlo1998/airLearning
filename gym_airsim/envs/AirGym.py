@@ -647,13 +647,10 @@ class AirSimEnv(gym.Env):
         print(f"total step count: {self.total_step_count_for_experiment}")
         try:
             if(settings.profile):
-                if(self.stepN>1):
-                    print("Avg loop rate:" + str(np.mean(self.loop_rate_list)))
-                    self.all_loop_rates = copy.deepcopy(self.loop_rate_list)
+                if(self.stepN % 20 ==0):
+                    print("Average Loop Rate:"+str(np.mean(self.loop_rate_list)))
                     print ("Action Time:" +str(np.mean(self.take_action_list)))
                     print("Collect State Time"+str(np.mean(self.clct_state_list)))
-                if(self.stepN % 20 ==0):
-                    print("Average Loop Rate:"+str(np.mean(self.all_loop_rates)))
 
             print("enter reset")
             self.randomize_env()

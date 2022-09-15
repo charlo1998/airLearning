@@ -303,9 +303,9 @@ def get_random_end_point(arena_size, split_index, total_num_of_splits):
     idx1_up_pos_bndry = (split_index + 1) * idx1_quanta
     idx2_up_pos_bndry = (split_index + 1) * idx2_quanta
 
-    print(split_index)
-    print(total_num_of_splits)
-    print(idx0_up_pos_bndry)
+    #print(split_index)
+    #print(total_num_of_splits)
+    #print(idx0_up_pos_bndry)
 
     if (settings.end_randomization_mode == "inclusive"):
         idx0_low_pos_bndry = 0
