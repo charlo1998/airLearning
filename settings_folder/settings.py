@@ -54,10 +54,9 @@ checkpoint_interval = 25000
 zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 3}  # pay attention
 
 # update_zone_success_threshold = 50
-acceptable_success_rate_to_update_zone = .6  # after what ratio of success up the zone # pay attention
+acceptable_success_rate_to_update_zone = .75  # after what ratio of success up the zone # pay attention
 update_zone_window = 50  # the window within which the  update_zone_accpetable_success_rate
-# needs to be achieved. Note that at the begining of every
-# new window we zero out the achieved ratio
+# needs to be achieved. Note that at the begining of every new window we zero out the achieved ratio
 
 
 # ------------------------------------------------------------ 
@@ -180,8 +179,8 @@ this means the "percieved" latency doesn't increase linearly with the clockspeed
 action_discretization = 16 #this needs to be a square number and greater than one!
 assert(action_discretization > 1)
 assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
-mv_fw_dur = 0.15
-rot_dur = 0.15
+mv_fw_dur = 0.10
+rot_dur = 0.10
 # yaw_rate = (180/180)*math.pi #in degree
 mv_fw_spd_1 = 1
 mv_fw_spd_2 = 2
@@ -227,7 +226,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 50000
+training_steps_cap = 100000
 nb_steps_warmup = 3000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = False
@@ -235,11 +234,11 @@ verbose = False
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = max_zone*100  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = max_zone*200  # note that if number of zones are x, #pay attention
 # then model get tested testing_nb_episodes_per_model/x
 # times per zone
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)
-assert(testing_nb_episodes_per_zone <testing_nb_episodes_per_model), "get the equality right ,darn it"
+assert(testing_nb_episodes_per_zone <= testing_nb_episodes_per_model), "get the equality right ,darn it"
 
 
 # ---------------------------

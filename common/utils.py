@@ -67,13 +67,14 @@ def santize_data(file):
 #    return mean_dict
 
 def plot_trajectories(file):
-    
+    print("collecting trajectories")
     data = parse_data(file)
-    assert(len(data['stepN']) > 20)
+    nbOfEpisodesToPlot = 15
+    assert(len(data['stepN']) >= 2*nbOfEpisodesToPlot)
     nbOfSteps = 0
-    #plot the first 10 episodes
+    #plot the first x episodes
     plt.figure()
-    for i in range(10): #this is the number of trajectories to plot
+    for i in range(nbOfEpisodesToPlot): #this is the number of trajectories to plot
         xcoord = []
         ycoord = []
         episodeLength = data['stepN'][i]
@@ -91,14 +92,14 @@ def plot_trajectories(file):
 
     plt.xlabel("x")
     plt.ylabel("y")
-    plt.title("first 10 episodes")
-    plt.xlim([-50, 50])
-    plt.ylim([-50, 50])
+    plt.title(f'first {nbOfEpisodesToPlot} episodes')
+    plt.xlim([-25, 25])
+    plt.ylim([-25, 25])
 
     #plot the last 10 episodes
-    nbOfSteps = data['total_step_count_for_experiment'][-11] #remove the steps before the last 10 episodes
+    nbOfSteps = data['total_step_count_for_experiment'][-nbOfEpisodesToPlot-1] #remove the steps before the last 10 episodes
     plt.figure()
-    for i in range(-10,0): #this is the number of trajectories to plot
+    for i in range(-nbOfEpisodesToPlot,0): #this is the number of trajectories to plot
         xcoord = []
         ycoord = []
         episodeLength = data['stepN'][i]
@@ -116,9 +117,9 @@ def plot_trajectories(file):
 
     plt.xlabel("x")
     plt.ylabel("y")
-    plt.title("last 10 episodes")
-    plt.xlim([-50, 50])
-    plt.ylim([-50, 50])
+    plt.title(f'last {nbOfEpisodesToPlot} episodes')
+    plt.xlim([-25, 25])
+    plt.ylim([-25, 25])
     plt.show()
 
 def average(data):
@@ -196,7 +197,7 @@ def plot_histogram(file="C:/Users/charl/workspace/airlearning/airlearning-rl/dat
     with open(file, 'r') as f:
         take_action_list = f.read()
 
-    print("processing data")
+    print("processing env_log.txt data")
     take_action_out = take_action_list.strip("[ ]\n") #removing brackets and spaces
     take_action_out = [float(value) for value in take_action_out.split(",")] #converting into list of floats
 

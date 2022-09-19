@@ -75,5 +75,18 @@ def test(env, agent, filepath = "C:/Users/charl/workspace/airlearning/airlearnin
             action, _states = model.predict(obs)
             obs, rewards, done, info = env.step(action)
 
+    #env loop rate logging
+    if settings.profile:
+        with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),
+            "w") as f:
+            f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
+            f.write("take_action_list:" + str(env.take_action_list) + "\n")
+            f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
+
+        action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(settings.i_run) + ".txt")
+        with open(action_duration_file, "w") as f:
+            f.write(str(env.take_action_list))
+
+
 
 
