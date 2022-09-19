@@ -358,27 +358,77 @@ class AirLearningClient(airsim.MultirotorClient):
 
     def take_discrete_action(self, action):
 
-               # check if copter is on level cause sometimes he goes up without a
-       # reason
         """
-        x = 0
-        while self.client.getPosition().z_val < -7.0:
-            self.client.moveToZAsync(-6, 3).join()
-            time.sleep(1)
-            print(self.client.getPosition().z_val, "and", x)
-            x = x + 1
-            if x > 10:
-                return True
+        takes an action with a duration of settings.mv_fw_dur or settings.rot_dur
+        """
+        if action == 0:
+            start, duration = self.straight(settings.mv_fw_spd_5, settings.mv_fw_dur)
+        if action == 1:
+            start, duration = self.straight(settings.mv_fw_spd_4, settings.mv_fw_dur)
+        if action == 2:
+            start, duration = self.straight(settings.mv_fw_spd_3, settings.mv_fw_dur)
+        if action == 3:
+            start, duration = self.straight(settings.mv_fw_spd_2, settings.mv_fw_dur)
+        if action == 4:
+            start, duration = self.straight(settings.mv_fw_spd_1, settings.mv_fw_dur)
+        if action == 5:
+            start, duration = self.move_forward_Speed(settings.mv_fw_spd_5, settings.mv_fw_spd_5, settings.mv_fw_dur)
+        if action == 6:
+            start, duration = self.move_forward_Speed(settings.mv_fw_spd_4, settings.mv_fw_spd_4, settings.mv_fw_dur)
+        if action == 7:
+            start, duration = self.move_forward_Speed(settings.mv_fw_spd_3, settings.mv_fw_spd_3, settings.mv_fw_dur)
+        if action == 8:
+            start, duration = self.move_forward_Speed(settings.mv_fw_spd_2, settings.mv_fw_spd_2, settings.mv_fw_dur)
+        if action == 9:
+            start, duration = self.move_forward_Speed(settings.mv_fw_spd_1, settings.mv_fw_spd_1, settings.mv_fw_dur)
+        if action == 10:
+            start, duration = self.backup(settings.mv_fw_spd_5, settings.mv_fw_dur)
+        if action == 11:
+            start, duration = self.backup(settings.mv_fw_spd_4, settings.mv_fw_dur)
+        if action == 12:
+            start, duration = self.backup(settings.mv_fw_spd_3, settings.mv_fw_dur)
+        if action == 13:
+            start, duration = self.backup(settings.mv_fw_spd_2, settings.mv_fw_dur)
+        if action == 14:
+            start, duration = self.backup(settings.mv_fw_spd_1, settings.mv_fw_dur)
+        if action == 15:
+            start, duration = self.yaw_right(settings.yaw_rate_1_1, settings.rot_dur)
+        if action == 16:
+            start, duration = self.yaw_right(settings.yaw_rate_1_2, settings.rot_dur)
+        if action == 17:
+            start, duration = self.yaw_right(settings.yaw_rate_1_4, settings.rot_dur)
+        if action == 18:
+            start, duration = self.yaw_right(settings.yaw_rate_1_8, settings.rot_dur)
+        if action == 19:
+            start, duration = self.yaw_right(settings.yaw_rate_1_16, settings.rot_dur)
+        if action == 20:
+            start, duration = self.yaw_right(settings.yaw_rate_2_1, settings.rot_dur)
+        if action == 21:
+            start, duration = self.yaw_right(settings.yaw_rate_2_2, settings.rot_dur)
+        if action == 22:
+            start, duration = self.yaw_right(settings.yaw_rate_2_4, settings.rot_dur)
+        if action == 23:
+            start, duration = self.yaw_right(settings.yaw_rate_2_8, settings.rot_dur)
+        if action == 24:
+            start, duration = self.yaw_right(settings.yaw_rate_2_16, settings.rot_dur)
 
-        start = time.time()
-        duration = 0
-        """
+
+        collided = (self.client.getMultirotorState().trip_stats.collision_count > 0)
+
+        return collided
+
+
+    def take_timed_action(self, action):
 
         """
         discretization of the action duration: (e^((action//root)/(root-1))*15 - 14)*mv_fw_dur
-        the constants 10 and 9 are chosen to fix the range of the function to about [1,25]*mv_fw_dur.
+        the constants 15 and 10 are chosen to fix the range of the function to about [1,25]*mv_fw_dur.
         the actual duration is then interpolated in an exponential function that passes through these boundaries.
+
+        Note: the drone has a reduced range of [1,9] for the rotation actions, since rotating for
+        more than 1 seconds doesn't really make sense, it will be much more than 180 degrees
         """
+
         root = np.sqrt(settings.action_discretization)
         
         if action < settings.action_discretization * 1 :
@@ -391,11 +441,11 @@ class AirLearningClient(airsim.MultirotorClient):
         elif action < settings.action_discretization * 3:
             #turn right
             action = action % settings.action_discretization
-            start, duration = self.yaw_right(settings.yaw_rate_1_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*15 - 14))
+            start, duration = self.yaw_right(settings.yaw_rate_1_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*5 - 4))
         elif action < settings.action_discretization * 4:
             #turn left
             action = action % settings.action_discretization
-            start, duration = self.yaw_right(settings.yaw_rate_2_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*15 - 14))
+            start, duration = self.yaw_right(settings.yaw_rate_2_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*5 - 4))
 
         #go diagonally. this was removed as the drone can just turn then go straight
         #if action == 5:

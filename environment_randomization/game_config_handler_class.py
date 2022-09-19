@@ -110,7 +110,7 @@ class GameConfigHandler:
             range_val = self.game_config_range.get_item(el)[low_bnd:up_bnd]
             random_val = random.choice(range_val)
             self.cur_game_config.set_item(el, random_val)
-            #print(f"sampled: {el} ({random_val})")
+            print(f"sampled: {el} ({random_val})")
 
         # end
         if "End" in arg and self.game_config_range.get_item("End")[0] == "Mutable":

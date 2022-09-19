@@ -176,11 +176,15 @@ Also, increasing the clockspeed virtually increases the latency of the agent
 however, a part of the latency is explained by a waiting time to collect the state, which is also sped up a little bit.
 this means the "percieved" latency doesn't increase linearly with the clockspeed, but increases nonetheless, slower than linearly.
 """
+
+timedActions = True
 action_discretization = 16 #this needs to be a square number and greater than one!
 assert(action_discretization > 1)
 assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
-mv_fw_dur = 0.10
-rot_dur = 0.10
+
+
+mv_fw_dur = 0.05
+rot_dur = 0.03 #this needs to be shorter, as we don't want the drone doing 3 turns in a row for a rotation
 # yaw_rate = (180/180)*math.pi #in degree
 mv_fw_spd_1 = 1
 mv_fw_spd_2 = 2
@@ -226,7 +230,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 100000
+training_steps_cap = 1000
 nb_steps_warmup = 3000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = False

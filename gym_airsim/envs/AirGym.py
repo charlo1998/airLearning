@@ -144,8 +144,11 @@ class AirSimEnv(gym.Env):
                                        np.array([+5.0, +5.0]),
                                        dtype=np.float32)
         else:
-            self.nb_action_types = 4 
-            self.action_space = spaces.Discrete(self.nb_action_types * settings.action_discretization) 
+            if(settings.timedActions):
+                self.nb_action_types = 4 
+                self.action_space = spaces.Discrete(self.nb_action_types * settings.action_discretization)
+            else:
+                self.action_space = spaces.Discrete(25)
 
 
         self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End"))
@@ -527,7 +530,10 @@ class AirSimEnv(gym.Env):
                 self.actions_in_step.append([action[0], action[1]])
                 collided = self.airgym.take_continious_action(action)
             else:
-                collided = self.airgym.take_discrete_action(action)
+                if(settings.timedActions):
+                    collided = self.airgym.take_timed_action(action)
+                else:
+                    collided = self.airgym.take_discrete_action(action)
                 self.actions_in_step.append(str(action))
                 
             
