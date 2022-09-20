@@ -90,13 +90,11 @@ def runTask(task):
         data_file = os.path.join(settings.proj_root_path, "data", task["algo"], task["data_file"])
         plot_trajectories(data_file)
 
-
 def main():
     taskList = []
 
     #put weights to test in a list as we can test multiple in one task
     model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"] #baselines
-    #model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/run_time/saved_model/dqn_weights_run0.hf5"] #keras rl
     
     model_to_checkpoint = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"
 
@@ -112,19 +110,23 @@ def main():
     task6 = {"algo": algo, "task_type": "plot_trajectories", "data_file": task_type + "_episodal_logverbose0.txt"}
 
 
+
+
     taskList.append(task1) #start gane
     if task_type == "train":
         for i in range(settings.runs_to_do):
             taskList.append(task2) #train
     else:
         taskList.append(task2) # don't do multiple runs for test
-        taskList.append(task6) #plot trejectories
+        taskList.append(task6) #plot trajectories
+
     taskList.append(task3) #close game
     
     taskList.append(task5) #plot
-    taskList.append(task4) #generate_csv
+    #taskList.append(task4) #generate_csv
 
     for task_el in taskList:
+        #print(f'executing task {task_el}')
         runTask(task_el)
 
 

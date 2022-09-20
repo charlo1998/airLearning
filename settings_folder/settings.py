@@ -51,10 +51,10 @@ checkpoint_interval = 25000
 # ---------------------------
 # how many zones for each variable for the entire range. Note that frequency
 # of moving to a new zone is not determined here
-zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 3}  # pay attention
+zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 2}  # pay attention
 
 # update_zone_success_threshold = 50
-acceptable_success_rate_to_update_zone = .75  # after what ratio of success up the zone # pay attention
+acceptable_success_rate_to_update_zone = 0.75  # after what ratio of success up the zone # pay attention
 update_zone_window = 50  # the window within which the  update_zone_accpetable_success_rate
 # needs to be achieved. Note that at the begining of every new window we zero out the achieved ratio
 
@@ -91,17 +91,17 @@ medium_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                     "NumberOfObjects": list(range(2,4))}
 
 hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
-                  "MinimumDistance": [4],
+                  "MinimumDistance": [3],
                   "EnvType": ["Indoor"],
                   "EnvType": ["Indoor"],
                   "ArenaSize": [[50, 50, 10]],
                   "PlayerStart": [[0, 0, 0]],
-                  "NumberOfDynamicObjects": list(range(0, 1)),
+                  "NumberOfDynamicObjects": list(range(7, 10)),
                   "Walls1": [[255, 255, 10]],
                   "Seed": list(range(0, 5000)),
-                  "VelocityRange": [[5, 15]],
+                  "VelocityRange": [[2, 4]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(10, 16))}
+                  "NumberOfObjects": list(range(7, 10))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -122,7 +122,7 @@ max_zone = zone_dic["End"]  # should be equal to mutable or total number of zone
 end_randomization_mode = "inclusive"  # whether each level of difficulty should be inclusive (including the previous level) or exclusive
 
 # how frequently to update the environment this is based on epides
-environment_change_frequency = {"Seed": 1, "NumberOfObjects": 10, "End": 1} #the keywords are the variables to randomize, and the int associated is the number of episodes before randomization (i.e. 1 means every episode, etc.)
+environment_change_frequency = {"Seed": 2, "NumberOfObjects": 10, "End": 1} #the keywords are the variables to randomize, and the int associated is the number of episodes before randomization (i.e. 1 means every episode, etc.)
 
 # ------------------------------------------------------------
 #                               -Drone related-
@@ -177,7 +177,7 @@ however, a part of the latency is explained by a waiting time to collect the sta
 this means the "percieved" latency doesn't increase linearly with the clockspeed, but increases nonetheless, slower than linearly.
 """
 
-timedActions = True
+timedActions = False
 action_discretization = 16 #this needs to be a square number and greater than one!
 assert(action_discretization > 1)
 assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
@@ -230,7 +230,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 1000
+training_steps_cap = 10000
 nb_steps_warmup = 3000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = False
@@ -238,7 +238,7 @@ verbose = False
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = max_zone*200  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = max_zone*250  # note that if number of zones are x, #pay attention
 # then model get tested testing_nb_episodes_per_model/x
 # times per zone
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)
