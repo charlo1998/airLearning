@@ -55,7 +55,7 @@ class AirLearningClient(airsim.MultirotorClient):
         elif(settings.position):
             concat_state = np.concatenate((distances, pos), axis = None)
         elif(settings.velocity):
-            concat_state = np.concatenate((distances, pos), axis = None)
+            concat_state = np.concatenate((distances, vel), axis = None)
         else:
             concat_state = distances
 
@@ -428,30 +428,42 @@ class AirLearningClient(airsim.MultirotorClient):
         Note: the drone has a reduced range of [1,9] for the rotation actions, since rotating for
         more than 1 seconds doesn't really make sense, it will be much more than 180 degrees
         """
-
         root = np.sqrt(settings.action_discretization)
+        #we need to make sure the action is not an array, as the airSim function only accepts scalars. the test method from baselines uses arrays.
+        if isinstance(action, np.ndarray):
+            action = action.item()
         
         if action < settings.action_discretization * 1 :
             #go straight
-            start, duration = self.straight(settings.mv_fw_spd_5/((action % root)+1), settings.mv_fw_dur*(np.exp((action//root)/(root-1))*15 - 14))
+            speed = settings.mv_fw_spd_5/((action % root)+1)
+            duration = settings.mv_fw_dur*(np.exp((action//root)/(root-1))*15 - 14)
+
+            start, duration = self.straight(speed, duration)
+
         elif action < settings.action_discretization * 2:
             #go back
             action = action % settings.action_discretization
-            start, duration = self.backup(settings.mv_fw_spd_5/((action % root)+1), settings.mv_fw_dur*(np.exp((action//root)/(root-1))*15 - 14))
+            speed = settings.mv_fw_spd_5/((action % root)+1)
+            duration = settings.mv_fw_dur*(np.exp((action//root)/(root-1))*15 - 14)
+
+            start, duration = self.backup(speed, duration)
+
         elif action < settings.action_discretization * 3:
             #turn right
             action = action % settings.action_discretization
-            start, duration = self.yaw_right(settings.yaw_rate_1_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*5 - 4))
+            speed = settings.yaw_rate_1_1/((action % root)**2+1)
+            duration = settings.rot_dur*(np.exp((action//root)/(root-1))*5 - 4)
+
+            start, duration = self.yaw_right(speed, duration)
+
         elif action < settings.action_discretization * 4:
             #turn left
             action = action % settings.action_discretization
-            start, duration = self.yaw_right(settings.yaw_rate_2_1/((action % root)**2+1), settings.rot_dur*(np.exp((action//root)/(root-1))*5 - 4))
+            speed = settings.yaw_rate_1_1/((action % root)**2+1)
+            duration = settings.rot_dur*(np.exp((action//root)/(root-1))*5 - 4)
 
-        #go diagonally. this was removed as the drone can just turn then go straight
-        #if action == 5:
-        #    start, duration = self.move_forward_Speed(settings.mv_fw_spd_5, settings.mv_fw_spd_5, settings.mv_fw_dur*3)
+            start, duration = self.yaw_right(speed, duration)
 
         collided = (self.client.getMultirotorState().trip_stats.collision_count > 0)
-
         return collided
 

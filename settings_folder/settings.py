@@ -122,7 +122,7 @@ max_zone = zone_dic["End"]  # should be equal to mutable or total number of zone
 end_randomization_mode = "inclusive"  # whether each level of difficulty should be inclusive (including the previous level) or exclusive
 
 # how frequently to update the environment this is based on epides
-environment_change_frequency = {"Seed": 2, "NumberOfObjects": 10, "End": 1} #the keywords are the variables to randomize, and the int associated is the number of episodes before randomization (i.e. 1 means every episode, etc.)
+environment_change_frequency = {"Seed": 1, "NumberOfObjects": 10, "End": 1} #the keywords are the variables to randomize, and the int associated is the number of episodes before randomization (i.e. 1 means every episode, etc.)
 
 # ------------------------------------------------------------
 #                               -Drone related-
@@ -177,7 +177,7 @@ however, a part of the latency is explained by a waiting time to collect the sta
 this means the "percieved" latency doesn't increase linearly with the clockspeed, but increases nonetheless, slower than linearly.
 """
 
-timedActions = False
+timedActions = True
 action_discretization = 16 #this needs to be a square number and greater than one!
 assert(action_discretization > 1)
 assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
@@ -230,7 +230,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 10000
+training_steps_cap = 1000
 nb_steps_warmup = 3000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = False
@@ -284,7 +284,7 @@ ue4_winY = 480
 concatenate_inputs = True
 encoded_depth = True
 position = True
-velocity = True
+velocity = False
 grey = False
 rgb = False
 
