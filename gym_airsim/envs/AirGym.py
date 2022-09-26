@@ -578,10 +578,12 @@ class AirSimEnv(gym.Env):
                 #self.collect_data()
             elif self.stepN >= settings.nb_max_episodes_steps: #ran out of time/battery: -100pts
                 done = True
+                print("-----------drone ran out of time!--------")
                 reward = -100.0
                 self.success = False
             elif collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
+                print("------------drone collided!--------")
                 reward = min(-(1000.0-self.stepN), -250)
                 self.success = False
             elif (now[2] < -15): # Penalize for flying away too high
@@ -644,10 +646,10 @@ class AirSimEnv(gym.Env):
         now = self.airgym.drone_pos()
         self.track = self.airgym.goal_direction(self.goal, now)
         self.concat_state = self.airgym.getConcatState(self.track, self.goal)
-        self.depth = self.airgym.getScreenDepthVis(self.track)
-        self.rgb = self.airgym.getScreenRGB()
-        self.position = self.airgym.get_distance(self.goal)
-        self.velocity = self.airgym.drone_velocity()
+        #self.depth = self.airgym.getScreenDepthVis(self.track)
+        #self.rgb = self.airgym.getScreenRGB()
+        #self.position = self.airgym.get_distance(self.goal)
+        #self.velocity = self.airgym.drone_velocity()
         msgs.cur_zone_number = self.cur_zone_number_buff  #which delays the update for cur_zone_number
 
     def reset(self): #was_reset, which means it wasn't imported with a import * (don't know where it was imported yet
@@ -662,15 +664,13 @@ class AirSimEnv(gym.Env):
 
             print("enter reset")
             self.randomize_env()
-            print("done randomizing")
             if(os.name=="nt"):
                 connection_established = self.airgym.unreal_reset()
                 if not connection_established:
                     raise Exception
-            print("done unreal_resetting")
             time.sleep(2)
             self.airgym.AirSim_reset()
-            print("done arisim reseting")
+            print("done arisim resetting")
             self.on_episode_start()
             print("done on episode start")
             state = self.state()
@@ -693,11 +693,11 @@ class AirSimEnv(gym.Env):
         self.game_config_handler.update_zone(*args)
         self.episodeNInZone = 0
 
-    # generate neew random environement if
-    # it's time
+    # generate new random environement if needed
     def randomize_env(self):
         vars_to_randomize = []
         for k, v in settings.environment_change_frequency.items(): #get the variable/frequency pairs
+            
             if (self.episodeN+1) %  v == 0: #if they are due to randomize, pass them to the sample function
                 vars_to_randomize.append(k)
 

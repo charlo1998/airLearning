@@ -92,6 +92,7 @@ class GameConfigHandler:
 
     # sampling within the entire range
     def sample(self, *arg):
+        print(f"args to sample: {arg}")
         all_keys = self.game_config_range.find_all_keys() #find all configurable variables in the Json envgen file (ex. seed, numberOfObject, End's position)
         if (len(arg) == 0):
             arg = all_keys
@@ -110,7 +111,6 @@ class GameConfigHandler:
             range_val = self.game_config_range.get_item(el)[low_bnd:up_bnd]
             random_val = random.choice(range_val)
             self.cur_game_config.set_item(el, random_val)
-            print(f"sampled: {el} ({random_val})")
 
         # end
         if "End" in arg and self.game_config_range.get_item("End")[0] == "Mutable":
