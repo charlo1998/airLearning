@@ -51,11 +51,11 @@ checkpoint_interval = 25000
 # ---------------------------
 # how many zones for each variable for the entire range. Note that frequency
 # of moving to a new zone is not determined here
-zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 2}  # pay attention
+zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 3}  # pay attention
 
 # update_zone_success_threshold = 50
 acceptable_success_rate_to_update_zone = 0.75  # after what ratio of success up the zone # pay attention
-update_zone_window = 50  # the window within which the  update_zone_accpetable_success_rate
+update_zone_window = 75  # the window within which the  update_zone_accpetable_success_rate
 # needs to be achieved. Note that at the begining of every new window we zero out the achieved ratio
 
 
@@ -91,17 +91,17 @@ medium_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                     "NumberOfObjects": list(range(2,4))}
 
 hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
-                  "MinimumDistance": [3],
+                  "MinimumDistance": [2],
                   "EnvType": ["Indoor"],
                   "EnvType": ["Indoor"],
                   "ArenaSize": [[50, 50, 10]],
                   "PlayerStart": [[0, 0, 0]],
-                  "NumberOfDynamicObjects": list(range(7, 10)),
+                  "NumberOfDynamicObjects": list(range(6, 9)),
                   "Walls1": [[255, 255, 10]],
                   "Seed": list(range(0, 5000)),
                   "VelocityRange": [[2, 4]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(7, 10))}
+                  "NumberOfObjects": list(range(5, 8))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -177,14 +177,14 @@ however, a part of the latency is explained by a waiting time to collect the sta
 this means the "percieved" latency doesn't increase linearly with the clockspeed, but increases nonetheless, slower than linearly.
 """
 
-timedActions = True
+timedActions = False
 action_discretization = 16 #this needs to be a square number and greater than one!
 assert(action_discretization > 1)
 assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
 
 
 mv_fw_dur = 0.05
-rot_dur = 0.03 #this needs to be shorter, as we don't want the drone doing 3 turns in a row for a rotation
+rot_dur = 0.05
 # yaw_rate = (180/180)*math.pi #in degree
 mv_fw_spd_1 = 1
 mv_fw_spd_2 = 2
@@ -219,7 +219,7 @@ list_algo = ["DQN", "DDPG"]  # a new algo needs to be added to this list for bac
 nb_max_episodes_steps = 1000  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
-success_distance_to_goal = 0.6
+success_distance_to_goal = 0.75
 slow_down_activation_distance = 2.5 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
 
 # ---------------------------
@@ -230,7 +230,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 1000
+training_steps_cap = 500000
 nb_steps_warmup = 3000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = False
@@ -253,7 +253,7 @@ restart_game_from_scratch_count_threshold = 3  # the upper bound to try to reloa
 window_restart_ctr_threshold = 2  # how many times we are allowed to restart the window
 # before easying up the randomization
 
-ease_constant = 10  # used when not meeting a zone for window_restart_ctr_threshold times. scales the randomization freq
+ease_constant = 1  # used when not meeting a zone for window_restart_ctr_threshold times. scales the randomization freq
 
 
 # ---------------------------
