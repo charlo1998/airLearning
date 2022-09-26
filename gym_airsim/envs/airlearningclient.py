@@ -37,7 +37,6 @@ class AirLearningClient(airsim.MultirotorClient):
 
         track = math.radians(pos_angle - yaw)
         track = ((math.degrees(track) - 180) % 360) - 180
-
         return track
 
     def getConcatState(self, track, goal): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
@@ -176,11 +175,17 @@ class AirLearningClient(airsim.MultirotorClient):
         return np.array([v_x, v_y, v_z])
 
     def get_distance(self, goal):
+        #computinge values
         now = self.client.getPosition()
         xdistance = (goal[0] - now.x_val)
         ydistance = (goal[1] - now.y_val)
         euclidean = np.sqrt(np.power(xdistance,2) + np.power(ydistance,2))
         angle = self.goal_direction(goal, [now.x_val, now.y_val])
+
+        #normalizing values and bounding them to [-1,1]
+        euclidean = np.log10(euclidean+0.0001) #this way gives more range to the smaller distances (large distances are less important).
+        euclidean = min(1,max(-1,euclidean))
+        angle = angle/180 #since it is already between [-180,180] and we want a linear transformation.
 
         return np.array([angle, euclidean])
 
@@ -237,6 +242,7 @@ class AirLearningClient(airsim.MultirotorClient):
         if not (points.shape[0] == 1):
             points = np.reshape(points, (int(points.shape[0]/3), 3))
         else:
+            #no points in the lidarPointcloud
             print("lidar not seeing anything ?!")
             return 0
 
@@ -245,6 +251,9 @@ class AirLearningClient(airsim.MultirotorClient):
         Z = points[:,2]
         
         distance = min(np.sqrt(X**2+Y**2))
+        #normalizing values and bounding them to [-1,1]
+        distance = np.log10(distance+0.0001) #this way gives more range to the smaller distances (large distances are less important).
+        distance = min(1,max(-1,distance))
 
         return distance
 
