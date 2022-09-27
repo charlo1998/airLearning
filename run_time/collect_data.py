@@ -94,12 +94,12 @@ def main():
     taskList = []
 
     #put weights to test in a list as we can test multiple in one task
-    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"] #baselines
+    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"] # change A2C for baselines
     
     model_to_checkpoint = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"
 
     algo = "A2C-B"
-    task_type = "test"
+    task_type = "train"
 
     task1 = {"task_type": "start_game"}
     task2 = {"algo": algo, "task_type": task_type, "difficulty_level": settings.difficulty, "env_name": "AirSimEnv-v42",
@@ -123,7 +123,7 @@ def main():
     taskList.append(task3) #close game
     
     taskList.append(task5) #plot
-    #taskList.append(task4) #generate_csv
+    taskList.append(task4) #generate_csv
 
     for task_el in taskList:
         #print(f'executing task {task_el}')
