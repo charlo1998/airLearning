@@ -536,7 +536,6 @@ class AirSimEnv(gym.Env):
             self.track = self.airgym.goal_direction(self.goal, now)
             
             #get observation
-            print("getting state")
             if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B"):
                 self.concat_state = self.airgym.getConcatState(self.track, self.goal)
             elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
@@ -545,14 +544,13 @@ class AirSimEnv(gym.Env):
                 print("not an implemented algo")
                 self.distances = self.airgym.get_laser_state()
                 self.position = self.airgym.get_distance(self.goal)
-                self.velocity = self.airgym.drone_velocity()
 
             if(settings.profile):
                 clct_state_end = time.time()
                 self.clct_state_list.append(clct_state_end - clct_state_start)
 
 
-
+            self.velocity = self.airgym.drone_velocity()
             self.speed = np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2)
             #print("Speed:"+str(self.speed))
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
