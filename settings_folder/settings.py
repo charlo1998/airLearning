@@ -54,7 +54,7 @@ checkpoint_interval = 25000
 zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 3}  # pay attention
 
 # update_zone_success_threshold = 50
-acceptable_success_rate_to_update_zone = 0.75  # after what ratio of success up the zone # pay attention
+acceptable_success_rate_to_update_zone = 0.60  # after what ratio of success up the zone # pay attention
 update_zone_window = 75  # the window within which the  update_zone_accpetable_success_rate
 # needs to be achieved. Note that at the begining of every new window we zero out the achieved ratio
 
@@ -122,7 +122,7 @@ max_zone = zone_dic["End"]  # should be equal to mutable or total number of zone
 end_randomization_mode = "inclusive"  # whether each level of difficulty should be inclusive (including the previous level) or exclusive
 
 # how frequently to update the environment this is based on epides
-environment_change_frequency = {"Seed": 1, "NumberOfObjects": 10, "End": 1} #the keywords are the variables to randomize, and the int associated is the number of episodes before randomization (i.e. 1 means every episode, etc.)
+environment_change_frequency = {"Seed": 1, "NumberOfObjects": 10, "End": 1} #the keywords are the variables to randomize, and the int associated is the number of episodes before randomization (i._. 1 means every episode, etc.)
 
 # ------------------------------------------------------------
 #                               -Drone related-
@@ -253,7 +253,7 @@ restart_game_from_scratch_count_threshold = 3  # the upper bound to try to reloa
 window_restart_ctr_threshold = 2  # how many times we are allowed to restart the window
 # before easying up the randomization
 
-ease_constant = 1  # used when not meeting a zone for window_restart_ctr_threshold times. scales the randomization freq
+ease_constant = 0  # used when not meeting a zone for window_restart_ctr_threshold times. scales the randomization freq
 
 
 # ---------------------------

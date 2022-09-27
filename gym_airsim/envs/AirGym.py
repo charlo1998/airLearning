@@ -499,17 +499,7 @@ class AirSimEnv(gym.Env):
             self.addToLog('action', action)
             self.stepN += 1
             self.total_step_count_for_experiment +=1
-            """
-            parent_conn, child_conn = Pipe()
-            print("cuasdfasdf") 
-            p = Process(target=child_step, args=(child_conn, self.airgym))
-            p.start()
-            collided, now, track, self.depth, self.position, self.velocity, excp_occured = parent_conn.recv()
-            p.join() 
-             
-            if (excp_occured):
-                raise Exception("server exception happened") 
-            """
+
             if(settings.profile):
                     self.this_time = time.time()
                     if(self.stepN > 1):
@@ -517,8 +507,8 @@ class AirSimEnv(gym.Env):
                     self.prev_time = time.time()
                     take_action_start = time.perf_counter()
 
+            #do action
             if(msgs.algo == "DDPG"):
-                #self.actions_in_step.append([action[0][0], action[0][1], action[0][2]])
                 self.actions_in_step.append([action[0], action[1], action[2]])
                 action = self.ddpg_add_noise_action(action)
                 collided = self.airgym.take_continious_action(float(action[0]), float(action[1]), float(action[2]), float(action[3]),
@@ -545,6 +535,8 @@ class AirSimEnv(gym.Env):
             now = self.airgym.drone_pos()
             self.track = self.airgym.goal_direction(self.goal, now)
             
+            #get observation
+            print("getting state")
             if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B"):
                 self.concat_state = self.airgym.getConcatState(self.track, self.goal)
             elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
@@ -648,8 +640,8 @@ class AirSimEnv(gym.Env):
         self.concat_state = self.airgym.getConcatState(self.track, self.goal)
         #self.depth = self.airgym.getScreenDepthVis(self.track)
         #self.rgb = self.airgym.getScreenRGB()
-        #self.position = self.airgym.get_distance(self.goal)
-        #self.velocity = self.airgym.drone_velocity()
+        self.position = self.airgym.get_distance(self.goal)
+        self.velocity = self.airgym.drone_velocity()
         msgs.cur_zone_number = self.cur_zone_number_buff  #which delays the update for cur_zone_number
 
     def reset(self): #was_reset, which means it wasn't imported with a import * (don't know where it was imported yet

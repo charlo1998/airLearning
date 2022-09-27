@@ -123,8 +123,12 @@ def plot_trajectories(file):
     plt.show()
 
 def average(data):
-    new_data = [[0],[0],[0]]
-    bucket_size = int(settings.training_steps_cap/50)
+    #initializing list
+    new_data = [[],[],[]]
+    last_data_point = 0
+
+    nb_of_data_points = 50
+    bucket_size = int(settings.training_steps_cap/nb_of_data_points)
     if bucket_size < 1000:
         print("bucket size too small! verifiy settings.training_steps_cap")
         bucket_size = 1000
@@ -139,16 +143,18 @@ def average(data):
             ybucket = [data[k]["total_reward"][i] for i in idx]
             #avg the bucket into 1 value
             xbucket = round(sum(xbucket)/len(xbucket)) if (len(xbucket) > 0) else i_step
-            ybucket = round(sum(ybucket)/len(ybucket)) if (len(ybucket) > 0) else new_data[1][-1]
+            ybucket = round(sum(ybucket)/len(ybucket)) if (len(ybucket) > 0) else last_data_point
             #add the averagd value of all the runs into a list
             xbucket_avg.append(xbucket)
             ybucket_avg.append(ybucket)
         #add the avg of all the runs in a list
         new_data[0].append(round(sum(xbucket_avg)/len(xbucket_avg)))
-        new_data[1].append(round(sum(ybucket_avg)/len(ybucket_avg)))
+        last_data_point = round(sum(ybucket_avg)/len(ybucket_avg))
+        new_data[1].append(last_data_point)
         new_data[2].append(np.std(ybucket_avg, axis=0))
 
         i_step += bucket_size
+
     return new_data
 
 
