@@ -215,6 +215,8 @@ class AirSimEnv(gym.Env):
             return self.concat_state
         elif(msgs.algo == "A2C-B"):
             return self.concat_state
+        elif(msgs.algo == "GOFAI"):
+            return self.concat_state
         else:
             return self.depth, self.velocity, self.position
     
@@ -472,7 +474,7 @@ class AirSimEnv(gym.Env):
             self.ppo_call_back_emulator()
         elif(msgs.algo == "SAC"):
             self.sac_call_back_emulator()
-        elif(msgs.algo == "DQN-B" or msgs.algo == "A2C-B"):
+        elif(msgs.algo == "DQN-B" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI"):
             self.dqn_baselines_call_back_emulator()
 
         self.restart_window_if_necessary()
@@ -536,7 +538,7 @@ class AirSimEnv(gym.Env):
             self.track = self.airgym.goal_direction(self.goal, now)
             
             #get observation
-            if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B"):
+            if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI"):
                 self.concat_state = self.airgym.getConcatState(self.track, self.goal)
             elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                 self.depth = self.airgym.getScreenDepthVis(self.track)

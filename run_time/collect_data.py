@@ -9,6 +9,7 @@ import ddpg_airsim
 import dqn_baselines
 import ppo_airsim
 from algorithms.discrete import a2c_baselines
+from algorithms.discrete import gofai_baselines
 #import sac_airsim
 from game_handler_class import *
 
@@ -23,7 +24,7 @@ def runTask(task):
     game_handler = GameHandler()
 
     if ("algo" in task.keys()):
-        if (task["algo"] in ["DDPG", "DQN", "PPO", "A2C-B", "DQN-B"]):
+        if (task["algo"] in ["DDPG", "DQN", "PPO", "A2C-B", "DQN-B", "GOFAI"]):
             if (task["algo"] == "DDPG"):
                 msgs.algo = "DDPG"
                 train_class = ddpg_airsim #ddpg not working? issue when creating the actor network
@@ -39,6 +40,9 @@ def runTask(task):
             elif (task["algo"] == "A2C-B"):
                 train_class = a2c_baselines
                 msgs.algo = "A2C-B"
+            elif (task["algo"] == "GOFAI"):
+                train_class = gofai_baselines
+                msgs.algo = "GOFAI"
         else:
             print("this algorithm is not supported")
             exit(0)
@@ -57,16 +61,22 @@ def runTask(task):
         elif task["algo"] == "DQN-B" or task["algo"] == "A2C-B":
             train_class.train(train_obj, env, checkpoint = task["checkpoint"]) #only will use the checkpoint if settings.checkpoint = True
 
+
     if (task["task_type"] == "test"):
 
-        if (len(task["weights"]) == 0):
-            task["weights"] = file_handling.find_all_weight_files(msgs.algo, settings.proj_root_path)
-
-        for weights in task["weights"]:
-            utils.reset_msg_logs()
-            train_obj, env = train_class.setup(env_name=task["env_name"], \
+        if task["algo"] == "GOFAI":
+            env =  train_class.setup(env_name=task["env_name"], \
                                                difficulty_level=task["difficulty_level"])
-            train_class.test(train_obj, env, weights)
+            train_class.test(env)
+        else:
+            if (len(task["weights"]) == 0):
+                task["weights"] = file_handling.find_all_weight_files(msgs.algo, settings.proj_root_path)
+
+            for weights in task["weights"]:
+                utils.reset_msg_logs()
+                train_obj, env = train_class.setup(env_name=task["env_name"], \
+                                                   difficulty_level=task["difficulty_level"])
+                train_class.test(train_obj, env, weights)
 
     if (task["task_type"] == "start_game"):
         game_handler.start_game_in_editor()
@@ -98,8 +108,8 @@ def main():
     
     model_to_checkpoint = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"
 
-    algo = "A2C-B"
-    task_type = "train"
+    algo = "GOFAI"
+    task_type = "test"
 
     task1 = {"task_type": "start_game"}
     task2 = {"algo": algo, "task_type": task_type, "difficulty_level": settings.difficulty, "env_name": "AirSimEnv-v42",
@@ -112,18 +122,18 @@ def main():
 
 
 
-    taskList.append(task1) #start gane
-    if task_type == "train":
-        for i in range(settings.runs_to_do):
-            taskList.append(task2) #train
-    else:
-        taskList.append(task2) # don't do multiple runs for test
-        taskList.append(task6) #plot trajectories
+    #taskList.append(task1) #start gane
+    #if task_type == "train":
+    #    for i in range(settings.runs_to_do):
+    #        taskList.append(task2) #train
+    #else:
+    #    taskList.append(task2) # don't do multiple runs for test
+    #    taskList.append(task6) #plot trajectories
 
-    taskList.append(task3) #close game
+    #taskList.append(task3) #close game
     
     taskList.append(task5) #plot
-    taskList.append(task4) #generate_csv
+    #taskList.append(task4) #generate_csv
 
     for task_el in taskList:
         #print(f'executing task {task_el}')
