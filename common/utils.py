@@ -128,12 +128,13 @@ def average(data):
     last_data_point = 0
 
     nb_of_data_points = 50
-    bucket_size = int(settings.training_steps_cap/nb_of_data_points)
+    nb_steps = data[0]["total_step_count_for_experiment"][-1]
+    bucket_size = int(nb_steps/nb_of_data_points)
     if bucket_size < 1000:
         print("bucket size too small! verifiy settings.training_steps_cap")
         bucket_size = 1000
     i_step = 0
-    while i_step < settings.training_steps_cap:
+    while i_step < nb_steps:
         xbucket_avg = []
         ybucket_avg = []
         for k in range(settings.runs_to_do):

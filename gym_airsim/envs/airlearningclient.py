@@ -183,7 +183,7 @@ class AirLearningClient(airsim.MultirotorClient):
         angle = self.goal_direction(goal, [now.x_val, now.y_val])
 
         #normalizing values and bounding them to [-1,1]
-        euclidean = np.log10(euclidean+0.0001) #this way gives more range to the smaller distances (large distances are less important).
+        euclidean = np.log10(euclidean+0.0001)/np.log10(100) #this way gives more range to the smaller distances (large distances are less important).
         euclidean = min(1,max(-1,euclidean))
         angle = angle/180 #since it is already between [-180,180] and we want a linear transformation.
 
@@ -252,7 +252,7 @@ class AirLearningClient(airsim.MultirotorClient):
         
         distance = min(np.sqrt(X**2+Y**2))
         #normalizing values and bounding them to [-1,1]
-        distance = np.log10(distance+0.0001) #this way gives more range to the smaller distances (large distances are less important).
+        distance = np.log10(distance+0.0001)/np.log10(100) #this way gives more range to the smaller distances (large distances are less important).
         distance = min(1,max(-1,distance))
 
         return distance
