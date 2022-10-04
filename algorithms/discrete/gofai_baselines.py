@@ -66,11 +66,12 @@ class gofai():
     def __init__(self, env):
         self.action_space = env.action_space
         self.observation_space = env.observation_space
-        if (self.action_space != 24):
-            print(f"wrong action space! should be 24 but is {self.action_space}")
+        if (self.action_space != 25):
+            print(f"wrong action space! should be 25 but is {self.action_space}")
         if (self.action_space != 6):
-            print(f"wrong observation space! should be 24 but is {self.observation_space}")
-        self.avoidance_counter = 5
+            print(f"wrong observation space! should be 6 but is {self.observation_space}")
+        self.avoidance_length = 20
+        self.avoidance_counter = 0
         self.avoiding = False
 
 
@@ -79,41 +80,51 @@ class gofai():
         observation is in the form [angle, d_goal, d1, d2, d3, d4]
         actions are distributed as following:
         0-4: go straight with decreasing speed
-        5-9: same
-        10-14: backup with decreasing speed
-        15-19: yaw right with decreasing speed
-        20-24: yaw left with decreasing speed
+        5-9: backup with decreasing speed
+        10-14: yaw right with decreasing speed
+        15-19: yaw left with decreasing speed
         '''
 
         obs = obs[0][0] #flattening the list
-        print(f"counter: {self.avoidance_counter}")
 
         if self.avoiding: #avoid mode
+            print(f"counter: {self.avoidance_counter}")
             if obs[0] <= 0.1: #still an obstacle in front
-                action = 15
-                self.avoidance_counter = 5
-            elif self.avoidance_counter > 0: #go forward to avoid obstacle
-                action = 2
+                action = 10
+                self.avoidance_counter = self.avoidance_length
+                print("turn right fast")
+            elif self.avoidance_counter > self.avoidance_length/2: #continue turning right to avoid obstacle
+                action = 11
+                print("turn right")
                 self.avoidance_counter -= 1
+            elif self.avoidance_counter > 0: #go forward to avoid obstacle
+                action = 3
+                self.avoidance_counter -= 1
+                print("straight")
             else:
                 self.avoiding = False
                 action = 2
-                self.avoidance_counter = 5
+                print("straight")
+                self.avoidance_counter = self.avoidance_length
         else:
-            if (obs[0] <= 0.1): #first check if obstacles are in front, and enter avoid mode.
+            if (obs[0] <= 0.25): #first check if obstacles are in front, and enter avoid mode.
                 self.avoiding = True
+                self.avoidance_counter = self.avoidance_length
                 print("entering avoidance mode!")
-                action = 16
-            elif (obs[4] <= -0.05):  #if no obstacles, try to align to the goal (turn right)
-                action = 24
-            elif (obs[4] >= 0.05):  #if no obstacles, try to align to the goal (turn left)
-                action = 19
+                action = 8
+            elif (obs[4] <= -0.05):  #if no obstacles, try to align to the goal (turn left)
+                action = 17
+                print("turn left")
+            elif (obs[4] >= 0.05):  #if no obstacles, try to align to the goal (turn right)
+                action = 12
+                print("turn right")
             elif (obs[5] >= 0.5): #if aligned and far, go straight fast
-                action = 1
+                action = 2
+                print("straight fast")
             else: #if aligned and near, go straight slow
                 action = 4
+                print("straight slow")
 
-        print(action)
 
         return action
        

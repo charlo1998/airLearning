@@ -148,7 +148,7 @@ class AirSimEnv(gym.Env):
                 self.nb_action_types = 4 
                 self.action_space = spaces.Discrete(self.nb_action_types * settings.action_discretization)
             else:
-                self.action_space = spaces.Discrete(25)
+                self.action_space = spaces.Discrete(20)
 
 
         self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End"))
@@ -379,7 +379,7 @@ class AirSimEnv(gym.Env):
         msgs.episodal_log_dic.clear()
         msgs.episodal_log_dic_verbose.clear()
         msgs.episodal_log_dic["cur_zone_number"] = msgs.cur_zone_number
-        msgs.episodal_log_dic["success_ratio_within_window"] = self.success_ratio_within_window
+        msgs.episodal_log_dic["success_ratio"] = float(sum(self.success_history)/len(self.success_history))
         msgs.episodal_log_dic["success_history"] = sum(self.success_history)
         msgs.episodal_log_dic["success"] = msgs.success
         msgs.episodal_log_dic["stepN"] = self.stepN

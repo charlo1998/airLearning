@@ -380,45 +380,46 @@ class AirLearningClient(airsim.MultirotorClient):
             start, duration = self.straight(settings.mv_fw_spd_2, settings.mv_fw_dur)
         if action == 4:
             start, duration = self.straight(settings.mv_fw_spd_1, settings.mv_fw_dur)
+        #these actions are going diagonally, increasing the action space for not much more flexibility
+        #if action == 5:
+        #    start, duration = self.move_forward_Speed(settings.mv_fw_spd_5, settings.mv_fw_spd_5, settings.mv_fw_dur)
+        #if action == 6:
+        #    start, duration = self.move_forward_Speed(settings.mv_fw_spd_4, settings.mv_fw_spd_4, settings.mv_fw_dur)
+        #if action == 7:
+        #    start, duration = self.move_forward_Speed(settings.mv_fw_spd_3, settings.mv_fw_spd_3, settings.mv_fw_dur)
+        #if action == 8:
+        #    start, duration = self.move_forward_Speed(settings.mv_fw_spd_2, settings.mv_fw_spd_2, settings.mv_fw_dur)
+        #if action == 9:
+        #    start, duration = self.move_forward_Speed(settings.mv_fw_spd_1, settings.mv_fw_spd_1, settings.mv_fw_dur)
         if action == 5:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_5, settings.mv_fw_spd_5, settings.mv_fw_dur)
-        if action == 6:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_4, settings.mv_fw_spd_4, settings.mv_fw_dur)
-        if action == 7:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_3, settings.mv_fw_spd_3, settings.mv_fw_dur)
-        if action == 8:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_2, settings.mv_fw_spd_2, settings.mv_fw_dur)
-        if action == 9:
-            start, duration = self.move_forward_Speed(settings.mv_fw_spd_1, settings.mv_fw_spd_1, settings.mv_fw_dur)
-        if action == 10:
             start, duration = self.backup(settings.mv_fw_spd_5, settings.mv_fw_dur)
-        if action == 11:
+        if action == 6:
             start, duration = self.backup(settings.mv_fw_spd_4, settings.mv_fw_dur)
-        if action == 12:
+        if action == 7:
             start, duration = self.backup(settings.mv_fw_spd_3, settings.mv_fw_dur)
-        if action == 13:
+        if action == 8:
             start, duration = self.backup(settings.mv_fw_spd_2, settings.mv_fw_dur)
-        if action == 14:
+        if action == 9:
             start, duration = self.backup(settings.mv_fw_spd_1, settings.mv_fw_dur)
-        if action == 15:
+        if action == 10:
             start, duration = self.yaw_right(settings.yaw_rate_1_1, settings.rot_dur)
-        if action == 16:
+        if action == 11:
             start, duration = self.yaw_right(settings.yaw_rate_1_2, settings.rot_dur)
-        if action == 17:
+        if action == 12:
             start, duration = self.yaw_right(settings.yaw_rate_1_4, settings.rot_dur)
-        if action == 18:
+        if action == 13:
             start, duration = self.yaw_right(settings.yaw_rate_1_8, settings.rot_dur)
-        if action == 19:
+        if action == 14:
             start, duration = self.yaw_right(settings.yaw_rate_1_16, settings.rot_dur)
-        if action == 20:
+        if action == 15:
             start, duration = self.yaw_right(settings.yaw_rate_2_1, settings.rot_dur)
-        if action == 21:
+        if action == 16:
             start, duration = self.yaw_right(settings.yaw_rate_2_2, settings.rot_dur)
-        if action == 22:
+        if action == 17:
             start, duration = self.yaw_right(settings.yaw_rate_2_4, settings.rot_dur)
-        if action == 23:
+        if action == 18:
             start, duration = self.yaw_right(settings.yaw_rate_2_8, settings.rot_dur)
-        if action == 24:
+        if action == 19:
             start, duration = self.yaw_right(settings.yaw_rate_2_16, settings.rot_dur)
 
 
