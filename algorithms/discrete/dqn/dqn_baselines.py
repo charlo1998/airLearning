@@ -51,14 +51,36 @@ def train(env, agent, checkpoint="C:/Users/charl/workspace/airlearning/airlearni
             f.write("take_action_list:" + str(env.take_action_list) + "\n")
             f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
 
+        action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(settings.i_run) + ".txt")
+        with open(action_duration_file, "w") as f:
+            f.write(str(env.take_action_list))
+
     agent.save("C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model") #todo: automate the path
 
 def test(env, agent, filepath):
+    msgs.mode = 'test'
+    msgs.weight_file_under_test = filepath
+
     model = DQN.load(filepath)
-    obs = env.reset()
+    
     for i in range(settings.testing_nb_episodes_per_model):
-        action, _states = model.predict(obs)
-        obs, rewards, dones, info = env.step(action)
+        obs = env.reset()
+        done = False
+        while not done:
+            action, _states = model.predict(obs)
+            obs, rewards, done, info = env.step(action)
+
+    #env loop rate logging
+    if settings.profile:
+        with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),
+            "w") as f:
+            f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
+            f.write("take_action_list:" + str(env.take_action_list) + "\n")
+            f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
+
+        action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(settings.i_run) + ".txt")
+        with open(action_duration_file, "w") as f:
+            f.write(str(env.take_action_list))
 
 if __name__ == "__main__":
     env, agent = setup()
