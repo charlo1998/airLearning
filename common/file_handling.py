@@ -28,7 +28,12 @@ def find_list_of_files(data_dir):
 def incr_file_name(file_path):
 	file_name = os.path.basename(file_path)
 	file_name_pieces = re.split('_|\.', file_name)
-	number = list(filter(lambda x: x.isdigit(), file_name_pieces))[0]
+	numbers = list(filter(lambda x: x.isdigit(), file_name_pieces))
+	if len(numbers) == 0:
+		print("found files without numbers in them!")
+		return file_name
+	else:
+		number = numbers[0]
 	new_file_name = file_name.replace(number, str((int(number) + 1)))
 	return join(os.path.dirname(file_path), new_file_name)
 
@@ -181,7 +186,7 @@ class CheckPoint():
 		if len(file_path_list) < self.max_chck_pt_per_zone:
 			return incr_file_name(find_file_or_dir(file_path_list, 'newest'))
 		else:
-			return (find_file_or_dir(file_path_list, 'oldest')).replace('.ckpt', '').replace('.pkl','')
+			return os.path.basename(find_file_or_dir(file_path_list, 'oldest'))
 
 	# import settings
 

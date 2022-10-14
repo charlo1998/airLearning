@@ -338,7 +338,7 @@ class AirSimEnv(gym.Env):
             elif (msgs.mode == 'test'):
                 append_log_file(self.episodeN-1, "verbose")
                 append_log_file(self.episodeN-1, "")
-                with open(msgs.weight_file_under_test+"_test"+str(msgs.tst_inst_ctr) + "_meta_data.txt", "w") as file_hndle:
+                with open(msgs.weight_file_under_test.replace('.pkl','') + "_test"+str(msgs.tst_inst_ctr) + "_meta_data.txt", "w") as file_hndle:
                     json.dump(msgs.meta_data, file_hndle)
                     json.dump(msgs.meta_data, file_hndle)
             else:
@@ -379,7 +379,7 @@ class AirSimEnv(gym.Env):
         msgs.episodal_log_dic.clear()
         msgs.episodal_log_dic_verbose.clear()
         msgs.episodal_log_dic["cur_zone_number"] = msgs.cur_zone_number
-        msgs.episodal_log_dic["success_ratio"] = float(sum(self.success_history)/len(self.success_history))
+        msgs.episodal_log_dic["success_ratio"] = round(float(sum(self.success_history)/len(self.success_history)),3)
         msgs.episodal_log_dic["success_history"] = sum(self.success_history)
         msgs.episodal_log_dic["success"] = msgs.success
         msgs.episodal_log_dic["stepN"] = self.stepN

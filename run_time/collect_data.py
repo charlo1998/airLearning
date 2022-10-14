@@ -103,13 +103,12 @@ def runTask(task):
 def main():
     taskList = []
 
-    #put weights to test in a list as we can test multiple in one task
-    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"] # change A2C for baselines
-    
-    model_to_checkpoint = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"
 
-    algo = "GOFAI"
+
+    algo = "DQN-B"
     task_type = "test"
+    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"] # change A2C for baselines
+    model_to_checkpoint = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"
 
     task1 = {"task_type": "start_game"}
     task2 = {"algo": algo, "task_type": task_type, "difficulty_level": settings.difficulty, "env_name": "AirSimEnv-v42",
