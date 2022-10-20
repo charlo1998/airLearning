@@ -4,6 +4,7 @@ import math
 import time
 import cv2
 import settings
+from bisect import bisect
 
 from PIL import Image
 from pylab import array, uint8, arange
@@ -219,24 +220,22 @@ class AirLearningClient(airsim.MultirotorClient):
 
         ## -- laser ranger -- ##
         lidarDatafront = self.client.getLidarData(lidar_name="Lidarfront",vehicle_name="Drone1")
-        lidarDataleft = self.client.getLidarData(lidar_name="Lidarleft",vehicle_name="Drone1")
-        lidarDataright = self.client.getLidarData(lidar_name="Lidarright",vehicle_name="Drone1")
         lidarDataback = self.client.getLidarData(lidar_name="Lidarback",vehicle_name="Drone1")
         
         
-        front = self.process_lidar(lidarDatafront.point_cloud)
-        left = self.process_lidar(lidarDataleft.point_cloud)
-        right = self.process_lidar(lidarDataright.point_cloud)
-        back = self.process_lidar(lidarDataback.point_cloud)
+        front = self.process_lidar(lidarDatafront.point_cloud,5)
+        back = self.process_lidar(lidarDataback.point_cloud,1)
 
-        output = [front, left, right, back]
+        output = front + back
         #print(output)
 
         return np.array(output)   
 
-    def process_lidar(self, lidarPointcloud):
+    def process_lidar(self, lidarPointcloud, nb_of_sensors):
         """
-        processes a lidar point clouds into coordinates and finds closest point.
+        1. processes a lidar point clouds into coordinates
+        2. split the range into arcs of angle depending on the number of distance sensor simulated
+        3. finds closest points in each of these arcs.
         """
         points = np.array(lidarPointcloud, dtype=np.dtype('f4'))
         if not (points.shape[0] == 1):
@@ -244,18 +243,57 @@ class AirLearningClient(airsim.MultirotorClient):
         else:
             #no points in the lidarPointcloud
             print("lidar not seeing anything ?!")
-            return 0
+            return [0 for i in range(nb_of_sensors)]
 
         X = points[:,0]
         Y = points[:,1]
         Z = points[:,2]
         
-        distance = min(np.sqrt(X**2+Y**2))
-        #normalizing values and bounding them to [-1,1]
-        distance = np.log10(distance+0.0001)/np.log10(100) #this way gives more range to the smaller distances (large distances are less important).
-        distance = min(1,max(-1,distance))
+        #finding the FOV of the lidar
+        angles = []
+        for x,y in zip(X,Y):
+            angles.append(math.atan2(x,y)*180.0/math.pi)
+        angle_left = min(angles)
+        angle_right = max(angles)
+        lidar_FOV =  math.ceil(angle_right - angle_left)
 
-        return distance
+        #spliting points into ranges of angles
+        theta = lidar_FOV/nb_of_sensors
+        for i in range(nb_of_sensors):
+            if i == 0:
+                thetas = [math.floor(angle_left)]
+            else:
+                thetas.append(thetas[i-1]+theta)
+
+        #print(f"angle ranges: {thetas}")
+        #print(f"angle left: {angle_left}")
+        #print(f"angle right: {angle_right}")
+
+        #adding points
+        x_coords_by_sensor = [[] for i in range(nb_of_sensors)]
+        y_coords_by_sensor = [[] for i in range(nb_of_sensors)]
+
+        for i, angle in enumerate(angles):
+            ith_sensor = bisect(thetas,angle) #the bisect fnc finds where the angle would fit in the ranges we created (thetas)
+            x_coords_by_sensor[ith_sensor-1].append(X[i])
+            y_coords_by_sensor[ith_sensor-1].append(Y[i])
+
+        distances = [0 for x in range(nb_of_sensors)]
+
+        for i in range(nb_of_sensors):
+            x = np.array(x_coords_by_sensor[i])
+            y = np.array(y_coords_by_sensor[i])
+            if len(x) == 0 or len(y) == 0: #missing lidar values!
+                distances[i] = 0
+            else:
+                distances[i] = min(np.sqrt(x**2+y**2))
+            #normalizing values and bounding them to [-1,1]
+            distances[i] = np.log(distances[i]+0.0001)/np.log(100) #this way gives more range to the smaller distances (large distances are less important).
+            distances[i] = min(1,max(-1,distances[i]))
+
+        #print(f"distances: {distances}")
+
+        return distances
 
     def AirSim_reset(self):
         self.client.reset()

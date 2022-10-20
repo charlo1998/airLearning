@@ -66,7 +66,7 @@ class AirSimEnv(gym.Env):
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DISTANCES = 4
+            STATE_DISTANCES = 6
             if(msgs.algo == "SAC"):
                 self.observation_space = spaces.Box(low=-100000, high=1000000, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
