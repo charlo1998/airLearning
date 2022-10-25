@@ -96,12 +96,12 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "EnvType": ["Indoor"],
                   "ArenaSize": [[50, 50, 10]],
                   "PlayerStart": [[0, 0, 0]],
-                  "NumberOfDynamicObjects": list(range(25, 30)),
+                  "NumberOfDynamicObjects": list(range(0, 1)),
                   "Walls1": [[255, 255, 10]],
                   "Seed": list(range(0, 5000)),
-                  "VelocityRange": [[2, 4]],
+                  "VelocityRange": [[0.5, 2]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(10,11))}
+                  "NumberOfObjects": list(range(2,3))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -177,14 +177,19 @@ however, a part of the latency is explained by a waiting time to collect the sta
 this means the "percieved" latency doesn't increase linearly with the clockspeed, but increases nonetheless, slower than linearly.
 """
 
+
+# ---------------------------
+# action space configuration
+# ---------------------------
 timedActions = False
+positionActions = True
 action_discretization = 16 #this needs to be a square number and greater than one!
 assert(action_discretization > 1)
 assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
 
 
-mv_fw_dur = 0.08
-rot_dur = 0.08
+mv_fw_dur = 1
+rot_dur = 1
 # yaw_rate = (180/180)*math.pi #in degree
 mv_fw_spd_1 = 1
 mv_fw_spd_2 = 2
@@ -216,7 +221,7 @@ backup_folder_name_style = "bu_0"  # the backup obj will create a file with this
 # general params
 # ---------------------------
 list_algo = ["DQN", "DDPG", "A2C-B", "GOFAI"]  # a new algo needs to be added to this list for backup to back up its results
-nb_max_episodes_steps = 1000  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
+nb_max_episodes_steps = 5000  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
 success_distance_to_goal = 0.60
@@ -283,7 +288,7 @@ ue4_winY = 480
 #--------------------------------
 concatenate_inputs = True
 encoded_depth = True
-position = True
+goal_position = True
 velocity = False
 grey = False
 rgb = False

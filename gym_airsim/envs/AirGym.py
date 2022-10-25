@@ -53,10 +53,10 @@ class AirSimEnv(gym.Env):
     def __init__(self):
         # left depth, center depth, right depth, yaw
         if(settings.concatenate_inputs):
-            if(settings.position and settings.velocity): #for ablation studies
+            if(settings.goal_position and settings.velocity): #for ablation studies
                 STATE_POS = 2
                 STATE_VEL = 3
-            elif(settings.position):
+            elif(settings.goal_position):
                 STATE_POS = 2
                 STATE_VEL = 0
             elif(settings.velocity):
@@ -66,11 +66,11 @@ class AirSimEnv(gym.Env):
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DISTANCES = 6
+            STATE_DISTANCES = 16
             if(msgs.algo == "SAC"):
-                self.observation_space = spaces.Box(low=-100000, high=1000000, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
+                self.observation_space = spaces.Box(low=-1, high=1, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
-                self.observation_space = spaces.Box(low=-100000, high=1000000,
+                self.observation_space = spaces.Box(low=-1, high=1,
                                                     shape=((1, STATE_POS + STATE_VEL + STATE_DISTANCES)))
         else:
             self.observation_space = spaces.Box(low=0, high=255, shape=(STATE_DISTANCES))
@@ -144,7 +144,7 @@ class AirSimEnv(gym.Env):
                                        np.array([+5.0, +5.0]),
                                        dtype=np.float32)
         else:
-            if(settings.timedActions):
+            if(settings.timedActions or settings.positionActions):
                 self.nb_action_types = 4 
                 self.action_space = spaces.Discrete(self.nb_action_types * settings.action_discretization)
             else:
@@ -524,6 +524,8 @@ class AirSimEnv(gym.Env):
             else:
                 if(settings.timedActions):
                     collided = self.airgym.take_timed_action(action)
+                elif(settings.positionActions):
+                    collided = self.airgym.take_position_action(action)
                 else:
                     collided = self.airgym.take_discrete_action(action)
                 self.actions_in_step.append(str(action))
@@ -557,6 +559,10 @@ class AirSimEnv(gym.Env):
             #print("Speed:"+str(self.speed))
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             #print(distance)
+            print("-------------------------------------------------------------------------------------------------------")
+            print(f"current pose: {np.round(now,1)}")
+            print(f"goal pose: {self.goal}")
+            
             
             if distance < settings.success_distance_to_goal: #we found the goal: 1000ptso
                 done = True

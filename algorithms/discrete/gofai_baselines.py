@@ -1,7 +1,9 @@
 
-
+from random import choice
 import sys
 import gym
+import math
+import numpy as np
 
 import os
 import tensorflow as tf
@@ -66,65 +68,154 @@ class gofai():
     def __init__(self, env):
         self.action_space = env.action_space
         self.observation_space = env.observation_space
-        if (self.action_space != 25):
-            print(f"wrong action space! should be 25 but is {self.action_space}")
-        if (self.action_space != 6):
-            print(f"wrong observation space! should be 6 but is {self.observation_space}")
-        self.avoidance_length = 20
-        self.avoidance_counter = 0
-        self.avoiding = False
+        if (self.action_space != settings.action_discretization*4):
+            print(f"wrong action space! should be 16*4 but is {self.action_space}")
+        if (self.action_space != settings.action_discretization+2):
+            print(f"wrong observation space! should be 16+2 but is {self.observation_space}")
+        self.angle = 360/settings.action_discretization
+        self.heading_coeff = 1
+        self.safety_coeff = 5
+        self.safety_dist = 2.5
+
+
 
 
     def predict(self, obs):
         '''
-        observation is in the form [angle, d_goal, d1, d2, d3, d4]
+        observation is in the form [angle, d_goal, d1, d2, ..., d16] where d1 starts at 180 deg and goes ccw
         actions are distributed as following:
-        0-4: go straight with decreasing speed
-        5-9: backup with decreasing speed
-        10-14: yaw right with decreasing speed
-        15-19: yaw left with decreasing speed
+        0-15: small circle
+        16-31: medium small circle
+        32-47: medium big circle
+        48-63: big circle
         '''
 
         obs = obs[0][0] #flattening the list
+        obs[1:] = 100**obs[1:] #reconverting to real values
+        goal_angle = obs[0]*math.pi
+        goal_distance = obs[1]
+        sensors = obs[2:]
+        
+        angles =  np.arange(-180,180,self.angle)*math.pi/180
+        sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want
+        angles = np.concatenate((angles,angles))
 
-        if self.avoiding: #avoid mode
-            print(f"counter: {self.avoidance_counter}")
-            if obs[0] <= 0.1: #still an obstacle in front
-                action = 10
-                self.avoidance_counter = self.avoidance_length
-                print("turn right fast")
-            elif self.avoidance_counter > self.avoidance_length/2: #continue turning right to avoid obstacle
-                action = 11
-                print("turn right")
-                self.avoidance_counter -= 1
-            elif self.avoidance_counter > 0: #go forward to avoid obstacle
-                action = 3
-                self.avoidance_counter -= 1
-                print("straight")
-            else:
-                self.avoiding = False
-                action = 2
-                print("straight")
-                self.avoidance_counter = self.avoidance_length
-        else:
-            if (obs[0] <= 0.25): #first check if obstacles are in front, and enter avoid mode.
-                self.avoiding = True
-                self.avoidance_counter = self.avoidance_length
-                print("entering avoidance mode!")
-                action = 8
-            elif (obs[4] <= -0.05):  #if no obstacles, try to align to the goal (turn left)
-                action = 17
-                print("turn left")
-            elif (obs[4] >= 0.05):  #if no obstacles, try to align to the goal (turn right)
-                action = 12
-                print("turn right")
-            elif (obs[5] >= 0.5): #if aligned and far, go straight fast
-                action = 2
-                print("straight fast")
-            else: #if aligned and near, go straight slow
-                action = 4
-                print("straight slow")
+        bestBenefit = -1000
+        action = 0
+        
+        print(f"angle to goal: {goal_angle*180/math.pi}")
+        print(f"distance to goal: {goal_distance}")
+        #print(f"sensors: {np.round(sensors,1)}")
 
+        for i in range(settings.action_discretization*4): #settings.action_discretization*4
+            idx = 15 + 12 - i%settings.action_discretization #in the action space, the circle starts at 90 deg and goes cw
+            objects = sensors[idx-3:idx+5] #only consider the obstacles in the direction we're going
+            thetas = angles[idx-3:idx+5]
+
+
+            #computing new distance to goal
+            travel_dist = 0.5*2**(i//settings.action_discretization) #travelled distance can be 0.5, 1, 2, or 4
+            x_dest = travel_dist*math.cos(thetas[4])
+            y_dest = travel_dist*math.sin(thetas[4])
+            x_goal = goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
+            y_goal = goal_distance*math.cos(goal_angle)
+            new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
+
+            #print(f"destination: {[x_dest,y_dest]}")
+            #print(f"observed goal (relative): {[x_goal,y_goal]}")
+            #print(f"new_dist: {new_dist}")
+
+            #computing the closest obstacle to the trajectory
+            minDist = 50
+            for object,angle in zip(objects,thetas):
+                x_obj = object*math.cos(angle+self.angle/2)
+                y_obj = object*math.sin(angle+self.angle/2)
+                dist = self.shortest_distance_on_trajectory(x_obj,y_obj,x_dest,y_dest)
+                if dist < minDist:
+                    minDist = dist
+
+            #print(f"objects: {np.round(objects,1)}")
+            #print(f"angles: {thetas*180/math.pi}")
+
+            #computing the benefit
+            benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*minDist
+            if benefit > bestBenefit:
+                bestBenefit = benefit
+                action =i
+
+
+
+        
 
         return action
+
+    def shortest_distance_on_trajectory(self, x1,y1,x2,y2):
+        """
+        finds de the shortest distance to (x1,y1) by moving along the (x2,y2) line segment (from the origin)
+        """
+
+        dot = x1*x2 + y1*y2
+        norm = x2*x2 + y2*y2
+        if norm == 0:
+            norm = 0.0001
+
+        param = -1
+        param = dot/norm
+
+        if param < 0:
+            xx = 0
+            yy = 0
+        elif param > 1:
+            xx = x2
+            yy = y2
+        else:
+            xx = param*x2
+            yy = param*y2
+
+        dx = x1 - xx
+        dy = y1 - yy
+
+        return math.sqrt(dx**2+dy**2)
+
+    def state_machine(self, obs):
+                #if self.avoiding: #avoid mode
+        #    print(f"counter: {self.avoidance_counter}")
+        #    if obs[0] <= 0.1: #still an obstacle in front
+        #        action = 10
+        #        self.avoidance_counter = self.avoidance_length
+        #        print("turn right fast")
+        #    elif self.avoidance_counter > self.avoidance_length/2: #continue turning right to avoid obstacle
+        #        action = 11
+        #        print("turn right")
+        #        self.avoidance_counter -= 1
+        #    elif self.avoidance_counter > 0: #go forward to avoid obstacle
+        #        action = 3
+        #        self.avoidance_counter -= 1
+        #        print("straight")
+        #    else:
+        #        self.avoiding = False
+        #        action = 2
+        #        print("straight")
+        #        self.avoidance_counter = self.avoidance_length
+        #else:
+        #    if (obs[0] <= 0.25): #first check if obstacles are in front, and enter avoid mode.
+        #        self.avoiding = True
+        #        self.avoidance_counter = self.avoidance_length
+        #        print("entering avoidance mode!")
+        #        action = 8
+        #    elif (obs[4] <= -0.05):  #if no obstacles, try to align to the goal (turn left)
+        #        action = 17
+        #        print("turn left")
+        #    elif (obs[4] >= 0.05):  #if no obstacles, try to align to the goal (turn right)
+        #        action = 12
+        #        print("turn right")
+        #    elif (obs[5] >= 0.5): #if aligned and far, go straight fast
+        #        action = 1
+        #        print("straight fast")
+        #    else: #if aligned and near, go straight slow
+        #        action = 4
+        #        print("straight slow")
+
+        return 0
+
        

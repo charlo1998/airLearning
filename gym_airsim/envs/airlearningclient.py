@@ -44,18 +44,18 @@ class AirLearningClient(airsim.MultirotorClient):
         distances = self.get_laser_state()
 
         #ToDo: Add RGB, velocity etc
-        if(settings.position): #This is for ablation purposes
+        if(settings.goal_position): #This is for ablation purposes
             pos = self.get_distance(goal)
 
         if(settings.velocity): #This is for ablation purposes
             vel = self.drone_velocity()
 
-        if(settings.position and settings.velocity):
-            concat_state = np.concatenate((distances, pos, vel), axis = None)
-        elif(settings.position):
-            concat_state = np.concatenate((distances, pos), axis = None)
+        if(settings.goal_position and settings.velocity):
+            concat_state = np.concatenate((pos, vel, distances), axis = None)
+        elif(settings.goal_position):
+            concat_state = np.concatenate((pos, distances), axis = None)
         elif(settings.velocity):
-            concat_state = np.concatenate((distances, vel), axis = None)
+            concat_state = np.concatenate((vel, distances), axis = None)
         else:
             concat_state = distances
 
@@ -220,13 +220,11 @@ class AirLearningClient(airsim.MultirotorClient):
 
         ## -- laser ranger -- ##
         lidarDatafront = self.client.getLidarData(lidar_name="Lidarfront",vehicle_name="Drone1")
-        lidarDataback = self.client.getLidarData(lidar_name="Lidarback",vehicle_name="Drone1")
         
         
-        front = self.process_lidar(lidarDatafront.point_cloud,5)
-        back = self.process_lidar(lidarDataback.point_cloud,1)
+        front = self.process_lidar(lidarDatafront.point_cloud,16)
 
-        output = front + back
+        output = front
         #print(output)
 
         return np.array(output)   
@@ -384,24 +382,22 @@ class AirLearningClient(airsim.MultirotorClient):
         start = time.time()
         return start, duration
 
-    def move_forward_Speed(self, speed_x=0.5, speed_y=0.5, duration=0.5):
+    def move_forward_Speed(self, speed_x=0.4, speed_y=0.4, duration=0.5):
         pitch, roll, yaw = self.client.getPitchRollYaw()
         vel = self.client.getVelocity()
         vx = math.cos(yaw) * speed_x - math.sin(yaw) * speed_y
         vy = math.sin(yaw) * speed_x + math.cos(yaw) * speed_y
-        if speed_x <= 0.01:
-            drivetrain = 0
-            #yaw_mode = YawMode(is_rate= True, yaw_or_rate = 0)
-        elif speed_x > 0.01:
-            drivetrain = 0
-            #yaw_mode = YawMode(is_rate= False, yaw_or_rate = 0)
-        self.client.moveByVelocityZAsync(vx = (vx + vel.x_val) / 2 ,
-                             vy = (vy + vel.y_val) / 2 , #do this to try and smooth the movement
+        self.client.moveByVelocityZAsync(vx = vx,
+                             vy = vy, #do this to try and smooth the movement
                              z = self.z,
-                             duration = duration,
-                             drivetrain = drivetrain,).join()
+                             duration = duration).join()
         start = time.time()
         return start, duration
+
+    def move_position(self, x,y, velocity = 3, timeout_sec=1):
+        self.client.moveToPositionAsync( x, y, self.z, velocity, timeout_sec).join()
+        start = time.time()
+        return start, velocity
 
     def take_discrete_action(self, action):
 
@@ -409,26 +405,15 @@ class AirLearningClient(airsim.MultirotorClient):
         takes an action with a duration of settings.mv_fw_dur or settings.rot_dur
         """
         if action == 0:
-            start, duration = self.straight(settings.mv_fw_spd_5, settings.mv_fw_dur)
+            start, duration = self.move_forward_Speed(duration=0.5)
         if action == 1:
-            start, duration = self.straight(settings.mv_fw_spd_4, settings.mv_fw_dur)
+            start, duration = self.move_forward_Speed(speed_x=-0.4, speed_y = -0.4, duration=0.5)
         if action == 2:
             start, duration = self.straight(settings.mv_fw_spd_3, settings.mv_fw_dur)
         if action == 3:
             start, duration = self.straight(settings.mv_fw_spd_2, settings.mv_fw_dur)
         if action == 4:
             start, duration = self.straight(settings.mv_fw_spd_1, settings.mv_fw_dur)
-        #these actions are going diagonally, increasing the action space for not much more flexibility
-        #if action == 5:
-        #    start, duration = self.move_forward_Speed(settings.mv_fw_spd_5, settings.mv_fw_spd_5, settings.mv_fw_dur)
-        #if action == 6:
-        #    start, duration = self.move_forward_Speed(settings.mv_fw_spd_4, settings.mv_fw_spd_4, settings.mv_fw_dur)
-        #if action == 7:
-        #    start, duration = self.move_forward_Speed(settings.mv_fw_spd_3, settings.mv_fw_spd_3, settings.mv_fw_dur)
-        #if action == 8:
-        #    start, duration = self.move_forward_Speed(settings.mv_fw_spd_2, settings.mv_fw_spd_2, settings.mv_fw_dur)
-        #if action == 9:
-        #    start, duration = self.move_forward_Speed(settings.mv_fw_spd_1, settings.mv_fw_spd_1, settings.mv_fw_dur)
         if action == 5:
             start, duration = self.backup(settings.mv_fw_spd_5, settings.mv_fw_dur)
         if action == 6:
@@ -463,6 +448,52 @@ class AirLearningClient(airsim.MultirotorClient):
 
         collided = (self.client.getMultirotorState().trip_stats.collision_count > 0)
 
+        return collided
+
+    def take_position_action(self, action):
+        """
+        discretization of the position actions: they are placed in a circle around the UAV. this circle is divided by 16 for the directions.
+        there are 4 circles with different radius depending on how far the drone wants to go.
+        """
+        duration = settings.mv_fw_dur
+
+        if action < settings.action_discretization * 1:
+            #short distance
+            distance = 0.5
+            angle = 2*math.pi/settings.action_discretization*action
+            vx =  distance*math.cos(angle)/duration
+            vy = distance*math.sin(angle)/duration
+
+            start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
+        elif action < settings.action_discretization * 2:
+            #medium short dist
+            distance = 1
+            action = action % settings.action_discretization
+            angle = 2*math.pi/settings.action_discretization*action
+            vx =  distance*math.cos(angle)/duration
+            vy = distance*math.sin(angle)/duration
+
+            start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
+        elif action < settings.action_discretization * 3:
+            #medium long
+            distance = 2
+            action = action % settings.action_discretization
+            angle = 2*math.pi/settings.action_discretization*action
+            vx =  distance*math.cos(angle)/duration
+            vy = distance*math.sin(angle)/duration
+
+            start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
+        elif action < settings.action_discretization * 4:
+            #long dist
+            distance = 4
+            action = action % settings.action_discretization
+            angle = 2*math.pi/settings.action_discretization*action
+            vx =  distance*math.cos(angle)/duration
+            vy = distance*math.sin(angle)/duration
+
+            start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
+
+        collided = (self.client.getMultirotorState().trip_stats.collision_count > 0)
         return collided
 
 
