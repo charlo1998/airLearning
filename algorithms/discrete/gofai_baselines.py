@@ -75,7 +75,7 @@ class gofai():
         self.angle = 360/settings.action_discretization
         self.heading_coeff = 1
         self.safety_coeff = 5
-        self.safety_dist = 2.5
+        self.safety_dist = 5
 
 
 
@@ -103,8 +103,8 @@ class gofai():
         bestBenefit = -1000
         action = 0
         
-        print(f"angle to goal: {goal_angle*180/math.pi}")
-        print(f"distance to goal: {goal_distance}")
+        #print(f"angle to goal: {goal_angle*180/math.pi}")
+        #print(f"distance to goal: {goal_distance}")
         #print(f"sensors: {np.round(sensors,1)}")
 
         for i in range(settings.action_discretization*4): #settings.action_discretization*4
@@ -114,7 +114,7 @@ class gofai():
 
 
             #computing new distance to goal
-            travel_dist = 0.5*2**(i//settings.action_discretization) #travelled distance can be 0.5, 1, 2, or 4
+            travel_dist = 0.5*2**(i//settings.action_discretization)*settings.mv_fw_dur #travelled distance can be 0.5, 1, 2, or 4 times duration
             x_dest = travel_dist*math.cos(thetas[4])
             y_dest = travel_dist*math.sin(thetas[4])
             x_goal = goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
@@ -126,19 +126,21 @@ class gofai():
             #print(f"new_dist: {new_dist}")
 
             #computing the closest obstacle to the trajectory
-            minDist = 50
+            minDist = self.safety_dist #change to self.safety_dist
             for object,angle in zip(objects,thetas):
                 x_obj = object*math.cos(angle+self.angle/2)
                 y_obj = object*math.sin(angle+self.angle/2)
                 dist = self.shortest_distance_on_trajectory(x_obj,y_obj,x_dest,y_dest)
                 if dist < minDist:
                     minDist = dist
+                    #print(f"drone will breach safe distance! minDist: {dist} with action: {i}")
 
             #print(f"objects: {np.round(objects,1)}")
             #print(f"angles: {thetas*180/math.pi}")
+            #print(f"closest obstacle to trajectory: {minDist}")
 
             #computing the benefit
-            benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*minDist
+            benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
             if benefit > bestBenefit:
                 bestBenefit = benefit
                 action =i

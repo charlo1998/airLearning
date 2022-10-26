@@ -459,37 +459,37 @@ class AirLearningClient(airsim.MultirotorClient):
 
         if action < settings.action_discretization * 1:
             #short distance
-            distance = 0.5
+            speed = 0.5
             angle = 2*math.pi/settings.action_discretization*action
-            vx =  distance*math.cos(angle)/duration
-            vy = distance*math.sin(angle)/duration
+            vx =  speed*math.cos(angle)
+            vy = speed*math.sin(angle)
 
             start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
         elif action < settings.action_discretization * 2:
             #medium short dist
-            distance = 1
+            speed = 1
             action = action % settings.action_discretization
             angle = 2*math.pi/settings.action_discretization*action
-            vx =  distance*math.cos(angle)/duration
-            vy = distance*math.sin(angle)/duration
+            vx =  speed*math.cos(angle)
+            vy = speed*math.sin(angle)
 
             start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
         elif action < settings.action_discretization * 3:
             #medium long
-            distance = 2
+            speed = 2
             action = action % settings.action_discretization
             angle = 2*math.pi/settings.action_discretization*action
-            vx =  distance*math.cos(angle)/duration
-            vy = distance*math.sin(angle)/duration
+            vx =  speed*math.cos(angle)
+            vy = speed*math.sin(angle)
 
             start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
         elif action < settings.action_discretization * 4:
             #long dist
-            distance = 4
+            speed = 4
             action = action % settings.action_discretization
             angle = 2*math.pi/settings.action_discretization*action
-            vx =  distance*math.cos(angle)/duration
-            vy = distance*math.sin(angle)/duration
+            vx =  speed*math.cos(angle)
+            vy = speed*math.sin(angle)
 
             start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
 

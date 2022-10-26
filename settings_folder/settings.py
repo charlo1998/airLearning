@@ -101,7 +101,7 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "Seed": list(range(0, 5000)),
                   "VelocityRange": [[0.5, 2]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(2,3))}
+                  "NumberOfObjects": list(range(20,30))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -188,8 +188,8 @@ assert(action_discretization > 1)
 assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
 
 
-mv_fw_dur = 1
-rot_dur = 1
+mv_fw_dur = 0.1
+rot_dur = 0.1
 # yaw_rate = (180/180)*math.pi #in degree
 mv_fw_spd_1 = 1
 mv_fw_spd_2 = 2
@@ -221,7 +221,7 @@ backup_folder_name_style = "bu_0"  # the backup obj will create a file with this
 # general params
 # ---------------------------
 list_algo = ["DQN", "DDPG", "A2C-B", "GOFAI"]  # a new algo needs to be added to this list for backup to back up its results
-nb_max_episodes_steps = 5000  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
+nb_max_episodes_steps = 1000  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
 success_distance_to_goal = 0.60
