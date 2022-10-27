@@ -51,7 +51,7 @@ checkpoint_interval = 25000
 # ---------------------------
 # how many zones for each variable for the entire range. Note that frequency
 # of moving to a new zone is not determined here
-zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 4}  # pay attention
+zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 1}  # pay attention
 
 # update_zone_success_threshold = 50
 acceptable_success_rate_to_update_zone = 0.75  # after what ratio of success up the zone # pay attention
@@ -96,12 +96,12 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "EnvType": ["Indoor"],
                   "ArenaSize": [[50, 50, 10]],
                   "PlayerStart": [[0, 0, 0]],
-                  "NumberOfDynamicObjects": list(range(0, 1)),
+                  "NumberOfDynamicObjects": list(range(20, 30)),
                   "Walls1": [[255, 255, 10]],
                   "Seed": list(range(0, 5000)),
                   "VelocityRange": [[0.5, 2]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(20,30))}
+                  "NumberOfObjects": list(range(0,1))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -187,9 +187,9 @@ action_discretization = 16 #this needs to be a square number and greater than on
 assert(action_discretization > 1)
 assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
 
-
-mv_fw_dur = 0.1
-rot_dur = 0.1
+base_speed = 0.25
+mv_fw_dur = 0.1*5
+rot_dur = 0.1*5
 # yaw_rate = (180/180)*math.pi #in degree
 mv_fw_spd_1 = 1
 mv_fw_spd_2 = 2
@@ -243,7 +243,7 @@ verbose = False
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = max_zone*200  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = max_zone*150  # note that if number of zones are x, #pay attention
 # then model get tested testing_nb_episodes_per_model/x
 # times per zone
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)
