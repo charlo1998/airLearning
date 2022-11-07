@@ -49,6 +49,8 @@ class AirLearningClient(airsim.MultirotorClient):
 
         if(settings.velocity): #This is for ablation purposes
             vel = self.drone_velocity()
+            #keep only x and y, and  TODO: normalize them
+            vel = vel[0:2]
 
         if(settings.goal_position and settings.velocity):
             concat_state = np.concatenate((pos, vel, distances), axis = None)
@@ -405,9 +407,9 @@ class AirLearningClient(airsim.MultirotorClient):
         takes an action with a duration of settings.mv_fw_dur or settings.rot_dur
         """
         if action == 0:
-            start, duration = self.move_forward_Speed(duration=0.5)
+            start, duration = self.move_position(0.6,0.6)
         if action == 1:
-            start, duration = self.move_forward_Speed(speed_x=-0.4, speed_y = -0.4, duration=0.5)
+            start, duration = self.move_position(0.4,0.4)
         if action == 2:
             start, duration = self.straight(settings.mv_fw_spd_3, settings.mv_fw_dur)
         if action == 3:

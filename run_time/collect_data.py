@@ -105,7 +105,7 @@ def main():
 
 
 
-    algo = "DQN-B"
+    algo = "GOFAI"
     task_type = "test"
     model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"] # change A2C for baselines
     model_to_checkpoint = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"

@@ -55,13 +55,13 @@ class AirSimEnv(gym.Env):
         if(settings.concatenate_inputs):
             if(settings.goal_position and settings.velocity): #for ablation studies
                 STATE_POS = 2
-                STATE_VEL = 3
+                STATE_VEL = 2
             elif(settings.goal_position):
                 STATE_POS = 2
                 STATE_VEL = 0
             elif(settings.velocity):
                 STATE_POS = 0
-                STATE_VEL = 3
+                STATE_VEL = 2
             else:
                 STATE_POS = 0
                 STATE_VEL = 0
@@ -559,9 +559,9 @@ class AirSimEnv(gym.Env):
             #print("Speed:"+str(self.speed))
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             #print(distance)
-            print("-------------------------------------------------------------------------------------------------------")
-            print(f"current pose: {np.round(now,1)}")
-            print(f"goal pose: {self.goal}")
+            #print("-------------------------------------------------------------------------------------------------------")
+            print(f"current pose: {np.round(now,2)}")
+            #print(f"goal pose: {self.goal}")
             
             
             if distance < settings.success_distance_to_goal: #we found the goal: 1000ptso

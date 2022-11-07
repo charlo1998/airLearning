@@ -51,7 +51,7 @@ checkpoint_interval = 25000
 # ---------------------------
 # how many zones for each variable for the entire range. Note that frequency
 # of moving to a new zone is not determined here
-zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 1}  # pay attention
+zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 3}  # pay attention
 
 # update_zone_success_threshold = 50
 acceptable_success_rate_to_update_zone = 0.75  # after what ratio of success up the zone # pay attention
@@ -94,9 +94,9 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "MinimumDistance": [3],
                   "EnvType": ["Indoor"],
                   "EnvType": ["Indoor"],
-                  "ArenaSize": [[50, 50, 10]],
+                  "ArenaSize": [[100, 100, 10]],
                   "PlayerStart": [[0, 0, 0]],
-                  "NumberOfDynamicObjects": list(range(20, 30)),
+                  "NumberOfDynamicObjects": list(range(100, 130)),
                   "Walls1": [[255, 255, 10]],
                   "Seed": list(range(0, 5000)),
                   "VelocityRange": [[0.5, 2]],
@@ -224,7 +224,7 @@ list_algo = ["DQN", "DDPG", "A2C-B", "GOFAI"]  # a new algo needs to be added to
 nb_max_episodes_steps = 1000  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
-success_distance_to_goal = 0.60
+success_distance_to_goal = 0.75
 slow_down_activation_distance = 2.5 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
 
 # ---------------------------
@@ -235,8 +235,8 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 200000
-nb_steps_warmup = 3000 #iterations are really fast during this phase
+training_steps_cap = 300000
+nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = False
 
@@ -289,7 +289,7 @@ ue4_winY = 480
 concatenate_inputs = True
 encoded_depth = True
 goal_position = True
-velocity = False
+velocity = True
 grey = False
 rgb = False
 
