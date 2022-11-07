@@ -74,15 +74,16 @@ class gofai():
             print(f"wrong observation space! should be 16+2 but is {self.observation_space}")
         self.angle = 360/settings.action_discretization
         self.heading_coeff = 1
-        self.safety_coeff = 1.5
-        self.safety_dist = 3
+        self.safety_coeff = 2
+        self.safety_dist = 4.0
+        self.previous = 0
 
 
 
 
     def predict(self, obs, env):
         '''
-        observation is in the form [angle, d_goal, d1, d2, ..., d16] where d1 starts at 180 deg and goes ccw
+        observation is in the form [angle, d_goal, y_vel, x_vel, d1, d2, ..., d16] where d1 starts at 180 deg and goes ccw, velocities are in drone's body frame ref
         actions are distributed as following:
         0-15: small circle
         16-31: medium small circle
@@ -91,10 +92,14 @@ class gofai():
         '''
 
         obs = obs[0][0] #flattening the list
-        obs[1:] = 100**obs[1:] #reconverting to real values
+        obs[4:] = 100**obs[4:] #reconverting from normalized to real values
+        obs[1] = 100**obs[1]
+
         goal_angle = obs[0]*math.pi
         goal_distance = obs[1]
-        sensors = obs[2:]
+        x_vel = obs[3]
+        y_vel = obs[2]
+        sensors = obs[4:]
         
         angles =  np.arange(-180,180,self.angle)*math.pi/180
         sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want
@@ -114,9 +119,9 @@ class gofai():
 
 
             #computing new distance to goal
-            travel_dist = settings.base_speed*2**(i//settings.action_discretization)*settings.mv_fw_dur #travelled distance can be 0.5, 1, 2, or 4 times duration
-            x_dest = travel_dist*math.cos(thetas[4])
-            y_dest = travel_dist*math.sin(thetas[4])
+            travel_dist = settings.base_speed*2**(i//settings.action_discretization)*(settings.mv_fw_dur) #travelled distance can be 0.5, 1, 2, or 4 times duration
+            x_dest = travel_dist*math.cos(thetas[4]) + x_vel * 0.05 # correcting for current speed since change in speed isn't instantaneous
+            y_dest = travel_dist*math.sin(thetas[4]) + y_vel * 0.05
             x_goal = goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
             y_goal = goal_distance*math.cos(goal_angle)
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
@@ -131,22 +136,22 @@ class gofai():
                     minDist = dist
 
             #computing the benefit
-            benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
+            benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)**2
             if benefit > bestBenefit:
                 bestBenefit = benefit
                 action =i
 
 
 
-        ## -----------printing info on the chosen action-------------------------------------------------------------
+        ### -----------printing info on the chosen action-------------------------------------------------------------
         idx = 15 + 12 - action%settings.action_discretization #in the action space, the circle starts at 90 deg and goes cw
         objects = sensors[idx-3:idx+5] #only consider the obstacles in the direction we're going
         thetas = angles[idx-3:idx+5]
 
         #computing new distance to goal
-        travel_dist = settings.base_speed*2**(action//settings.action_discretization)*settings.mv_fw_dur #travelled distance can be 0.5, 1, 2, or 4 times duration
-        x_dest = travel_dist*math.cos(thetas[4])
-        y_dest = travel_dist*math.sin(thetas[4])
+        travel_dist = settings.base_speed*2**(i//settings.action_discretization)*(settings.mv_fw_dur) #travelled distance can be 0.5, 1, 2, or 4 times duration
+        x_dest = travel_dist*math.cos(thetas[4]) + x_vel * 0.01 # correcting for current speed since change in speed isn't instantaneous
+        y_dest = travel_dist*math.sin(thetas[4]) + y_vel * 0.01
         x_goal = goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
         y_goal = goal_distance*math.cos(goal_angle)
         new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
@@ -161,9 +166,9 @@ class gofai():
                 minDist = dist
 
         #computing the benefit
-        benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
+        benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)**2
 
-        #print(f"min distance in chosen trajectory: {minDist}")
+        print(f"min distance in chosen trajectory: {minDist}")
         #print(f"objects: {np.round(objects,1)}")
         #print(f"angles: {thetas*180/math.pi}")
         #print(f"observed goal (relative): {[y_goal,x_goal]}")
@@ -171,9 +176,16 @@ class gofai():
         now = env.airgym.drone_pos()
         now[0] += y_dest
         now[1] += x_dest
-        print(f"destination: {np.round(now,2)}")
+        #print(f"destination: {np.round(now,2)}")
+        #now[0] += y_vel * 0.3
+        #now[1] += x_vel * 0.3
+        print(f"corrected destination: {np.round(now,2)}")
         #print(f"new_dist: {new_dist}")
         #---------------------------------------------
+
+
+        #action = 1-self.previous
+        #self.previous = action
 
         
         return action

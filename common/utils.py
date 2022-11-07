@@ -93,8 +93,8 @@ def plot_trajectories(file):
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title(f'first {nbOfEpisodesToPlot} episodes')
-    plt.xlim([-25, 25])
-    plt.ylim([-25, 25])
+    plt.xlim([-50, 50])
+    plt.ylim([-50, 50])
 
     #plot the last 10 episodes
     nbOfSteps = data['total_step_count_for_experiment'][-nbOfEpisodesToPlot-1] #remove the steps before the last 10 episodes
@@ -118,8 +118,8 @@ def plot_trajectories(file):
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title(f'last {nbOfEpisodesToPlot} episodes')
-    plt.xlim([-25, 25])
-    plt.ylim([-25, 25])
+    plt.xlim([-50, 50])
+    plt.ylim([-50, 50])
     plt.show()
 
 def average(data):
