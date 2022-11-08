@@ -4,6 +4,7 @@ import sys
 import gym
 import math
 import numpy as np
+import time
 
 import os
 import tensorflow as tf
@@ -74,7 +75,7 @@ class gofai():
             print(f"wrong observation space! should be 16+2 but is {self.observation_space}")
         self.angle = 360/settings.action_discretization
         self.heading_coeff = 1
-        self.safety_coeff = 2
+        self.safety_coeff = 5
         self.safety_dist = 4.0
         self.previous = 0
 
@@ -90,6 +91,7 @@ class gofai():
         32-47: medium big circle
         48-63: big circle
         '''
+        begin = time.perf_counter()
 
         obs = obs[0][0] #flattening the list
         obs[4:] = 100**obs[4:] #reconverting from normalized to real values
@@ -120,8 +122,8 @@ class gofai():
 
             #computing new distance to goal
             travel_dist = settings.base_speed*2**(i//settings.action_discretization)*(settings.mv_fw_dur) #travelled distance can be 0.5, 1, 2, or 4 times duration
-            x_dest = travel_dist*math.cos(thetas[4]) + x_vel * 0.05 # correcting for current speed since change in speed isn't instantaneous
-            y_dest = travel_dist*math.sin(thetas[4]) + y_vel * 0.05
+            x_dest = travel_dist*math.cos(thetas[4]) + x_vel * 0.5 # correcting for current speed since change in speed isn't instantaneous
+            y_dest = travel_dist*math.sin(thetas[4]) + y_vel * 0.5
             x_goal = goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
             y_goal = goal_distance*math.cos(goal_angle)
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
@@ -136,7 +138,7 @@ class gofai():
                     minDist = dist
 
             #computing the benefit
-            benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)**2
+            benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
             if benefit > bestBenefit:
                 bestBenefit = benefit
                 action =i
@@ -166,9 +168,9 @@ class gofai():
                 minDist = dist
 
         #computing the benefit
-        benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)**2
+        benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
 
-        print(f"min distance in chosen trajectory: {minDist}")
+        #print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
         #print(f"objects: {np.round(objects,1)}")
         #print(f"angles: {thetas*180/math.pi}")
         #print(f"observed goal (relative): {[y_goal,x_goal]}")
@@ -179,8 +181,11 @@ class gofai():
         #print(f"destination: {np.round(now,2)}")
         #now[0] += y_vel * 0.3
         #now[1] += x_vel * 0.3
-        print(f"corrected destination: {np.round(now,2)}")
+        #print(f"min distance in chosen trajectory: {minDist}")
+        #print(f"predicted destination: {np.round(now,2)}")
         #print(f"new_dist: {new_dist}")
+        end = time.perf_counter()
+        #print(f"computing action took {np.round((end-begin)*1000,3)} ms")
         #---------------------------------------------
 
 
