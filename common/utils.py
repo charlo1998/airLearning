@@ -376,6 +376,11 @@ def get_random_end_point(arena_size, split_index, total_num_of_splits):
     if (rnd_idx0 == rnd_idx1 == 0):  # to avoid being on the start position
         rnd_idx0 = idx0_pos_bndry - end_halo
 
+    rnd_idx0 = 45
+    rnd_idx1 = 48
+    print(f"goal set to: {[rnd_idx0, rnd_idx1, grounded_idx2]} by get_random_en_point()")
+
+
     return [rnd_idx0, rnd_idx1, grounded_idx2]
 
 
