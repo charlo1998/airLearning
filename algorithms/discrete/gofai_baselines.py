@@ -102,6 +102,10 @@ class gofai():
         x_vel = obs[3]
         y_vel = obs[2]
         sensors = obs[4:]
+
+        #print(f"angle to goal: {goal_angle*180/math.pi}")
+        #print(f"distance to goal: {goal_distance}")
+        print(f"sensors: {np.round(sensors,1)}")
         
         angles =  np.arange(-180,180,self.angle)*math.pi/180
         sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want
@@ -110,10 +114,6 @@ class gofai():
         bestBenefit = -1000
         action = 0
         
-        #print(f"angle to goal: {goal_angle*180/math.pi}")
-        #print(f"distance to goal: {goal_distance}")
-        #print(f"sensors: {np.round(sensors,1)}")
-
         for i in range(settings.action_discretization*4): #settings.action_discretization*4
             idx = 15 + 12 - i%settings.action_discretization #in the action space, the circle starts at 90 deg and goes cw
             objects = sensors[idx-3:idx+5] #only consider the obstacles in the direction we're going
@@ -122,8 +122,8 @@ class gofai():
 
             #computing new distance to goal
             travel_dist = settings.base_speed*2**(i//settings.action_discretization)*(settings.mv_fw_dur) #travelled distance can be 0.5, 1, 2, or 4 times duration
-            x_dest = travel_dist*math.cos(thetas[4]) + x_vel * 0.5 # correcting for current speed since change in speed isn't instantaneous
-            y_dest = travel_dist*math.sin(thetas[4]) + y_vel * 0.5
+            x_dest = travel_dist*math.cos(thetas[4])*0.5 + x_vel * 0.5 # correcting for current speed since change in speed isn't instantaneous
+            y_dest = travel_dist*math.sin(thetas[4])*0.5 + y_vel * 0.5
             x_goal = goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
             y_goal = goal_distance*math.cos(goal_angle)
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
@@ -151,9 +151,9 @@ class gofai():
         thetas = angles[idx-3:idx+5]
 
         #computing new distance to goal
-        travel_dist = settings.base_speed*2**(i//settings.action_discretization)*(settings.mv_fw_dur) #travelled distance can be 0.5, 1, 2, or 4 times duration
-        x_dest = travel_dist*math.cos(thetas[4]) + x_vel * 0.01 # correcting for current speed since change in speed isn't instantaneous
-        y_dest = travel_dist*math.sin(thetas[4]) + y_vel * 0.01
+        travel_dist = settings.base_speed*2**(action//settings.action_discretization)*(settings.mv_fw_dur) #travelled distance can be 0.25,0.5, 1, or 2 times duration
+        x_dest = travel_dist*math.cos(thetas[4])*0.5 + x_vel * 0.5 # correcting for current speed since change in speed isn't instantaneous
+        y_dest = travel_dist*math.sin(thetas[4])*0.5 + y_vel * 0.5
         x_goal = goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
         y_goal = goal_distance*math.cos(goal_angle)
         new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
@@ -169,16 +169,17 @@ class gofai():
 
         #computing the benefit
         benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
-
-        #print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
-        #print(f"objects: {np.round(objects,1)}")
-        #print(f"angles: {thetas*180/math.pi}")
+        print(f"[distance, angle]: {[travel_dist, thetas[4]*180/math.pi]}")
+        print(f"current speed: {[np.round(y_vel,1), np.round(x_vel,1)]}")
+        print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
+        print(f"objects: {np.round(objects,1)}")
+        print(f"angles: {thetas*180/math.pi}")
         #print(f"observed goal (relative): {[y_goal,x_goal]}")
-        #print(f"destination: {[y_dest, x_dest]}")
+        #print(f"destination: {[np.round(y_dest,1), np.round(x_dest,1)]}")
         now = env.airgym.drone_pos()
         now[0] += y_dest
         now[1] += x_dest
-        #print(f"destination: {np.round(now,2)}")
+        print(f"destination: {np.round(now,2)}")
         #now[0] += y_vel * 0.3
         #now[1] += x_vel * 0.3
         #print(f"min distance in chosen trajectory: {minDist}")
