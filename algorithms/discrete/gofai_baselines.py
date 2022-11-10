@@ -72,12 +72,12 @@ class gofai():
         if (self.action_space != settings.action_discretization*4):
             print(f"wrong action space! should be 16*4 but is {self.action_space}")
         if (self.action_space != settings.action_discretization+2):
-            print(f"wrong observation space! should be 16+2 but is {self.observation_space}")
+            print(f"wrong observation space! should be 16+4 but is {self.observation_space}")
         self.angle = 360/settings.action_discretization
         self.heading_coeff = 1
         self.safety_coeff = 5
-        self.safety_dist = 4.0
-        self.previous = 0
+        self.safety_dist = 3.1
+        self.previous_obs = [3]*20
 
 
 
@@ -102,6 +102,11 @@ class gofai():
         x_vel = obs[3]
         y_vel = obs[2]
         sensors = obs[4:]
+        #replace missing values with old observations
+        for i, sensor in enumerate(sensors):
+            if sensor >= 66:
+                sensors[i] = self.previous_obs[i]
+
 
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {goal_distance}")
@@ -122,8 +127,8 @@ class gofai():
 
             #computing new distance to goal
             travel_dist = settings.base_speed*2**(i//settings.action_discretization)*(settings.mv_fw_dur) #travelled distance can be 0.5, 1, 2, or 4 times duration
-            x_dest = travel_dist*math.cos(thetas[4])*0.5 + x_vel * 0.5 # correcting for current speed since change in speed isn't instantaneous
-            y_dest = travel_dist*math.sin(thetas[4])*0.5 + y_vel * 0.5
+            x_dest = travel_dist*math.cos(thetas[4])*0.5 + x_vel * 0.75 # correcting for current speed since change in speed isn't instantaneous
+            y_dest = travel_dist*math.sin(thetas[4])*0.5 + y_vel * 0.75
             x_goal = goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
             y_goal = goal_distance*math.cos(goal_angle)
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
@@ -144,6 +149,7 @@ class gofai():
                 action =i
 
 
+        self.previous_obs = sensors
 
         ### -----------printing info on the chosen action-------------------------------------------------------------
         idx = 15 + 12 - action%settings.action_discretization #in the action space, the circle starts at 90 deg and goes cw
@@ -152,8 +158,8 @@ class gofai():
 
         #computing new distance to goal
         travel_dist = settings.base_speed*2**(action//settings.action_discretization)*(settings.mv_fw_dur) #travelled distance can be 0.25,0.5, 1, or 2 times duration
-        x_dest = travel_dist*math.cos(thetas[4])*0.5 + x_vel * 0.5 # correcting for current speed since change in speed isn't instantaneous
-        y_dest = travel_dist*math.sin(thetas[4])*0.5 + y_vel * 0.5
+        x_dest = travel_dist*math.cos(thetas[4])*0.5 + x_vel * 0.75 # correcting for current speed since change in speed isn't instantaneous
+        y_dest = travel_dist*math.sin(thetas[4])*0.5 + y_vel * 0.75
         x_goal = goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
         y_goal = goal_distance*math.cos(goal_angle)
         new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
@@ -190,8 +196,6 @@ class gofai():
         #---------------------------------------------
 
 
-        #action = 1-self.previous
-        #self.previous = action
 
         
         return action
