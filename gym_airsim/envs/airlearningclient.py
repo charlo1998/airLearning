@@ -285,7 +285,7 @@ class AirLearningClient(airsim.MultirotorClient):
             y = np.array(y_coords_by_sensor[i])
             if len(x) == 0 or len(y) == 0: #missing lidar values!
                 distances[i] = 66 #with no information, set to 66, which will be ignored
-                print(f"missing lidar values in bucket {i}!")
+                #print(f"missing lidar values in bucket {i}!")
             else:
                 distances[i] = min(np.sqrt(x**2+y**2))
             #normalizing values and bounding them to [-1,1]
