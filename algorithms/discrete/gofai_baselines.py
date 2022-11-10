@@ -73,10 +73,10 @@ class gofai():
             print(f"wrong action space! should be 16*4 but is {self.action_space}")
         if (self.action_space != settings.action_discretization+2):
             print(f"wrong observation space! should be 16+4 but is {self.observation_space}")
-        self.angle = 360/settings.action_discretization
+        self.arc = 2*math.pi/settings.action_discretization #rad
         self.heading_coeff = 1
-        self.safety_coeff = 5
-        self.safety_dist = 3.1
+        self.safety_coeff = 3
+        self.safety_dist = 1.5
         self.previous_obs = [3]*20
 
 
@@ -97,7 +97,7 @@ class gofai():
         obs[4:] = 100**obs[4:] #reconverting from normalized to real values
         obs[1] = 100**obs[1]
 
-        goal_angle = obs[0]*math.pi
+        goal_angle = obs[0]*math.pi #rad
         goal_distance = obs[1]
         x_vel = obs[3]
         y_vel = obs[2]
@@ -112,7 +112,7 @@ class gofai():
         #print(f"distance to goal: {goal_distance}")
         print(f"sensors: {np.round(sensors,1)}")
         
-        angles =  np.arange(-180,180,self.angle)*math.pi/180
+        angles =  np.arange(-math.pi,math.pi,self.arc)
         sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want
         angles = np.concatenate((angles,angles))
 
@@ -123,6 +123,7 @@ class gofai():
             idx = 15 + 12 - i%settings.action_discretization #in the action space, the circle starts at 90 deg and goes cw
             objects = sensors[idx-3:idx+5] #only consider the obstacles in the direction we're going
             thetas = angles[idx-3:idx+5]
+            test = math.pi/2 - self.arc*(i%settings.action_discretization)
 
 
             #computing new distance to goal
@@ -134,16 +135,24 @@ class gofai():
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
 
             #computing the closest obstacle to the trajectory
-            minDist = self.safety_dist #change to self.safety_dist
+            minDist = self.safety_dist
             for object,angle in zip(objects,thetas):
-                x_obj = object*math.cos(angle+self.angle/2)
-                y_obj = object*math.sin(angle+self.angle/2)
+                x_obj = object*math.cos(angle+self.arc/2)
+                y_obj = object*math.sin(angle+self.arc/2)
                 dist = self.shortest_distance_on_trajectory(x_obj,y_obj,x_dest,y_dest)
                 if dist < minDist:
                     minDist = dist
+            #for object,angle in zip(sensors[0:16],angles[0:16]):
+            #    x_obj = object*math.cos(angle+self.arc/2)
+            #    y_obj = object*math.sin(angle+self.arc/2)
+            #    dist = self.shortest_distance_on_trajectory(x_obj,y_obj,x_dest,y_dest)
+            #    if dist < minDist:
+            #        minDist = dist
 
             #computing the benefit
             benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
+            #print(f"heading term: {goal_distance-new_dist}")
+            #print(f"safety term: {self.safety_dist - minDist}")
             if benefit > bestBenefit:
                 bestBenefit = benefit
                 action =i
@@ -165,16 +174,22 @@ class gofai():
         new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
 
         #computing the closest obstacle to the trajectory
-        minDist = self.safety_dist #change to self.safety_dist
+        minDist = self.safety_dist
         for object,angle in zip(objects,thetas):
-            x_obj = object*math.cos(angle+self.angle/2)
-            y_obj = object*math.sin(angle+self.angle/2)
+            x_obj = object*math.cos(angle+self.arc/2)
+            y_obj = object*math.sin(angle+self.arc/2)
             dist = self.shortest_distance_on_trajectory(x_obj,y_obj,x_dest,y_dest)
             if dist < minDist:
                 minDist = dist
+        #for object,angle in zip(sensors[0:16],angles[0:16]):
+        #    x_obj = object*math.cos(angle+self.arc/2)
+        #    y_obj = object*math.sin(angle+self.arc/2)
+        #    dist = self.shortest_distance_on_trajectory(x_obj,y_obj,x_dest,y_dest)
+        #    if dist < minDist:
+        #        minDist = dist
 
         #computing the benefit
-        benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
+        benefit = self.heading_coeff*(goal_distance-new_dist)*0.1 - self.safety_coeff*(self.safety_dist - minDist)
         print(f"[distance, angle]: {[travel_dist, thetas[4]*180/math.pi]}")
         print(f"current speed: {[np.round(y_vel,1), np.round(x_vel,1)]}")
         print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
@@ -192,7 +207,7 @@ class gofai():
         #print(f"predicted destination: {np.round(now,2)}")
         #print(f"new_dist: {new_dist}")
         end = time.perf_counter()
-        #print(f"computing action took {np.round((end-begin)*1000,3)} ms")
+        print(f"computing action took {np.round((end-begin)*1000,3)} ms")
         #---------------------------------------------
 
 
