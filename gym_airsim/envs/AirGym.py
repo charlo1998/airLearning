@@ -16,7 +16,10 @@ from algorithms.continuous.ddpg.OU import OU
 import random
 import time
 from gym_airsim.envs.airlearningclient import *
+
 from utils import append_log_file
+from utils import gofai
+
 logger = logging.getLogger(__name__)
 
 
@@ -144,11 +147,17 @@ class AirSimEnv(gym.Env):
                                        np.array([+5.0, +5.0]),
                                        dtype=np.float32)
         else:
-            if(settings.timedActions or settings.positionActions):
-                self.nb_action_types = 4 
-                self.action_space = spaces.Discrete(self.nb_action_types * settings.action_discretization)
+            if(msgs.algo == "GOFAI"):
+                #this is for baseline moving actions
+                if(settings.timedActions or settings.positionActions):
+                    self.nb_action_types = 4 
+                    self.action_space = spaces.Discrete(self.nb_action_types * settings.action_discretization)
+                else:
+                    self.action_space = spaces.Discrete(20)
             else:
-                self.action_space = spaces.Discrete(20)
+                #this is for RL on choosing observations
+                self.action_space = spaces.Discrete(16) # one for each direction (set to 16 manually in lidar processing) 
+                self.DWA = gofai()
 
 
         self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End"))
@@ -495,6 +504,7 @@ class AirSimEnv(gym.Env):
         msgs.success = False 
         msgs.meta_data = {}
 
+
         try:
             #print("ENter Step"+str(self.stepN))
             #print(f"action taken: {action}")
@@ -510,18 +520,7 @@ class AirSimEnv(gym.Env):
                     take_action_start = time.perf_counter()
 
             #do action
-            if(msgs.algo == "DDPG"):
-                self.actions_in_step.append([action[0], action[1], action[2]])
-                action = self.ddpg_add_noise_action(action)
-                collided = self.airgym.take_continious_action(float(action[0]), float(action[1]), float(action[2]), float(action[3]),
-                                                 float(action[4]))
-            elif(msgs.algo == "PPO"):
-                self.actions_in_step.append([action[0], action[1], action[2]])
-                collided = self.airgym.take_continious_action(action)
-            elif(msgs.algo == "SAC"):
-                self.actions_in_step.append([action[0], action[1]])
-                collided = self.airgym.take_continious_action(action)
-            else:
+            if(msgs.algo == "GOFAI"): #only do the baseline action
                 if(settings.timedActions):
                     collided = self.airgym.take_timed_action(action)
                 elif(settings.positionActions):
@@ -529,6 +528,29 @@ class AirSimEnv(gym.Env):
                 else:
                     collided = self.airgym.take_discrete_action(action)
                 self.actions_in_step.append(str(action))
+            else:  #determine observation based on meta-action
+                obs = self.airgym.take_meta_action(action, self.prev_state)
+                #determine move action based on DWA
+                action = self.DWA.predict(obs)
+                if(msgs.algo == "DDPG"):
+                    self.actions_in_step.append([action[0], action[1], action[2]])
+                    action = self.ddpg_add_noise_action(action)
+                    collided = self.airgym.take_continious_action(float(action[0]), float(action[1]), float(action[2]), float(action[3]),
+                                                     float(action[4]))
+                elif(msgs.algo == "PPO"):
+                    self.actions_in_step.append([action[0], action[1], action[2]])
+                    collided = self.airgym.take_continious_action(action)
+                elif(msgs.algo == "SAC"):
+                    self.actions_in_step.append([action[0], action[1]])
+                    collided = self.airgym.take_continious_action(action)
+                else:
+                    if(settings.timedActions):
+                        collided = self.airgym.take_timed_action(action)
+                    elif(settings.positionActions):
+                        collided = self.airgym.take_position_action(action)
+                    else:
+                        collided = self.airgym.take_discrete_action(action)
+                    self.actions_in_step.append(str(action))
                 
             
             if(settings.profile):
@@ -684,6 +706,8 @@ class AirSimEnv(gym.Env):
             self.on_episode_start()
             print("done on episode start")
             return self.prev_state
+
+
 
     def update_zone(self, *args):
         #all_keys = self.game_config_handler.game_config_range.find_all_keys()

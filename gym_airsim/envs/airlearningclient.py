@@ -549,3 +549,10 @@ class AirLearningClient(airsim.MultirotorClient):
         collided = (self.client.getMultirotorState().trip_stats.collision_count > 0)
         return collided
 
+    def take_meta_action(self, action, state):
+        """
+        takes the full state and action as input, and returns a partial observation based on the chosen action
+        """
+        print(state)
+        return state
+
