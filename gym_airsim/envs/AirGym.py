@@ -89,6 +89,7 @@ class AirSimEnv(gym.Env):
             self.all_loop_rates = []
             self.take_action_list = []
             self.clct_state_list = []
+            self.process_action_list = []
 
         self.episodeInWindow = 0
         self.passed_all_zones = False #whether we met all the zone success
@@ -529,9 +530,13 @@ class AirSimEnv(gym.Env):
                     collided = self.airgym.take_discrete_action(action)
                 self.actions_in_step.append(str(action))
             else:  #determine observation based on meta-action
+                process_action_start = time.perf_counter()
                 obs = self.airgym.take_meta_action(action, self.prev_state)
                 #determine move action based on DWA
                 action = self.DWA.predict(obs)
+                process_action_end = time.perf_counter()
+                if(settings.profile):
+                    self.process_action_list.append(process_action_end - process_action_start)
                 if(msgs.algo == "DDPG"):
                     self.actions_in_step.append([action[0], action[1], action[2]])
                     action = self.ddpg_add_noise_action(action)

@@ -429,7 +429,6 @@ class gofai():
         32-47: medium big circle
         48-63: big circle
         '''
-        begin = time.perf_counter()
 
         obs = obs[0][0] #flattening the list
         obs[4:] = 100**obs[4:] #reconverting from normalized to real values
@@ -444,13 +443,14 @@ class gofai():
 
         objects =[]
         orientations = []
-        #replace missing values with old observations, and create objects list to evaluate obstacles positions
+        #create objects list to evaluate obstacles positions, and replace missing values with old observations
         for i, sensor in enumerate(sensors):
-            if sensor >= 66:
-                sensors[i] = self.previous_obs[i]
-            else:
+            if sensor < 99:
                 objects.append(sensors[i])
                 orientations.append(angles[i])
+            if sensor >= 66:
+                sensors[i] = self.previous_obs[i]
+            
 
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {goal_distance}")
@@ -501,18 +501,16 @@ class gofai():
         #print(f"[distance, angle]: {[travel_dist, np.round(theta*180/math.pi,1)]}")
         #print(f"current speed: {[np.round(y_vel,1), np.round(x_vel,1)]}")
         #print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
-        print(f"objects: {np.round(objects,1)}")
-        print(f"orientations: {np.round(orientations,2)}")
-        print(f"sensors: {np.round(sensors,1)}")
-        print(f"angles: {np.round(angles,2)}")
+        #print(f"objects: {np.round(objects,1)}")
+        #print(f"orientations: {np.round(orientations,2)}")
+        #print(f"sensors: {np.round(sensors,1)}")
+        #print(f"angles: {np.round(angles,2)}")
         #print(f"observed goal (relative): {[y_goal,x_goal]}")
         #print(f"destination: {[np.round(y_dest,1), np.round(x_dest,1)]}")
         #print(f"destination: {np.round(now,2)}")
         #print(f"min distance in chosen trajectory: {minDist}")
         #print(f"predicted destination: {np.round(now,2)}")
         #print(f"new_dist: {new_dist}")
-        end = time.perf_counter()
-        print(f"computing action took {np.round((end-begin)*1000,3)} ms")
         #---------------------------------------------
 
         

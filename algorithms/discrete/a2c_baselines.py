@@ -52,6 +52,7 @@ def train(env, agent, checkpoint="C:/Users/charl/workspace/airlearning/airlearni
             f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
             f.write("take_action_list:" + str(env.take_action_list) + "\n")
             f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
+            f.write("process_action_list" + str(env.process_action_list) + "\n")
 
         action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(settings.i_run) + ".txt")
         with open(action_duration_file, "w") as f:

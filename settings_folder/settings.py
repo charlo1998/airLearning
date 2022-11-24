@@ -243,7 +243,7 @@ verbose = False
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = max_zone*150  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = max_zone*100  # note that if number of zones are x, #pay attention
 # then model get tested testing_nb_episodes_per_model/x
 # times per zone
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)

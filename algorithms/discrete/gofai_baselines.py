@@ -2,6 +2,7 @@
 from random import choice
 import sys
 import gym
+import time
 
 import os
 import tensorflow as tf
@@ -35,15 +36,20 @@ def train(env, agent, checkpoint="C:/Users/charl/workspace/airlearning/airlearni
 
 def test(env):
     msgs.mode = 'test'
-
+    process_action_list = []
     agent = gofai()
     
     for i in range(settings.testing_nb_episodes_per_model):
         obs = env.reset()
         done = False
         while not done:
+            begin = time.perf_counter()
             action = agent.predict(obs)
+            end = time.perf_counter()
             obs, rewards, done, info = env.step(action)
+
+            if settings.profile:
+                process_action_list.append(end-begin)
 
     #env loop rate logging
     if settings.profile:
@@ -52,6 +58,7 @@ def test(env):
             f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
             f.write("take_action_list:" + str(env.take_action_list) + "\n")
             f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
+            f.write("process_action_list" + str(process_action_list) + "\n")
 
         action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(settings.i_run) + ".txt")
         with open(action_duration_file, "w") as f:
