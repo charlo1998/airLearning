@@ -440,17 +440,23 @@ class gofai():
         x_vel = obs[3]
         y_vel = obs[2]
         sensors = obs[4:]
-        #replace missing values with old observations
+        angles =  np.arange(-math.pi,math.pi,self.arc)
+
+        objects =[]
+        orientations = []
+        #replace missing values with old observations, and create objects list to evaluate obstacles positions
         for i, sensor in enumerate(sensors):
             if sensor >= 66:
                 sensors[i] = self.previous_obs[i]
-
+            else:
+                objects.append(sensors[i])
+                orientations.append(angles[i])
 
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {goal_distance}")
         #print(f"sensors: {np.round(sensors,1)}")
         
-        angles =  np.arange(-math.pi,math.pi,self.arc)
+        
         #sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want
         #angles = np.concatenate((angles,angles))
 
@@ -460,7 +466,6 @@ class gofai():
         for i in range(settings.action_discretization*4): #settings.action_discretization*4
             theta = math.pi/2 - self.arc*(i%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw
             #idx = 15 + 12 - i%settings.action_discretization
-            #objects = sensors[idx-3:idx+5] #only consider the obstacles in the direction we're going
             #thetas = angles[idx-3:idx+5]
 
             #computing new distance to goal
@@ -473,12 +478,13 @@ class gofai():
 
             #computing the closest obstacle to the trajectory
             minDist = self.safety_dist
-            for object,angle in zip(sensors,angles):
-                x_obj = object*math.cos(angle+self.arc/2)
-                y_obj = object*math.sin(angle+self.arc/2)
-                dist = self.shortest_distance_on_trajectory(x_obj,y_obj,x_dest,y_dest)
-                if dist < minDist:
-                    minDist = dist
+            if (len(objects) > 0):
+                for object,angle in zip(objects,orientations):
+                    x_obj = object*math.cos(angle+self.arc/2)
+                    y_obj = object*math.sin(angle+self.arc/2)
+                    dist = self.shortest_distance_on_trajectory(x_obj,y_obj,x_dest,y_dest)
+                    if dist < minDist:
+                        minDist = dist
 
             #computing the benefit
             benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
@@ -492,34 +498,13 @@ class gofai():
         self.previous_obs = sensors
 
         ### -----------printing info on the chosen action-------------------------------------------------------------
-        idx = 15 + 12 - action%settings.action_discretization #in the action space, the circle starts at 90 deg and goes cw
-        objects = sensors[idx-3:idx+5] #only consider the obstacles in the direction we're going
-        thetas = angles[idx-3:idx+5]
-
-        #computing new distance to goal
-        travel_dist = settings.base_speed*2**(action//settings.action_discretization)*(settings.mv_fw_dur) #travelled distance can be 0.25,0.5, 1, or 2 times duration
-        x_dest = travel_dist*math.cos(theta)*0.5 + x_vel * 0.75 # correcting for current speed since change in speed isn't instantaneous
-        y_dest = travel_dist*math.sin(theta)*0.5 + y_vel * 0.75
-        x_goal = goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
-        y_goal = goal_distance*math.cos(goal_angle)
-        new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
-
-        #computing the closest obstacle to the trajectory
-        minDist = self.safety_dist
-        for object,angle in zip(sensors,angles):
-            x_obj = object*math.cos(angle+self.arc/2)
-            y_obj = object*math.sin(angle+self.arc/2)
-            dist = self.shortest_distance_on_trajectory(x_obj,y_obj,x_dest,y_dest)
-            if dist < minDist:
-                minDist = dist
-
-        #computing the benefit
-        benefit = self.heading_coeff*(goal_distance-new_dist)*0.1 - self.safety_coeff*(self.safety_dist - minDist)
         #print(f"[distance, angle]: {[travel_dist, np.round(theta*180/math.pi,1)]}")
         #print(f"current speed: {[np.round(y_vel,1), np.round(x_vel,1)]}")
         #print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
-        #print(f"objects: {np.round(sensors,1)}")
-        #print(f"angles: {angles*180/math.pi}")
+        print(f"objects: {np.round(objects,1)}")
+        print(f"orientations: {np.round(orientations,2)}")
+        print(f"sensors: {np.round(sensors,1)}")
+        print(f"angles: {np.round(angles,2)}")
         #print(f"observed goal (relative): {[y_goal,x_goal]}")
         #print(f"destination: {[np.round(y_dest,1), np.round(x_dest,1)]}")
         #print(f"destination: {np.round(now,2)}")
@@ -529,8 +514,6 @@ class gofai():
         end = time.perf_counter()
         print(f"computing action took {np.round((end-begin)*1000,3)} ms")
         #---------------------------------------------
-
-
 
         
         return action
@@ -563,43 +546,3 @@ class gofai():
 
         return math.sqrt(dx**2+dy**2)
 
-    def state_machine(self, obs):
-                #if self.avoiding: #avoid mode
-        #    print(f"counter: {self.avoidance_counter}")
-        #    if obs[0] <= 0.1: #still an obstacle in front
-        #        action = 10
-        #        self.avoidance_counter = self.avoidance_length
-        #        print("turn right fast")
-        #    elif self.avoidance_counter > self.avoidance_length/2: #continue turning right to avoid obstacle
-        #        action = 11
-        #        print("turn right")
-        #        self.avoidance_counter -= 1
-        #    elif self.avoidance_counter > 0: #go forward to avoid obstacle
-        #        action = 3
-        #        self.avoidance_counter -= 1
-        #        print("straight")
-        #    else:
-        #        self.avoiding = False
-        #        action = 2
-        #        print("straight")
-        #        self.avoidance_counter = self.avoidance_length
-        #else:
-        #    if (obs[0] <= 0.25): #first check if obstacles are in front, and enter avoid mode.
-        #        self.avoiding = True
-        #        self.avoidance_counter = self.avoidance_length
-        #        print("entering avoidance mode!")
-        #        action = 8
-        #    elif (obs[4] <= -0.05):  #if no obstacles, try to align to the goal (turn left)
-        #        action = 17
-        #        print("turn left")
-        #    elif (obs[4] >= 0.05):  #if no obstacles, try to align to the goal (turn right)
-        #        action = 12
-        #        print("turn right")
-        #    elif (obs[5] >= 0.5): #if aligned and far, go straight fast
-        #        action = 1
-        #        print("straight fast")
-        #    else: #if aligned and near, go straight slow
-        #        action = 4
-        #        print("straight slow")
-
-        return 0
