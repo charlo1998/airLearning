@@ -157,7 +157,7 @@ class AirSimEnv(gym.Env):
                     self.action_space = spaces.Discrete(20)
             else:
                 #this is for RL on choosing observations
-                self.action_space = spaces.Discrete(16) # one for each direction (set to 16 manually in lidar processing) 
+                self.action_space = spaces.MultiDiscrete([2]*16) # one for each sensor (set to 16 manually in lidar processing) 
                 self.DWA = gofai()
 
 

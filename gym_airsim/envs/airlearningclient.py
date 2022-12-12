@@ -557,12 +557,13 @@ class AirLearningClient(airsim.MultirotorClient):
         obs = state[0][0] #flattening the list
         sensors = obs[4:]
 
-        idx =  np.arange(0+action,8+action)
-        idx = idx%16
-        sensors[idx] = 1.0 #set the distance to 100**1 which means it will not be used by DWA (anything over 90m isn't used.)
+        print(action)
+        for i, usage in enumerate(action):
+            if (usage == 0):
+                sensors[i] = 1.0 #set the distance to 100**1 which means it will not be used by DWA (anything over 90m isn't used.)
 
-        state[0][0][4:] = sensors
-        #print(np.round(state,2))
+        #state[0][0][4:] = sensors
+        print(np.round(state,2))
 
         return state
 
