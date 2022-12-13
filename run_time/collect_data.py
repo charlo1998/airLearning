@@ -105,8 +105,8 @@ def main():
 
 
 
-    algo = "GOFAI"
-    task_type = "test"
+    algo = "A2C-B"
+    task_type = "train"
     model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"] # change A2C for baselines
     model_to_checkpoint = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"
 
@@ -120,7 +120,7 @@ def main():
 
 
 
-
+    
     taskList.append(task1) #start gane
     if task_type == "train":
         for i in range(settings.runs_to_do):

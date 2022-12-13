@@ -234,22 +234,29 @@ class AirSimEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def computeReward(self, now):
-        # test if getPosition works here liek that
-        # get exact coordiantes of the tip
-        distance_now = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
-        distance_before = self.allLogs['distance'][-1]
-        distance_correction = (distance_before - distance_now)
-        r = -1
+    #def computeReward(self, now):
+    #    # test if getPosition works here liek that
+    #    # get exact coordiantes of the tip
+    #    distance_now = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
+    #    distance_before = self.allLogs['distance'][-1]
+    #    distance_correction = (distance_before - distance_now)
+    #    r = -1
 
-        # check if you are too close to the goal, if yes, you need to reduce the yaw and speed
-        if distance_now < settings.slow_down_activation_distance:
-            yaw_correction =  abs(self.track) * distance_now 
-            velocity_correction = (settings.mv_fw_spd_5 - self.speed)* settings.mv_fw_dur
-            r = r + distance_correction + velocity_correction
-        else:
-            r = r + distance_correction
-        return r, distance_now
+    #    # check if you are too close to the goal, if yes, you need to reduce the yaw and speed
+    #    if distance_now < settings.slow_down_activation_distance:
+    #        yaw_correction =  abs(self.track) * distance_now 
+    #        velocity_correction = (settings.mv_fw_spd_5 - self.speed)* settings.mv_fw_dur
+    #        r = r + distance_correction + velocity_correction
+    #    else:
+    #        r = r + distance_correction
+    #    return r, distance_now
+
+    def computeReward(self, action):
+        nb_sensors = np.sum(action)
+        r = -0.5*nb_sensors
+        print(r)
+
+        return r
 
     def ddpg_add_noise_action(self, actions):
         noise_t = np.zeros([1, self.action_space.shape[0]])
@@ -416,7 +423,7 @@ class AirSimEnv(gym.Env):
             msgs.episodal_log_dic_verbose["distance_in_each_step"] = self.distance_in_step
             msgs.episodal_log_dic_verbose["position_in_each_step"] = self.position_in_step
         elif (msgs.mode == "train"):
-            return
+            msgs.episodal_log_dic_verbose["actions_in_each_step"] = self.actions_in_step
         else:
             raise Exception(msgs.mode + "is not supported as a mode")
 
@@ -531,9 +538,10 @@ class AirSimEnv(gym.Env):
                 self.actions_in_step.append(str(action))
             else:  #determine observation based on meta-action
                 process_action_start = time.perf_counter()
+                #action = action*0 +1 #artificially set all to 1
                 obs = self.airgym.take_meta_action(action, self.prev_state)
                 #determine move action based on DWA
-                action = self.DWA.predict(obs)
+                moveAction = self.DWA.predict(obs)
                 process_action_end = time.perf_counter()
                 if(settings.profile):
                     self.process_action_list.append(process_action_end - process_action_start)
@@ -550,11 +558,11 @@ class AirSimEnv(gym.Env):
                     collided = self.airgym.take_continious_action(action)
                 else:
                     if(settings.timedActions):
-                        collided = self.airgym.take_timed_action(action)
+                        collided = self.airgym.take_timed_action(moveAction)
                     elif(settings.positionActions):
-                        collided = self.airgym.take_position_action(action)
+                        collided = self.airgym.take_position_action(moveAction)
                     else:
-                        collided = self.airgym.take_discrete_action(action)
+                        collided = self.airgym.take_discrete_action(moveAction)
                     self.actions_in_step.append(str(action))
                 
             
@@ -610,14 +618,14 @@ class AirSimEnv(gym.Env):
             elif collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
                 print("------------drone collided!--------")
-                reward = min(-(1000.0-self.stepN), -250)
+                reward = min(-(1000.0-4*self.stepN), -500)
                 self.success = False
             elif (now[2] < -15): # Penalize for flying away too high
                 done = True
                 reward = -100
                 self.success = False
             else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def of computeReward)
-                reward, distance = self.computeReward(now)
+                reward= self.computeReward(action)
                 done = False
                 self.success = False
 
