@@ -35,7 +35,7 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
 
     return env, agent
 
-def train(env, agent, checkpoint="C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model.pkl"):
+def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/DQN-B/model.pkl"):
     if settings.use_checkpoint:
         print(f"loading checkpoint {checkpoint}")
         agent = DQN.load(checkpoint)
@@ -55,7 +55,7 @@ def train(env, agent, checkpoint="C:/Users/charl/workspace/airlearning/airlearni
         with open(action_duration_file, "w") as f:
             f.write(str(env.take_action_list))
 
-    agent.save("C:/Users/charl/workspace/airlearning/airlearning-rl/data/DQN-B/model") #todo: automate the path
+    agent.save(os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/DQN-B/model") #todo: automate the path
 
 def test(env, agent, filepath):
     msgs.mode = 'test'

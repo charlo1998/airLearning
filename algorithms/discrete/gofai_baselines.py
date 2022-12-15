@@ -31,7 +31,7 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     # Parallel environments
     return env
 
-def train(env, agent, checkpoint="C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"):
+def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/A2C-B/model"):
     print("no need for training!")
 
 def test(env):

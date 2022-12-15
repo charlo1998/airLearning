@@ -202,7 +202,7 @@ def generate_csv(file):
         data_frame.to_csv(file.replace("log", "log" + str(i)).replace("txt", "csv"), index=False)
 
 
-def plot_histogram(file="C:/Users/charl/workspace/airlearning/airlearning-rl/data/env/env_log.txt"):
+def plot_histogram(file="C:/Users/Charles/workspace/airlearning/airlearning-rl/data/env/env_log.txt"):
     with open(file, 'r') as f:
         take_action_list = f.read()
 
@@ -224,7 +224,7 @@ def append_log_file(episodeN, log_mode="verbose"):
             f.write('{\n')
             f.write('"loaded from checkpoint":' + str(settings.use_checkpoint).lower() + ',\n')
             f.write('"difficulty":' + '"' + str(settings.difficulty) + '"' + ',\n')
-            file_hndl = open("C:/Users/charl/Documents/AirSim/settings.json", "r")
+            file_hndl = open(os.path.expanduser("~") + "/Documents/AirSim/settings.json", "r")
             #print(f"parsing: {file_name}")
             UnrealSettings = json.load(file_hndl)
             f.write('"ClockSpeed":' + str(UnrealSettings['ClockSpeed']) + ',\n')

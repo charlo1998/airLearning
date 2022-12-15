@@ -2,6 +2,7 @@ import os
 
 os.sys.path.insert(0, os.path.abspath('../settings_folder'))
 
+
 import settings
 import msgs
 import dqn_airsim
@@ -15,7 +16,6 @@ from game_handler_class import *
 
 import file_handling
 from utils import *
-
 
 def runTask(task):
     # decide on the algorithm
@@ -107,8 +107,8 @@ def main():
 
     algo = "A2C-B"
     task_type = "train"
-    model_weights_list_to_test = ["C:/Users/charl/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"] # change A2C for baselines
-    model_to_checkpoint = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"
+    model_weights_list_to_test = [os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"] # change A2C for baselines
+    model_to_checkpoint = os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"
 
     task1 = {"task_type": "start_game"}
     task2 = {"algo": algo, "task_type": task_type, "difficulty_level": settings.difficulty, "env_name": "AirSimEnv-v42",

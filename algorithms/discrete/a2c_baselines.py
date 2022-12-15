@@ -37,7 +37,7 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
 
     return env, agent
 
-def train(env, agent, checkpoint="C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"):
+def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/A2C-B/model"):
     if settings.use_checkpoint:
         print(f"loading checkpoint {checkpoint}")
         agent = A2C.load(checkpoint)
@@ -60,9 +60,9 @@ def train(env, agent, checkpoint="C:/Users/charl/workspace/airlearning/airlearni
 
         
 
-    agent.save("C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model") #todo: automate the path
+    agent.save(os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/A2C-B/model") #todo: automate the path
 
-def test(env, agent, filepath = "C:/Users/charl/workspace/airlearning/airlearning-rl/data/A2C-B/model"):
+def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/A2C-B/model"):
     msgs.mode = 'test'
     msgs.weight_file_under_test = filepath
 
