@@ -254,7 +254,7 @@ class AirSimEnv(gym.Env):
     def computeReward(self, action):
         nb_sensors = np.sum(action)
         r = -0.5*nb_sensors
-        print(r)
+        #print(r)
 
         return r
 
