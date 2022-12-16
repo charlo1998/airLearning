@@ -253,7 +253,7 @@ class AirSimEnv(gym.Env):
 
     def computeReward(self, action):
         nb_sensors = np.sum(action)
-        r = -0.5*nb_sensors
+        r = -0.1*nb_sensors
         #print(r)
 
         return r
@@ -613,12 +613,13 @@ class AirSimEnv(gym.Env):
             elif self.stepN >= settings.nb_max_episodes_steps: #ran out of time/battery: -100pts
                 done = True
                 print("-----------drone ran out of time!--------")
-                reward = -100.0
+                reward = -300.0
                 self.success = False
             elif collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
                 print("------------drone collided!--------")
-                reward = min(-(1000.0-4*self.stepN), -500)
+                #reward = min(-(1000.0-4*self.stepN), -500)
+                reward = -1000
                 self.success = False
             elif (now[2] < -15): # Penalize for flying away too high
                 done = True
