@@ -51,7 +51,7 @@ checkpoint_interval = 25000
 # ---------------------------
 # how many zones for each variable for the entire range. Note that frequency
 # of moving to a new zone is not determined here
-zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 3}  # pay attention
+zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 1}  # pay attention
 
 # update_zone_success_threshold = 50
 acceptable_success_rate_to_update_zone = 0.75  # after what ratio of success up the zone # pay attention
@@ -169,7 +169,7 @@ policy = "shallow" #"shallow" or "deep"
 action durations here correspond to simulated time, so if the clockspeed is 
 set to 2 in the airsim settings, an action of 50 ms here will take 25 ms.
 
-NOTE: the learning and other rl stuff takes about 10 ms with the A2C algorithm (for example).
+NOTE: the learning and other rl stuff takes about 10 ms per step with the A2C algorithm (for example).
 So the real frequency is always lower than the minimal action duration.
 Also, increasing the clockspeed virtually increases the latency of the agent
 (ex. the 10 ms becomes 20 ms in simulation time).
@@ -235,7 +235,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 50000
+training_steps_cap = 100000
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True
