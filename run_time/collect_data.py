@@ -115,7 +115,7 @@ def main():
              "weights": model_weights_list_to_test, "checkpoint": model_to_checkpoint}
     task3 = {"task_type": "kill_game"}
     task4 = {"algo": algo, "task_type": "generate_csv", "data_file": task_type + "_episodal_log.txt"}
-    task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_log.txt", "data_to_plot": [["episodeN", "success_ratio"], ["total_step_count_for_experiment", "total_reward"], ["episodeN", "stepN"]], "plot_data_mode": "separate"}
+    task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_logverbose.txt", "data_to_plot": [["episodeN", "success_ratio"], ["total_step_count_for_experiment", "total_reward"], ["episodeN", "stepN"]], "plot_data_mode": "separate"}
     task6 = {"algo": algo, "task_type": "plot_trajectories", "data_file": task_type + "_episodal_logverbose0.txt"}
 
 
