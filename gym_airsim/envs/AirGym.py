@@ -116,6 +116,7 @@ class AirSimEnv(gym.Env):
         self.distances = np.zeros(4)
         self.speed = 0
         self.track = 0
+        self.collided = False
         self.prev_state = self.state()
         self.prev_info = {"x_pos": 0, "y_pos": 0}
         self.success = False
@@ -540,11 +541,11 @@ class AirSimEnv(gym.Env):
             #do action
             if(msgs.algo == "GOFAI"): #only do the baseline action
                 if(settings.timedActions):
-                    collided = self.airgym.take_timed_action(action)
+                    self.collided = self.airgym.take_timed_action(action)
                 elif(settings.positionActions):
-                    collided = self.airgym.take_position_action(action)
+                    self.collided = self.airgym.take_position_action(action)
                 else:
-                    collided = self.airgym.take_discrete_action(action)
+                    self.collided = self.airgym.take_discrete_action(action)
                 self.actions_in_step.append(str(action))
             else:  #determine observation based on meta-action
                 process_action_start = time.perf_counter()
@@ -558,21 +559,21 @@ class AirSimEnv(gym.Env):
                 if(msgs.algo == "DDPG"):
                     self.actions_in_step.append([action[0], action[1], action[2]])
                     action = self.ddpg_add_noise_action(action)
-                    collided = self.airgym.take_continious_action(float(action[0]), float(action[1]), float(action[2]), float(action[3]),
+                    self.collided = self.airgym.take_continious_action(float(action[0]), float(action[1]), float(action[2]), float(action[3]),
                                                      float(action[4]))
                 elif(msgs.algo == "PPO"):
                     self.actions_in_step.append([action[0], action[1], action[2]])
-                    collided = self.airgym.take_continious_action(action)
+                    self.collided = self.airgym.take_continious_action(action)
                 elif(msgs.algo == "SAC"):
                     self.actions_in_step.append([action[0], action[1]])
-                    collided = self.airgym.take_continious_action(action)
+                    self.collided = self.airgym.take_continious_action(action)
                 else:
                     if(settings.timedActions):
-                        collided = self.airgym.take_timed_action(moveAction)
+                        self.collided = self.airgym.take_timed_action(moveAction)
                     elif(settings.positionActions):
-                        collided = self.airgym.take_position_action(moveAction)
+                        self.collided = self.airgym.take_position_action(moveAction)
                     else:
-                        collided = self.airgym.take_discrete_action(moveAction)
+                        self.collided = self.airgym.take_discrete_action(moveAction)
                     self.actions_in_step.append(str(action))
                 
             
@@ -625,7 +626,7 @@ class AirSimEnv(gym.Env):
                 print("-----------drone ran out of time!--------")
                 reward = 0.0
                 self.success = False
-            elif collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
+            elif self.collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
                 print("------------drone collided!--------")
                 #reward = min(-(1000.0-4*self.stepN), -500)
@@ -698,8 +699,8 @@ class AirSimEnv(gym.Env):
         msgs.cur_zone_number = self.cur_zone_number_buff  #which delays the update for cur_zone_number
 
     def reset(self): #was_reset, which means it wasn't imported with a import * (don't know where it was imported yet
-        print(f"finished episode {self.episodeN}")
-        print(f"total step count: {self.total_step_count_for_experiment}")
+        print(f"finished episode {self.episodeN}, total step count: {self.total_step_count_for_experiment}")
+        first = time.time()
         try:
             if(settings.profile):
                 if(self.stepN % 20 ==0):
@@ -707,19 +708,29 @@ class AirSimEnv(gym.Env):
                     print ("Action Time:" +str(np.mean(self.take_action_list)))
                     print("Collect State Time"+str(np.mean(self.clct_state_list)))
 
-            print("enter reset")
-            self.randomize_env()
-            if(os.name=="nt"):
-                connection_established = self.airgym.unreal_reset()
-                if not connection_established:
-                    raise Exception
-            time.sleep(2)
-            self.airgym.AirSim_reset()
-            print("done arisim resetting")
+            if(not self.collided): #no need to reset entire simulator
+                #print("enter reset")
+                vars_to_randomize = ["End"]
+                self.sampleGameConfig(*vars_to_randomize) #sample a new End position with arena range
+                self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End")) #set goal to new End position
+                scnd = time.time()
+                print(f"randomize_env: {np.round((scnd-first)*1000)} ms")
+            else:
+                self.randomize_env()
+                if(os.name=="nt"):
+                    connection_established = self.airgym.unreal_reset()
+                    if not connection_established:
+                        raise Exception
+                time.sleep(2)
+                self.airgym.AirSim_reset()
+                scnd = time.time()
+                print(f"done AirSim resetting: {np.round((scnd-first)*1000)} ms")
+
+
             self.on_episode_start()
-            print("done on episode start")
             state = self.state()
             self.prev_state = state
+
             return state
 
         except Exception as e:
