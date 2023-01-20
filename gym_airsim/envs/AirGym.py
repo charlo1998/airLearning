@@ -252,8 +252,18 @@ class AirSimEnv(gym.Env):
     #    return r, distance_now
 
     def computeReward(self, action):
+        #if success ratio is more than 90%, try to penalize sensor usage. else, encourage more sensors for better performance.
         nb_sensors = np.sum(action)
-        r = 0.5*nb_sensors - 0.1*nb_sensors*nb_sensors
+        if len(self.success_history) > 0:
+            success_ratio = float(sum(self.success_history)/len(self.success_history))
+        else:
+            success_ratio = 0
+
+        if (success_ratio > 0.9):
+            r = 16-nb_sensors
+        else:
+            r = nb_sensors-16
+
         #print(r)
 
         return r
@@ -608,18 +618,18 @@ class AirSimEnv(gym.Env):
                 #print(self.goal)
                 #print(now)
                 # Todo: Add code for landing drone (Airsim API)
-                reward = 1000.0
+                reward = 100
                 #self.collect_data()
-            elif self.stepN >= settings.nb_max_episodes_steps: #ran out of time/battery: -100pts
+            elif self.stepN >= settings.nb_max_episodes_steps: #ran out of time/battery: 100pts (avoided collision)
                 done = True
                 print("-----------drone ran out of time!--------")
-                reward = 100.0
+                reward = 0.0
                 self.success = False
             elif collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
                 print("------------drone collided!--------")
                 #reward = min(-(1000.0-4*self.stepN), -500)
-                reward = -2000
+                reward = -200
                 self.success = False
             elif (now[2] < -15): # Penalize for flying away too high
                 done = True

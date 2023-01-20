@@ -164,15 +164,21 @@ def average(data):
 def plot_data(file, data_to_inquire, mode="separate"):
     # santize_data(file)
     #make a list of dictionnaries, loop using setting.runs_to_do and average the values
+    
     dataList = []
     plt.figure()
     for i in range(settings.runs_to_do):
-        dataList.append(parse_data(file.replace("log", "log" + str(i))))
-        action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(i) + ".txt")
-        plot_histogram(action_duration_file)
+        if settings.verbose:
+            dataList.append(parse_data(file.replace("logverbose", "logverbose" + str(i))))
+        else:
+            dataList.append(parse_data(file.replace("log", "log" + str(i))))
+            action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(i) + ".txt")
+            plot_histogram(action_duration_file)
     
     #print(dataList)
     data = dataList #to do, average the values instead of plotting them all. warning: the runs have different length of episodes!
+    if settings.verbose:
+        plot_sensor_usage(data)
     for el in data_to_inquire:
         plt.figure()
         if (el[0] == "total_step_count_for_experiment"):
@@ -201,6 +207,26 @@ def generate_csv(file):
         data_frame = pd.DataFrame(data)
         data_frame.to_csv(file.replace("log", "log" + str(i)).replace("txt", "csv"), index=False)
 
+
+def plot_sensor_usage(data):
+    for k in range(settings.runs_to_do):
+        nb_episodes = data[k]["episodeN"][-1]
+        episode_actions = data[k]["actions_in_each_step"]
+    sensors_per_action = []
+    for i in range(nb_episodes):
+        temp = []
+        actions = episode_actions[i]
+        #print(actions)
+        for action in actions:
+            action = action.replace(" ", ", ")
+            #print(action)
+            temp.append(np.sum(json.loads(action)))
+        sensors_per_action.append(np.sum(temp)/len(temp))
+    #print(sensors_per_action)
+    plt.plot(range(len(sensors_per_action)),sensors_per_action)
+    plt.xlabel('Number of episodes')
+    plt.ylabel('number of sensors')
+    plt.title('average number of sensors used in function of the episode during training')
 
 def plot_histogram(file="C:/Users/Charles/workspace/airlearning/airlearning-rl/data/env/env_log.txt"):
     with open(file, 'r') as f:
