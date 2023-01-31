@@ -69,7 +69,7 @@ class AirSimEnv(gym.Env):
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DISTANCES = 16
+            STATE_DISTANCES = settings.number_of_sensors
             if(msgs.algo == "SAC"):
                 self.observation_space = spaces.Box(low=-1, high=1, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
@@ -158,7 +158,7 @@ class AirSimEnv(gym.Env):
                     self.action_space = spaces.Discrete(20)
             else:
                 #this is for RL on choosing observations
-                self.action_space = spaces.MultiDiscrete([2]*16) # one for each sensor (set to 16 manually in lidar processing) 
+                self.action_space = spaces.MultiDiscrete([2]*settings.number_of_sensors) # one for each sensor 
                 self.DWA = gofai()
 
 

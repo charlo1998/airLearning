@@ -71,7 +71,7 @@ def santize_data(file):
 def plot_trajectories(file):
     print("collecting trajectories")
     data = parse_data(file)
-    nbOfEpisodesToPlot = 15
+    nbOfEpisodesToPlot = 10
     assert(len(data['stepN']) >= 2*nbOfEpisodesToPlot)
     nbOfSteps = 0
     #plot the first x episodes
@@ -441,14 +441,14 @@ class gofai():
         self.heading_coeff = 1
         self.safety_coeff = 3
         self.safety_dist = 1.5
-        self.previous_obs = [3]*20
+        self.previous_obs = [3]*(settings.action_discretization+4)
 
 
 
 
     def predict(self, obs):
         '''
-        observation is in the form [angle, d_goal, y_vel, x_vel, d1, d2, ..., d16] where d1 starts at 180 deg and goes ccw, velocities are in drone's body frame ref
+        observation is in the form [angle, d_goal, y_vel, x_vel, d1, d2, ..., dn] where d1 starts at 180 deg and goes ccw, velocities are in drone's body frame ref
         actions are distributed as following:
         0-15: small circle
         16-31: medium small circle
@@ -490,7 +490,7 @@ class gofai():
         action = 0
         
         for i in range(settings.action_discretization*4): #settings.action_discretization*4
-            theta = math.pi/2 - self.arc*(i%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw
+            theta = math.pi/2 - self.arc*(i%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw (drone body frame reference)
             #idx = 15 + 12 - i%settings.action_discretization
             #thetas = angles[idx-3:idx+5]
 

@@ -224,7 +224,7 @@ class AirLearningClient(airsim.MultirotorClient):
         lidarDatafront = self.client.getLidarData(lidar_name="Lidarfront",vehicle_name="Drone1")
         
         
-        front = self.process_lidar(lidarDatafront.point_cloud,16)
+        front = self.process_lidar(lidarDatafront.point_cloud, settings.number_of_sensors)
 
         output = front
         #print(output)
