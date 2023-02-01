@@ -183,8 +183,8 @@ this means the "percieved" latency doesn't increase linearly with the clockspeed
 # ---------------------------
 timedActions = False
 positionActions = True
-action_discretization = 36 #this needs to be a square number and greater than one if timedActions is set to true! 
-number_of_sensors = 36
+action_discretization = 16 #this needs to be a square number and greater than one if timedActions is set to true! 
+number_of_sensors = 16
 assert(action_discretization > 1)
 if timedActions:
     assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)

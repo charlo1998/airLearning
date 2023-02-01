@@ -472,15 +472,15 @@ class gofai():
         #create objects list to evaluate obstacles positions, and replace missing values with old observations
         for i, sensor in enumerate(sensors):
             if sensor < 99:
+                if sensor >= 66:
+                    sensors[i] = self.previous_obs[i]
                 objects.append(sensors[i])
                 orientations.append(angles[i])
-            if sensor >= 66:
-                sensors[i] = self.previous_obs[i]
             
 
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {goal_distance}")
-        #print(f"sensors: {np.round(sensors,1)}")
+        print(f"sensors: {np.round(sensors,1)}")
         
         
         #sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want
