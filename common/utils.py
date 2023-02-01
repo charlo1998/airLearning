@@ -14,6 +14,8 @@ import ast
 import math
 import time
 
+from tangent_bug import tangent_bug
+
 def parse_data(file_name):
     with open(file_name  , 'a+') as f:
         f.seek(0,0)
@@ -442,11 +444,12 @@ class gofai():
         self.safety_coeff = 3
         self.safety_dist = 1.5
         self.previous_obs = [3]*(settings.action_discretization+4)
+        self.bug = tangent_bug()
 
 
 
 
-    def predict(self, obs):
+    def predict(self, obs, goal):
         '''
         observation is in the form [angle, d_goal, y_vel, x_vel, d1, d2, ..., dn] where d1 starts at 180 deg and goes ccw, velocities are in drone's body frame ref
         actions are distributed as following:
@@ -457,11 +460,16 @@ class gofai():
         '''
 
         obs = obs[0][0] #flattening the list
-        obs[4:] = 100**obs[4:] #reconverting from normalized to real values
-        obs[1] = 100**obs[1]
+        #obs[4:] = 100**obs[4:] #reconverting from normalized to real values
+        #obs[1] = 100**obs[1]
+
+        
 
         goal_angle = obs[0]*math.pi #rad
-        goal_distance = obs[1]
+        global_goal_distance = obs[1]
+        x_goal = goal[0]
+        y_goal = goal[1]
+
         x_vel = obs[3]
         y_vel = obs[2]
         sensors = obs[4:]
@@ -479,7 +487,7 @@ class gofai():
             
 
         #print(f"angle to goal: {goal_angle*180/math.pi}")
-        #print(f"distance to goal: {goal_distance}")
+        #print(f"distance to goal: {global_goal_distance}")
         print(f"sensors: {np.round(sensors,1)}")
         
         
@@ -498,8 +506,10 @@ class gofai():
             travel_dist = settings.base_speed*2**(i//settings.action_discretization)*(settings.mv_fw_dur) #travelled distance can be 0.5, 1, 2, or 4 times duration
             x_dest = travel_dist*math.cos(theta)*0.5 + x_vel * 0.75 # correcting for current speed since change in speed isn't instantaneous
             y_dest = travel_dist*math.sin(theta)*0.5 + y_vel * 0.75
-            x_goal = goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
-            y_goal = goal_distance*math.cos(goal_angle)
+
+            x_goal2 = global_goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
+            y_goal2 = global_goal_distance*math.cos(goal_angle)
+
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
 
             #computing the closest obstacle to the trajectory
@@ -513,8 +523,8 @@ class gofai():
                         minDist = dist
 
             #computing the benefit
-            benefit = self.heading_coeff*(goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
-            #print(f"heading term: {goal_distance-new_dist}")
+            benefit = self.heading_coeff*(global_goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
+            #print(f"heading term: {global_goal_distance-new_dist}")
             #print(f"safety term: {self.safety_dist - minDist}")
             if benefit > bestBenefit:
                 bestBenefit = benefit
@@ -524,14 +534,16 @@ class gofai():
         self.previous_obs = sensors
 
         ### -----------printing info on the chosen action-------------------------------------------------------------
-        #print(f"[distance, angle]: {[travel_dist, np.round(theta*180/math.pi,1)]}")
+        print(f"desired angle: {np.round(theta*180/math.pi,1)}")
         #print(f"current speed: {[np.round(y_vel,1), np.round(x_vel,1)]}")
         #print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
         #print(f"objects: {np.round(objects,1)}")
         #print(f"orientations: {np.round(orientations,2)}")
         #print(f"sensors: {np.round(sensors,1)}")
         #print(f"angles: {np.round(angles,2)}")
-        #print(f"observed goal (relative): {[y_goal,x_goal]}")
+        print(f"received goal (relative): {[y_goal,x_goal]}")
+        print(f"observed goal (relative): {[y_goal2,x_goal2]}")
+        print(f"goal_distance: {global_goal_distance} angle: {goal_angle*180/math.pi}")
         #print(f"destination: {[np.round(y_dest,1), np.round(x_dest,1)]}")
         #print(f"destination: {np.round(now,2)}")
         #print(f"min distance in chosen trajectory: {minDist}")

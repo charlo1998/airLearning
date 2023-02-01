@@ -46,12 +46,13 @@ def test(env):
         done = False
         while not done:
             begin = time.perf_counter()
-            print("--------------------------------------dwa---------------------------------------------")
-            action = agent.predict(obs)
             print("--------------------------------------bug---------------------------------------------")
-            bug.predict(obs, done)
+            goal = bug.predict(obs)
+            print("--------------------------------------dwa---------------------------------------------")
+            action = agent.predict(obs,goal)
             end = time.perf_counter()
             obs, rewards, done, info = env.step(action)
+            bug.done = done
 
             if settings.profile:
                 process_action_list.append(end-begin)

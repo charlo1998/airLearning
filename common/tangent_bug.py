@@ -12,19 +12,19 @@ class tangent_bug():
         self.arc = 2*math.pi/settings.number_of_sensors #rad
         self.d_leave = 150
         self.d_min = 149
-        self.done = 0
         self.following_boundary = False
-        self.max_dist = 5
+        self.done =False
+        self.max_dist = 3
         self.previous_dist = 150
         self.previous_obs = [3]*(settings.number_of_sensors+4)
 
 
 
-    def predict(self, obs, done):
+    def predict(self, obs):
 
         obs = obs[0][0] #flattening the list
-        #obs[4:] = 100**obs[4:] #reconverting from normalized to real values
-        #obs[1] = 100**obs[1]
+        obs[4:] = 100**obs[4:] #reconverting from normalized to real values
+        obs[1] = 100**obs[1]
 
         goal_angle = obs[0]*math.pi #rad
         goal_distance = obs[1]
@@ -47,7 +47,13 @@ class tangent_bug():
 
         print(f"sensors: {np.round(sensors,1)}")
         print(f"distances: {np.round(objects,1)}")
-        print(f"angles: {np.round(orientations,2)}")
+        print_angles = [x*180/math.pi for x in orientations]
+        print(f"angles: {np.round(print_angles,2)}")
+
+        if self.done:
+            self.previous_dist = 150
+            self.d_leave = 150
+            self.d_min = 149
 
         if(not self.following_boundary):
             #find direction that minimizes distance to goal
@@ -57,19 +63,21 @@ class tangent_bug():
                     min_dist = heuristic
                     direction = orientations[i]
             
-            print(f"direction: {np.round(direction,2)}")
+            print(f"direction: {np.round(direction*180/math.pi,2)}")
+            goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]  #drone body frame ref
             #take moving action
 
 
             if (min_dist > self.previous_dist):
                 self.following_boundary = True
-                print(f"Switched t boundary foloowingg: min_dist is {min_dist} but previous dist is {self.previous_dist}")
+                print(f"Switched to boundary following: min_dist is {min_dist} but previous dist is {self.previous_dist}")
 
             self.previous_dist = min_dist
 
         else:
             closest_obstacle = np.argmin(objects)
             tangent = orientations[closest_obstacle]+math.pi/2 #always turning left, other option is to check previous closest point to decide left or right
+            goal = [self.max_dist*math.cos(tangent), self.max_dist*math.sin(tangent)]
 
             print(f"closest obstacle is at angle {orientations[closest_obstacle]*180/math.pi}. Tangent:  {tangent*180/math.pi}")
             #move towards tangent
@@ -77,17 +85,21 @@ class tangent_bug():
             self.d_leave = self.compute_d_leave(objects, angles, goal_distance, goal_angle)
 
             #check if goal reached
-            self.done = done
 
             print(f"d_leave: {self.d_leave}  d_min: {self.d_min}")
+            
 
-            if (self.done or self.leave < self.min):
+            if (self.done or self.d_leave < self.d_min):
                 self.following_boundary = False
+                print("switched back to normal path")
 
             self.d_min = self.compute_d_min(objects, angles, goal_distance, goal_angle)
 
 
         self.previous_obs = sensors
+        print(f"goal distance: {goal_distance} angle: {goal_angle*180/math.pi}")
+
+        return goal
 
 
     def compute_d_leave(self, objects, angles, goal_dist, goal_angle):
