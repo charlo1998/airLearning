@@ -467,8 +467,14 @@ class gofai():
 
         goal_angle = obs[0]*math.pi #rad
         global_goal_distance = obs[1]
+
+        #read goal coordinates
         x_goal = goal[0]
         y_goal = goal[1]
+        #print(f"received goal (relative): {[x_goal,y_goal]}")
+        #x_goal = global_goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
+        #y_goal = global_goal_distance*math.cos(goal_angle)
+        #print(f"observed goal (relative): {[x_goal,y_goal]}")
 
         x_vel = obs[3]
         y_vel = obs[2]
@@ -478,6 +484,7 @@ class gofai():
         objects =[]
         orientations = []
         #create objects list to evaluate obstacles positions, and replace missing values with old observations
+        #values over 99 are the sensors that are "removed" by the RL agent
         for i, sensor in enumerate(sensors):
             if sensor < 99:
                 if sensor >= 66:
@@ -488,7 +495,7 @@ class gofai():
 
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {global_goal_distance}")
-        print(f"sensors: {np.round(sensors,1)}")
+        #print(f"sensors: {np.round(sensors,1)}")
         
         
         #sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want
@@ -506,9 +513,6 @@ class gofai():
             travel_dist = settings.base_speed*2**(i//settings.action_discretization)*(settings.mv_fw_dur) #travelled distance can be 0.5, 1, 2, or 4 times duration
             x_dest = travel_dist*math.cos(theta)*0.5 + x_vel * 0.75 # correcting for current speed since change in speed isn't instantaneous
             y_dest = travel_dist*math.sin(theta)*0.5 + y_vel * 0.75
-
-            x_goal2 = global_goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
-            y_goal2 = global_goal_distance*math.cos(goal_angle)
 
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
 
@@ -529,21 +533,20 @@ class gofai():
             if benefit > bestBenefit:
                 bestBenefit = benefit
                 action =i
+                direction = theta
 
 
         self.previous_obs = sensors
 
         ### -----------printing info on the chosen action-------------------------------------------------------------
-        print(f"desired angle: {np.round(theta*180/math.pi,1)}")
+        #print(f"desired angle: {np.round(direction*180/math.pi,1)}")
         #print(f"current speed: {[np.round(y_vel,1), np.round(x_vel,1)]}")
         #print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
         #print(f"objects: {np.round(objects,1)}")
         #print(f"orientations: {np.round(orientations,2)}")
         #print(f"sensors: {np.round(sensors,1)}")
         #print(f"angles: {np.round(angles,2)}")
-        print(f"received goal (relative): {[y_goal,x_goal]}")
-        print(f"observed goal (relative): {[y_goal2,x_goal2]}")
-        print(f"goal_distance: {global_goal_distance} angle: {goal_angle*180/math.pi}")
+        #print(f"goal_distance: {global_goal_distance} angle: {goal_angle*180/math.pi}")
         #print(f"destination: {[np.round(y_dest,1), np.round(x_dest,1)]}")
         #print(f"destination: {np.round(now,2)}")
         #print(f"min distance in chosen trajectory: {minDist}")

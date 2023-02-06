@@ -13,10 +13,12 @@ class tangent_bug():
         self.d_leave = 150
         self.d_min = 149
         self.following_boundary = False
+        self.following_boundary_counter=0
         self.done =False
-        self.max_dist = 3
-        self.previous_dist = 150
+        self.min_dist = 150
+        self.max_dist = 10
         self.previous_obs = [3]*(settings.number_of_sensors+4)
+        self.foundPathCounter = 0
 
 
 
@@ -35,8 +37,8 @@ class tangent_bug():
 
         objects =[]
         orientations = []
-        min_dist = 150
         #create objects list to evaluate obstacles positions, and replace missing values with old observations.
+        #values over 99 are the sensors that are "removed" by the RL agent
         #any distance greater than the treshold will be ceiled.
         for i, sensor in enumerate(sensors):
             if sensor < 99:
@@ -45,61 +47,104 @@ class tangent_bug():
                 objects.append(min(sensors[i], self.max_dist))
                 orientations.append(angles[i])
 
-        print(f"sensors: {np.round(sensors,1)}")
-        print(f"distances: {np.round(objects,1)}")
-        print_angles = [x*180/math.pi for x in orientations]
-        print(f"angles: {np.round(print_angles,2)}")
+        segments = self.compute_discontinuities(objects)
 
-        if self.done:
-            self.previous_dist = 150
+        #print(f"sensors: {np.round(sensors,1)}")
+        print(f"distances: {np.round(objects,1)}")
+        print(f"segments: {segments}")
+        print_angles = [x*180/math.pi for x in orientations]
+        #print(f"angles: {np.round(print_angles,2)}")
+
+        
+        if self.done: #finished episode, reset distances
             self.d_leave = 150
             self.d_min = 149
+            self.min_dist = 150
+            self.following_boundary = False
+            self.foundPathCounter = 0
+
+        #find direction that minimizes distance to goal
+        foundPath = False
+        min_heuristic = 150
+        for i, object in enumerate(objects):
+            heuristic = self.compute_heuristic(object, orientations[i], goal_distance, goal_angle)
+            if heuristic <= min_heuristic:
+                min_heuristic = heuristic
+                direction = orientations[i]
+                best_idx = i
+        print(f"previous heuristic: {self.min_dist}")
+        if min_heuristic <= self.min_dist:
+            self.min_dist = min_heuristic
+            foundPath = True
+            self.foundPathCounter = 0
+        heuristic = self.compute_heuristic_verbose(objects[best_idx], orientations[best_idx], goal_distance, goal_angle)
+        
+
+        if foundPath == False and self.following_boundary == False:
+            self.foundPathCounter += 1
+            direction = math.pi/2 - goal_angle
+            print("heuristic increased, go straight into goal, counter increased for boundary following")
+            goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]
+
+        #if the heuristic didn't decrease after last couple actions, we need to enter into boundary following
+        if self.foundPathCounter >= 10:
+            self.following_boundary = True
+            self.following_boundary_counter=0
+
+
 
         if(not self.following_boundary):
-            #find direction that minimizes distance to goal
-            for i, object in enumerate(objects):
-                heuristic = self.compute_heuristic(object, orientations[i], goal_distance, goal_angle)
-                if heuristic < min_dist:
-                    min_dist = heuristic
-                    direction = orientations[i]
+            
+            #action = 12 - direction_idx + 32
             
             print(f"direction: {np.round(direction*180/math.pi,2)}")
-            goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]  #drone body frame ref
+            if goal_distance > objects[best_idx]:
+                goal = [objects[best_idx]*math.cos(direction), objects[best_idx]*math.sin(direction)]  #drone body frame ref
+            else:
+                goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]  #drone body frame ref
             #take moving action
 
-
-            if (min_dist > self.previous_dist):
-                self.following_boundary = True
-                print(f"Switched to boundary following: min_dist is {min_dist} but previous dist is {self.previous_dist}")
-
-            self.previous_dist = min_dist
 
         else:
             closest_obstacle = np.argmin(objects)
             tangent = orientations[closest_obstacle]+math.pi/2 #always turning left, other option is to check previous closest point to decide left or right
-            goal = [self.max_dist*math.cos(tangent), self.max_dist*math.sin(tangent)]
+            
+            goal = [settings.mv_fw_spd_1*math.cos(tangent), settings.mv_fw_spd_1*math.sin(tangent)]
 
             print(f"closest obstacle is at angle {orientations[closest_obstacle]*180/math.pi}. Tangent:  {tangent*180/math.pi}")
-            #move towards tangent
-
-            self.d_leave = self.compute_d_leave(objects, angles, goal_distance, goal_angle)
-
-            #check if goal reached
-
-            print(f"d_leave: {self.d_leave}  d_min: {self.d_min}")
             
+            object_to_avoid = segments[closest_obstacle]
+            print(f"avoiding segment no. : {object_to_avoid}")
+            self.d_leave, direction, idx = self.compute_d_leave(objects, angles, goal_distance, goal_angle)
+            self.d_min = self.compute_d_min(objects, angles, goal_distance, goal_angle, object_to_avoid, segments)
+            print(f"d_leave: {self.d_leave}  d_min: {self.d_min}")
 
+            #check if goal reached or escape found
             if (self.done or self.d_leave < self.d_min):
-                self.following_boundary = False
-                print("switched back to normal path")
+                if goal_distance > objects[idx]:
+                    goal = [objects[idx]*math.cos(direction), objects[idx]*math.sin(direction)]  #drone body frame ref
+                else:
+                    goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]  #drone body frame ref
 
-            self.d_min = self.compute_d_min(objects, angles, goal_distance, goal_angle)
+                self.following_boundary_counter += 1
+
+                if self.following_boundary_counter > 3:
+                    self.following_boundary = False
+                    self.foundPathCounter = 0
+                    print("switched back to normal path")
+                
+
+            
+            
 
 
         self.previous_obs = sensors
         print(f"goal distance: {goal_distance} angle: {goal_angle*180/math.pi}")
+        print(f"goal (conventional coordinates): {goal}")
 
         return goal
+
+
 
 
     def compute_d_leave(self, objects, angles, goal_dist, goal_angle):
@@ -113,15 +158,25 @@ class tangent_bug():
 
                 dist_obj2goal = np.sqrt((y_goal-y_obj)**2 + (x_goal-x_obj)**2)
 
+                if object < 10: #if the d_leave distance found is towards an obstacle, the real achievable distance is dist_obj2goal + the safety margin of the dwa.
+                    dist_obj2goal += 1.5
+
+                #limitation! : if the bug sees a escape window between two obstacles, but it is too narrow for the dwa to enter it, it will fail to avoid the local minimum
+
                 if dist_obj2goal < distMin:
                     distMin = dist_obj2goal
+                    orientation = angles[i]
+                    idx = i
 
-        return distMin
+        print(f"orientation of d_leave: {orientation*180/math.pi}")
+
+        return distMin, orientation, idx
 
 
-    def compute_d_min(self, objects, angles, goal_dist, goal_angle):
+    def compute_d_min(self, objects, angles, goal_dist, goal_angle, object_to_avoid, segments):
         distMin = self.d_min
         for i, object in enumerate(objects):
+            if segments[i] == object_to_avoid: #only update d_min if we confirmed this is on the boundary of the obstacle
                 x_obj = object*math.cos(angles[i]+self.arc/2)
                 y_obj = object*math.sin(angles[i]+self.arc/2)
 
@@ -137,22 +192,73 @@ class tangent_bug():
 
     def compute_heuristic(self, object_dist, object_angle, goal_dist, goal_angle):
 
-
         x_goal = goal_dist*math.sin(goal_angle) #reference frame for angle to goal is inverted
         y_goal = goal_dist*math.cos(goal_angle)
 
-        x_obj = object_dist*math.cos(object_angle+self.arc/2)
-        y_obj = object_dist*math.sin(object_angle+self.arc/2)
+        if object_dist < goal_dist:
+            x_obj = object_dist*math.cos(object_angle+self.arc/2)
+            y_obj = object_dist*math.sin(object_angle+self.arc/2)
 
+            dist_uav2obj = object_dist
+            dist_obj2goal = np.sqrt((y_goal-y_obj)**2 + (x_goal-x_obj)**2)
 
-        dist_uav2obj = object_dist
-        dist_obj2goal = np.sqrt((y_goal-y_obj)**2 + (x_goal-x_obj)**2)
+            #print(f"angle considered: {object_angle*180/math.pi}")
+            #print(f"object distance: {np.round(dist_uav2obj,2)}, obj to goal distance: {np.round(dist_obj2goal,2)} heuristic: {np.round(dist_uav2obj + dist_obj2goal,2)}")
 
-        if (dist_obj2goal < self.d_min):
-            self.d_min = dist_obj2goal
+            return max(0.5, dist_uav2obj + dist_obj2goal)
+        else: #goal is in front of obstacle
+            x_obj = goal_dist*math.cos(object_angle+self.arc/2)
+            y_obj = goal_dist*math.sin(object_angle+self.arc/2)
 
-        return dist_uav2obj + dist_obj2goal
+            dist_obj2goal = np.sqrt((y_goal-y_obj)**2 + (x_goal-x_obj)**2)
 
+            #print(f"Heuristic: {dist_obj2goal}")
+            return max(0.5, dist_obj2goal)
+
+    def compute_heuristic_verbose(self, object_dist, object_angle, goal_dist, goal_angle):
+
+        if object_dist < goal_dist:
+            x_goal = goal_dist*math.sin(goal_angle) #reference frame for angle to goal is inverted
+            y_goal = goal_dist*math.cos(goal_angle)
+
+            x_obj = object_dist*math.cos(object_angle+self.arc/2)
+            y_obj = object_dist*math.sin(object_angle+self.arc/2)
+
+            dist_uav2obj = object_dist
+            dist_obj2goal = np.sqrt((y_goal-y_obj)**2 + (x_goal-x_obj)**2)
+
+            print(f"angle considered: {object_angle*180/math.pi}")
+            print(f"object distance: {np.round(dist_uav2obj,2)}, obj to goal distance: {np.round(dist_obj2goal,2)} heuristic: {np.round(dist_uav2obj + dist_obj2goal,2)}")
+
+            return dist_uav2obj + dist_obj2goal
+        else: #goal is in front of obstacle
+            print(f"Heuristic: {goal_dist}")
+            return goal_dist
+
+    def compute_discontinuities(self, objects):
+        """receives lidar data, and divides data into continuous segments. returns a list of the tags for each object.
+        ex: for objects [1 1.1 1.2 1.3 5 5.1 3.1 3.2 3.1 0.9], will output [0 0 0 0 1 1 2 2 2 0] """
+
+        discontinuity_treshold = 0.9
+        diff = []
+        diff.append(objects[0]-objects[-1])
+        for i in range(len(objects)-1):
+            diff.append(objects[i+1]-objects[i])
+
+        segments = [0]*len(objects)
+        discontinuities = 0
+        for i, delta in enumerate(diff):
+            if abs(delta) > discontinuity_treshold:
+                discontinuities+=1
+            segments[i] = discontinuities
+
+        if abs(diff[0]) < discontinuity_treshold:
+            for i, segment in enumerate(segments):
+                if segment == discontinuities:
+                    segments[i] = 0
+
+        
+        return segments
 
     def find_obstacles(self, sensors):
         """ receives an array of sensors and computes where the obstacles are (discontinuities)""" 
