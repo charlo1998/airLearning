@@ -37,11 +37,14 @@ def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearni
 
 def test(env):
     msgs.mode = 'test'
+    print("test")
     process_action_list = []
     agent = gofai()
     bug = tangent_bug()
     
+
     for i in range(settings.testing_nb_episodes_per_model):
+        print("resetting env")
         obs = env.reset()
         done = False
         while not done:
@@ -50,6 +53,10 @@ def test(env):
             goal = bug.predict(obs)
             print("--------------------------------------dwa---------------------------------------------")
             action = agent.predict(obs,goal)
+            #---------------------step by step mode----------------------
+            #env.airgym.client.simPause(True)
+            #answer = input()
+            #env.airgym.client.simPause(False)
             end = time.perf_counter()
             obs, rewards, done, info = env.step(action)
             bug.done = done

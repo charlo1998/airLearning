@@ -105,8 +105,8 @@ def main():
 
 
 
-    algo = "A2C-B"
-    task_type = "train"
+    algo = "GOFAI"
+    task_type = "test"
     model_weights_list_to_test = [os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"] # change A2C for baselines
     model_to_checkpoint = os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"
 
@@ -135,7 +135,7 @@ def main():
     #taskList.append(task4) #generate_csv
 
     for task_el in taskList:
-        #print(f'executing task {task_el}')
+        print(f'executing task {task_el}')
         runTask(task_el)
 
 
