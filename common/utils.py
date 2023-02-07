@@ -73,7 +73,7 @@ def santize_data(file):
 def plot_trajectories(file):
     print("collecting trajectories")
     data = parse_data(file)
-    nbOfEpisodesToPlot = 10
+    nbOfEpisodesToPlot = 50
     assert(len(data['stepN']) >= 2*nbOfEpisodesToPlot)
     nbOfSteps = 0
     #plot the first x episodes
@@ -92,7 +92,8 @@ def plot_trajectories(file):
             ycoord.append(positions[1])
 
         nbOfSteps += episodeLength
-        plt.plot(xcoord, ycoord)
+        if episodeLength >= 200:
+            plt.plot(xcoord, ycoord)
 
     plt.xlabel("x")
     plt.ylabel("y")
@@ -117,7 +118,8 @@ def plot_trajectories(file):
             ycoord.append(positions[1])
 
         nbOfSteps += episodeLength
-        plt.plot(xcoord, ycoord)
+        if episodeLength >= 200:
+            plt.plot(xcoord, ycoord)
 
     plt.xlabel("x")
     plt.ylabel("y")

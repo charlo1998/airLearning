@@ -19,6 +19,8 @@ class tangent_bug():
         self.max_dist = 10
         self.previous_obs = [3]*(settings.number_of_sensors+4)
         self.foundPathCounter = 0
+        self.tangent_direction = 1
+        self.tangent_counter = 0
 
 
 
@@ -50,8 +52,8 @@ class tangent_bug():
         segments = self.compute_discontinuities(objects)
 
         #print(f"sensors: {np.round(sensors,1)}")
-        print(f"distances: {np.round(objects,1)}")
-        print(f"segments: {segments}")
+        #print(f"distances: {np.round(objects,1)}")
+        #print(f"segments: {segments}")
         print_angles = [x*180/math.pi for x in orientations]
         #print(f"angles: {np.round(print_angles,2)}")
 
@@ -77,7 +79,7 @@ class tangent_bug():
             self.min_dist = min_heuristic
             foundPath = True
             self.foundPathCounter = 0
-        heuristic = self.compute_heuristic_verbose(objects[best_idx], orientations[best_idx], goal_distance, goal_angle)
+        heuristic = self.compute_heuristic(objects[best_idx], orientations[best_idx], goal_distance, goal_angle)
         
 
         if foundPath == False and self.following_boundary == False:
@@ -87,9 +89,11 @@ class tangent_bug():
             goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]
 
         #if the heuristic didn't decrease after last couple actions, we need to enter into boundary following
-        if self.foundPathCounter >= 10:
+        if self.foundPathCounter >= 5 and not self.following_boundary:
+            print("entering boundary following")
             self.following_boundary = True
             self.following_boundary_counter=0
+            self.tangent_counter = 0
 
 
 
@@ -97,7 +101,7 @@ class tangent_bug():
             
             #action = 12 - direction_idx + 32
             
-            print(f"direction: {np.round(direction*180/math.pi,2)}")
+            #print(f"direction: {np.round(direction*180/math.pi,2)}")
             if goal_distance > objects[best_idx]:
                 goal = [objects[best_idx]*math.cos(direction), objects[best_idx]*math.sin(direction)]  #drone body frame ref
             else:
@@ -106,35 +110,46 @@ class tangent_bug():
 
 
         else:
-            closest_obstacle = np.argmin(objects)
-            tangent = orientations[closest_obstacle]+math.pi/2 #always turning left, other option is to check previous closest point to decide left or right
+
+
+            closest_obstacle_idx = np.argmin(objects)
+            tangent = orientations[closest_obstacle_idx]+math.pi/2*self.tangent_direction
             
             goal = [settings.mv_fw_spd_1*math.cos(tangent), settings.mv_fw_spd_1*math.sin(tangent)]
 
-            print(f"closest obstacle is at angle {orientations[closest_obstacle]*180/math.pi}. Tangent:  {tangent*180/math.pi}")
+            #print(f"closest obstacle is at angle {orientations[closest_obstacle_idx]*180/math.pi}. Tangent:  {tangent*180/math.pi}")
             
-            object_to_avoid = segments[closest_obstacle]
-            print(f"avoiding segment no. : {object_to_avoid}")
+            object_to_avoid = segments[closest_obstacle_idx]
+            #print(f"avoiding segment no. : {object_to_avoid}")
             self.d_leave, direction, idx = self.compute_d_leave(objects, angles, goal_distance, goal_angle)
             self.d_min = self.compute_d_min(objects, angles, goal_distance, goal_angle, object_to_avoid, segments)
-            print(f"d_leave: {self.d_leave}  d_min: {self.d_min}")
+            #print(f"d_leave: {self.d_leave}  d_min: {self.d_min}")
 
-            #check if goal reached or escape found
-            if (self.done or self.d_leave < self.d_min):
+            #check if goal reached or escape found, or far from any obstacles
+            if (self.done or self.d_leave < self.d_min or objects[closest_obstacle_idx] > 5):
                 if goal_distance > objects[idx]:
                     goal = [objects[idx]*math.cos(direction), objects[idx]*math.sin(direction)]  #drone body frame ref
                 else:
                     goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]  #drone body frame ref
 
                 self.following_boundary_counter += 1
-
-                if self.following_boundary_counter > 3:
+                if self.following_boundary_counter > 5:
                     self.following_boundary = False
                     self.foundPathCounter = 0
                     print("switched back to normal path")
-                
+                    print(f"closest obstacle: {objects[closest_obstacle_idx]}")
 
-            
+            else:
+                #if we've been following the boundary for a long time, try returning to normal state and switching tangent directions
+                self.tangent_counter +=1
+                if self.tangent_counter > 100:
+                    self.tangent_counter = -100
+                    self.tangent_direction = -1*self.tangent_direction
+                    print("switching direction")
+                    self.following_boundary = False
+                    self.foundPathCounter = 0
+                    print("switched back to normal path")
+         
             
 
 
@@ -151,6 +166,7 @@ class tangent_bug():
 
         #if the bug sees a escape window between two obstacles, but it is too narrow for the dwa to enter it, it will fail to avoid the local minimum.
         #we want to mark it as "obstacle"
+        temp_objects = objects.copy()
         for i, object in enumerate(objects):
             if i == 0:
                 left = -1
@@ -163,13 +179,13 @@ class tangent_bug():
                 right = i+1
 
             #process gaps
-            if object < 10:
-                #compute lenght of gap using al-kashi formula
-                gap = np.sqrt(objects[left]**2 + objects[right]**2 -2*objects[left]*objects[right]*math.cos(self.arc*2))
-                if gap < 2:
-                    objects[i] = min(objects[left], objects[right])
-                    print(f"filled in gap at angle {angles[i]*180/math.pi}")
+            #compute lenght of gap using al-kashi formula
+            gap = np.sqrt(objects[left]**2 + objects[right]**2 -2*objects[left]*objects[right]*math.cos(angles[right]-angles[left]))
+            if gap < 2:
+                temp_objects[i] = min(objects[left], objects[right])
+                #print(f"filled in gap at angle {angles[i]*180/math.pi}")
 
+        objects[:] = temp_objects[:]
 
         distMin = 150
         for i, object in enumerate(objects):
@@ -191,7 +207,7 @@ class tangent_bug():
                     orientation = angles[i]
                     idx = i
 
-        print(f"orientation of d_leave: {orientation*180/math.pi}")
+        #print(f"orientation of d_leave: {orientation*180/math.pi}")
 
         return distMin, orientation, idx
 
