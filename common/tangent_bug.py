@@ -72,7 +72,7 @@ class tangent_bug():
                 min_heuristic = heuristic
                 direction = orientations[i]
                 best_idx = i
-        print(f"previous heuristic: {self.min_dist}")
+        #print(f"previous heuristic: {self.min_dist}")
         if min_heuristic <= self.min_dist:
             self.min_dist = min_heuristic
             foundPath = True
@@ -83,7 +83,7 @@ class tangent_bug():
         if foundPath == False and self.following_boundary == False:
             self.foundPathCounter += 1
             direction = math.pi/2 - goal_angle
-            print("heuristic increased, go straight into goal, counter increased for boundary following")
+            #print("heuristic increased, go straight into goal, counter increased for boundary following")
             goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]
 
         #if the heuristic didn't decrease after last couple actions, we need to enter into boundary following
@@ -139,8 +139,8 @@ class tangent_bug():
 
 
         self.previous_obs = sensors
-        print(f"goal distance: {goal_distance} angle: {goal_angle*180/math.pi}")
-        print(f"goal (conventional coordinates): {goal}")
+        #print(f"goal distance: {goal_distance} angle: {goal_angle*180/math.pi}")
+        #print(f"goal (conventional coordinates): {goal}")
 
         return goal
 
@@ -148,6 +148,29 @@ class tangent_bug():
 
 
     def compute_d_leave(self, objects, angles, goal_dist, goal_angle):
+
+        #if the bug sees a escape window between two obstacles, but it is too narrow for the dwa to enter it, it will fail to avoid the local minimum.
+        #we want to mark it as "obstacle"
+        for i, object in enumerate(objects):
+            if i == 0:
+                left = -1
+                right = 1
+            elif i == len(objects)-1:
+                left = len(objects)-2
+                right = 0
+            else:
+                left = i-1
+                right = i+1
+
+            #process gaps
+            if object < 10:
+                #compute lenght of gap using al-kashi formula
+                gap = np.sqrt(objects[left]**2 + objects[right]**2 -2*objects[left]*objects[right]*math.cos(self.arc*2))
+                if gap < 2:
+                    objects[i] = min(objects[left], objects[right])
+                    print(f"filled in gap at angle {angles[i]*180/math.pi}")
+
+
         distMin = 150
         for i, object in enumerate(objects):
                 x_obj = object*math.cos(angles[i]+self.arc/2)
@@ -158,10 +181,10 @@ class tangent_bug():
 
                 dist_obj2goal = np.sqrt((y_goal-y_obj)**2 + (x_goal-x_obj)**2)
 
-                if object < 10: #if the d_leave distance found is towards an obstacle, the real achievable distance is dist_obj2goal + the safety margin of the dwa.
+                #check if the dwa will be able to reach that point easily.
+                if object < 10: #1. if the d_leave distance found is towards an obstacle, the real achievable distance is dist_obj2goal + the safety margin of the dwa.
                     dist_obj2goal += 1.5
 
-                #limitation! : if the bug sees a escape window between two obstacles, but it is too narrow for the dwa to enter it, it will fail to avoid the local minimum
 
                 if dist_obj2goal < distMin:
                     distMin = dist_obj2goal
