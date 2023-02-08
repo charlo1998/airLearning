@@ -92,7 +92,7 @@ class tangent_bug():
             goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]
 
         #if the heuristic didn't decrease after last couple actions, we need to enter into boundary following
-        if self.foundPathCounter >= 5 and not self.following_boundary:
+        if self.foundPathCounter >= 8 and not self.following_boundary:
             print("entering boundary following")
             self.following_boundary = True
             self.following_boundary_counter=0
@@ -132,19 +132,21 @@ class tangent_bug():
 
             #check if goal reached or escape found, or far from any obstacles
             if (self.done or self.d_leave < self.d_min or objects[closest_obstacle_idx] > 5):
+                self.following_boundary_counter += 1
                 if goal_distance > objects[idx]:
                     goal = [objects[idx]*math.cos(direction), objects[idx]*math.sin(direction)]  #drone body frame ref
                 else:
                     goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]  #drone body frame ref
 
-                self.following_boundary_counter += 1
+                
                 print(f"done: {self.done}")
-                if self.following_boundary_counter > 5:
+                if self.following_boundary_counter > 3:
                     self.following_boundary = False
                     self.foundPathCounter = 0
                     print("switched back to normal path")
 
             else:
+                self.following_boundary_counter = 0
                 #if we've been following the boundary for a long time, try returning to normal state and switching tangent directions
                 self.tangent_counter +=1
                 if self.tangent_counter > 100:
@@ -153,7 +155,11 @@ class tangent_bug():
                     print("switching direction")
                     self.following_boundary = False
                     self.foundPathCounter = 0
-                    print("switched back to normal path")
+                    self.d_leave = 150
+                    self.d_min = 149
+                    self.min_dist = 150
+                    self.tangent_counter = 0
+                    print("reset to normal behavior")
          
             
 
