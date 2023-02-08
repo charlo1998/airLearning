@@ -131,7 +131,7 @@ class tangent_bug():
             print(f"tangent counter: {self.tangent_counter}")
 
             #check if goal reached or escape found, or far from any obstacles
-            if (self.done or self.d_leave < self.d_min or objects[closest_obstacle_idx] > 5):
+            if (self.done or self.d_leave < self.d_min):
                 self.following_boundary_counter += 1
                 if goal_distance > objects[idx]:
                     goal = [objects[idx]*math.cos(direction), objects[idx]*math.sin(direction)]  #drone body frame ref

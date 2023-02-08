@@ -53,11 +53,12 @@ def test(env):
             goal = bug.predict(obs)
             #print("--------------------------------------dwa---------------------------------------------")
             action = agent.predict(obs,goal)
+            
+            end = time.perf_counter()
             #---------------------step by step mode----------------------
             #env.airgym.client.simPause(True)
             #answer = input()
             #env.airgym.client.simPause(False)
-            end = time.perf_counter()
             obs, rewards, done, info = env.step(action)
             bug.done = done
 
