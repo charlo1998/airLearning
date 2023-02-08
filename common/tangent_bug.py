@@ -62,8 +62,11 @@ class tangent_bug():
             self.d_leave = 150
             self.d_min = 149
             self.min_dist = 150
+            self.following_boundary_counter = 0
             self.following_boundary = False
             self.foundPathCounter = 0
+            self.tangent_direction = 1
+            self.tangent_counter = 0
 
         #find direction that minimizes distance to goal
         foundPath = False
@@ -117,13 +120,15 @@ class tangent_bug():
             
             goal = [settings.mv_fw_spd_1*math.cos(tangent), settings.mv_fw_spd_1*math.sin(tangent)]
 
-            #print(f"closest obstacle is at angle {orientations[closest_obstacle_idx]*180/math.pi}. Tangent:  {tangent*180/math.pi}")
+            print(f"closest obstacle is at angle {orientations[closest_obstacle_idx]*180/math.pi} and distance {objects[closest_obstacle_idx]}. Tangent:  {tangent*180/math.pi}")
             
             object_to_avoid = segments[closest_obstacle_idx]
-            #print(f"avoiding segment no. : {object_to_avoid}")
+            print(f"avoiding segment no. : {object_to_avoid}")
             self.d_leave, direction, idx = self.compute_d_leave(objects, angles, goal_distance, goal_angle)
             self.d_min = self.compute_d_min(objects, angles, goal_distance, goal_angle, object_to_avoid, segments)
-            #print(f"d_leave: {self.d_leave}  d_min: {self.d_min}")
+            print(f"d_leave: {self.d_leave}  d_min: {self.d_min}")
+            print(f"boundary folling counter: {self.following_boundary_counter}")
+            print(f"tangent counter: {self.tangent_counter}")
 
             #check if goal reached or escape found, or far from any obstacles
             if (self.done or self.d_leave < self.d_min or objects[closest_obstacle_idx] > 5):
@@ -133,11 +138,11 @@ class tangent_bug():
                     goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]  #drone body frame ref
 
                 self.following_boundary_counter += 1
+                print(f"done: {self.done}")
                 if self.following_boundary_counter > 5:
                     self.following_boundary = False
                     self.foundPathCounter = 0
                     print("switched back to normal path")
-                    print(f"closest obstacle: {objects[closest_obstacle_idx]}")
 
             else:
                 #if we've been following the boundary for a long time, try returning to normal state and switching tangent directions
