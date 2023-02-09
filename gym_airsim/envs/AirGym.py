@@ -19,6 +19,7 @@ from gym_airsim.envs.airlearningclient import *
 
 from utils import append_log_file
 from utils import gofai
+from tangent_bug import tangent_bug
 
 logger = logging.getLogger(__name__)
 
@@ -160,6 +161,7 @@ class AirSimEnv(gym.Env):
                 #this is for RL on choosing observations
                 self.action_space = spaces.MultiDiscrete([2]*settings.number_of_sensors) # one for each sensor 
                 self.DWA = gofai()
+                self.bug = tangent_bug()
 
 
         self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End"))
@@ -552,7 +554,8 @@ class AirSimEnv(gym.Env):
                 #action = action*0 +1 #artificially set all to 1
                 obs = self.airgym.take_meta_action(action, self.prev_state)
                 #determine move action based on DWA
-                moveAction = self.DWA.predict(obs)
+                goal = self.bug.predict(obs)
+                moveAction = self.DWA.predict(obs, goal)
                 process_action_end = time.perf_counter()
                 if(settings.profile):
                     self.process_action_list.append(process_action_end - process_action_start)

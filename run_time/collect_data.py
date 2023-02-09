@@ -105,8 +105,8 @@ def main():
 
 
 
-    algo = "GOFAI"
-    task_type = "test"
+    algo = "A2C-B"
+    task_type = "train"
     model_weights_list_to_test = [os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"] # change A2C for baselines
     model_to_checkpoint = os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"
 
