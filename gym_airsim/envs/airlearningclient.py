@@ -557,7 +557,9 @@ class AirLearningClient(airsim.MultirotorClient):
         obs = state[0][0] #flattening the list
         sensors = obs[4:]
 
-        #print(action)
+        action = action.flatten()
+
+
         for i, usage in enumerate(action):
             if (usage == 0):
                 sensors[i] = 1.0 #set the distance to 100**1 which means it will not be used by DWA (anything over 99m isn't used.)

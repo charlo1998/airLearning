@@ -584,7 +584,6 @@ class AirSimEnv(gym.Env):
                     take_action_end = time.perf_counter()
                     self.take_action_list.append(take_action_end - take_action_start)
                     clct_state_start = time.time()
-            
             now = self.airgym.drone_pos()
             self.track = self.airgym.goal_direction(self.goal, now)
             
