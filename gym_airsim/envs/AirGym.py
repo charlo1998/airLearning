@@ -263,9 +263,9 @@ class AirSimEnv(gym.Env):
             success_ratio = 0
 
         if (success_ratio > 0.9):
-            r = (settings.number_of_sensors-nb_sensors)/settings.number_of_sensors*5
+            r = (settings.number_of_sensors-nb_sensors)/settings.number_of_sensors*10-10
         else:
-            r = (nb_sensors-settings.number_of_sensors)/settings.number_of_sensors*5
+            r = (nb_sensors-settings.number_of_sensors)/settings.number_of_sensors*10-10
 
         #print(r)
 
@@ -712,14 +712,7 @@ class AirSimEnv(gym.Env):
                     print ("Action Time:" +str(np.mean(self.take_action_list)))
                     print("Collect State Time"+str(np.mean(self.clct_state_list)))
 
-            if(not self.collided): #no need to reset entire simulator
-                #print("enter reset")
-                vars_to_randomize = ["End"]
-                self.sampleGameConfig(*vars_to_randomize) #sample a new End position with arena range
-                self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End")) #set goal to new End position
-                scnd = time.time()
-                print(f"randomize_env: {np.round((scnd-first)*1000)} ms")
-            else:
+            if(self.collided or self.stepN % 20 == 0): 
                 self.randomize_env()
                 if(os.name=="nt"):
                     connection_established = self.airgym.unreal_reset()
@@ -729,6 +722,13 @@ class AirSimEnv(gym.Env):
                 self.airgym.AirSim_reset()
                 scnd = time.time()
                 print(f"done AirSim resetting: {np.round((scnd-first)*1000)} ms")
+            else: #no collision, no need to reset entire simulator
+                #print("enter reset")
+                vars_to_randomize = ["End"]
+                self.sampleGameConfig(*vars_to_randomize) #sample a new End position with arena range
+                self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End")) #set goal to new End position
+                scnd = time.time()
+                print(f"randomize_env: {np.round((scnd-first)*1000)} ms")
 
 
             self.on_episode_start()

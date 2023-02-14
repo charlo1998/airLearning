@@ -120,13 +120,13 @@ class tangent_bug():
             
             goal = [settings.mv_fw_spd_1*math.cos(tangent), settings.mv_fw_spd_1*math.sin(tangent)]
 
-            print(f"closest obstacle is at angle {orientations[closest_obstacle_idx]*180/math.pi} and distance {objects[closest_obstacle_idx]}. Tangent:  {tangent*180/math.pi}")
+            #print(f"closest obstacle is at angle {orientations[closest_obstacle_idx]*180/math.pi} and distance {objects[closest_obstacle_idx]}. Tangent:  {tangent*180/math.pi}")
             
             object_to_avoid = segments[closest_obstacle_idx]
-            print(f"avoiding segment no. : {object_to_avoid}")
+            #print(f"avoiding segment no. : {object_to_avoid}")
             self.d_leave, direction, idx = self.compute_d_leave(objects, angles, goal_distance, goal_angle)
             self.d_min = self.compute_d_min(objects, angles, goal_distance, goal_angle, object_to_avoid, segments)
-            print(f"d_leave: {self.d_leave}  d_min: {self.d_min}")
+            #print(f"d_leave: {self.d_leave}  d_min: {self.d_min}")
             print(f"boundary folling counter: {self.following_boundary_counter}")
             print(f"tangent counter: {self.tangent_counter}")
 
@@ -194,7 +194,7 @@ class tangent_bug():
             gap = np.sqrt(objects[left]**2 + objects[right]**2 -2*objects[left]*objects[right]*math.cos(angles[right]-angles[left]))
             if gap < 2:
                 temp_objects[i] = min(objects[left], objects[right])
-                #print(f"filled in gap at angle {angles[i]*180/math.pi}")
+                print(f"filled in gap at angle {angles[i]*180/math.pi}")
 
         objects[:] = temp_objects[:]
 
