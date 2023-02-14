@@ -214,15 +214,14 @@ def generate_csv(file):
 
 def plot_sensor_usage(data):
     for k in range(settings.runs_to_do):
-        nb_episodes = data[k]["episodeN"][-1]
         episode_actions = data[k]["actions_in_each_step"]
+        #print(len(episode_actions))
     sensors_per_action = []
-    for i in range(nb_episodes):
+    for actions in episode_actions:
         temp = []
-        actions = episode_actions[i]
         #print(actions)
         for action in actions:
-            action = action.replace(" ", ", ")
+            action = action.replace(" ", ", ") 
             #print(action)
             temp.append(np.sum(json.loads(action)))
         sensors_per_action.append(np.sum(temp)/len(temp))
@@ -444,7 +443,7 @@ class gofai():
         self.arc = 2*math.pi/settings.action_discretization #rad
         self.heading_coeff = 1
         self.safety_coeff = 3
-        self.safety_dist = 1.5
+        self.safety_dist = 1.75
         self.previous_obs = [3]*(settings.action_discretization+4)
         self.bug = tangent_bug()
 
