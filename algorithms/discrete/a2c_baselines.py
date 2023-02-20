@@ -12,7 +12,7 @@ from gym_airsim.envs.airlearningclient import *
 import callbacks
 from multi_modal_policy import MultiInputPolicy
 from stable_baselines.common.policies import MlpPolicy
-from stable_baselines.common.policies import CnnPolicy
+from stable_baselines.common.policies import MlpLstmPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
 #from stable_baselines.common import make_vec_env #this yields an error
 from stable_baselines import A2C
@@ -32,7 +32,7 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     vec_env = DummyVecEnv([lambda: env])  # The algorithms require a vectorized environment to run
     # Parallel environments
     #env = make_vec_env('CartPole-v1', n_envs=4)
-    agent = A2C(MlpPolicy, vec_env, verbose=1)
+    agent = A2C(MlpLstmPolicy , vec_env, verbose=1)
     env.set_model(agent)
 
     return env, agent
