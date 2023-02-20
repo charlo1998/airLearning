@@ -92,8 +92,7 @@ def plot_trajectories(file):
             ycoord.append(positions[1])
 
         nbOfSteps += episodeLength
-        if episodeLength >= 200:
-            plt.plot(xcoord, ycoord)
+        plt.plot(xcoord, ycoord)
 
     plt.xlabel("x")
     plt.ylabel("y")
@@ -118,8 +117,7 @@ def plot_trajectories(file):
             ycoord.append(positions[1])
 
         nbOfSteps += episodeLength
-        if episodeLength >= 200:
-            plt.plot(xcoord, ycoord)
+        plt.plot(xcoord, ycoord)
 
     plt.xlabel("x")
     plt.ylabel("y")

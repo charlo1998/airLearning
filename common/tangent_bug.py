@@ -1,6 +1,8 @@
 import math
 import numpy as np
 import settings
+import random
+import msgs
 
 
 class tangent_bug():
@@ -34,9 +36,20 @@ class tangent_bug():
         goal_distance = obs[1]
         x_vel = obs[3]
         y_vel = obs[2]
-        sensors = obs[4:]
-        angles =  np.arange(-math.pi,math.pi,self.arc)
 
+        # ---------------- random baseline -----------------------------
+        if(msgs.algo == "GOFAI"):
+            #randomly chooses a subset of sensors to process (imitating RL agent)
+            n_sensors = 12
+            sensors = obs[4:]
+            chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
+            #print(chosens)
+            for idx in chosens:
+                sensors[idx] = 100
+            #print(sensors)
+        # -----------------------------------------------------------------
+
+        angles =  np.arange(-math.pi,math.pi,self.arc)
         objects =[]
         orientations = []
         #create objects list to evaluate obstacles positions, and replace missing values with old observations.
@@ -50,6 +63,7 @@ class tangent_bug():
                 orientations.append(angles[i])
 
         segments = self.compute_discontinuities(objects)
+        #print(objects)
 
         #print(f"sensors: {np.round(sensors,1)}")
         #print(f"distances: {np.round(objects,1)}")
