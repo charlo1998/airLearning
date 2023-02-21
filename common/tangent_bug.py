@@ -31,6 +31,7 @@ class tangent_bug():
         obs = obs[0][0] #flattening the list
         obs[4:] = 100**obs[4:] #reconverting from normalized to real values
         obs[1] = 100**obs[1]
+        sensors = obs[4:]
 
         goal_angle = obs[0]*math.pi #rad
         goal_distance = obs[1]
@@ -41,7 +42,6 @@ class tangent_bug():
         if(msgs.algo == "GOFAI"):
             #randomly chooses a subset of sensors to process (imitating RL agent)
             n_sensors = 12
-            sensors = obs[4:]
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
             #print(chosens)
             for idx in chosens:
