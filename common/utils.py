@@ -438,11 +438,11 @@ class gofai():
     '''
 
     def __init__(self):
-        self.arc = 2*math.pi/settings.action_discretization #rad
+        self.arc = 2*math.pi/settings.number_of_sensors #rad
         self.heading_coeff = 1
         self.safety_coeff = 3
-        self.safety_dist = 1.75
-        self.previous_obs = [3]*(settings.action_discretization+4)
+        self.safety_dist = 1.5
+        self.previous_obs = [3]*(settings.number_of_sensors+4)
         self.bug = tangent_bug()
 
 
@@ -502,9 +502,9 @@ class gofai():
 
         bestBenefit = -1000
         action = 0
-        
+        angle_increment = 2*math.pi/settings.action_discretization
         for i in range(settings.action_discretization*4): #settings.action_discretization*4
-            theta = math.pi/2 - self.arc*(i%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw (drone body frame reference)
+            theta = math.pi/2 - angle_increment*(i%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw (drone body frame reference)
             #idx = 15 + 12 - i%settings.action_discretization
             #thetas = angles[idx-3:idx+5]
 
