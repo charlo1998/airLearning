@@ -41,12 +41,12 @@ class tangent_bug():
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 12
+            n_sensors = 14
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
             #print(chosens)
             for idx in chosens:
                 sensors[idx] = 100
-            #print(sensors)
+        print(f"sensors bug: {np.round(sensors,1)}")
         # -----------------------------------------------------------------
 
         angles =  np.arange(-math.pi,math.pi,self.arc)
