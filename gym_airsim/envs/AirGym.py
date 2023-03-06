@@ -361,8 +361,13 @@ class AirSimEnv(gym.Env):
                 if not(msgs.success):
                     return
                 weight_file_name = self.check_point.find_file_to_check_point(msgs.cur_zone_number)
-                weight_file_name = os.path.splitext(weight_file_name)[0]
-                self.model.save(weight_file_name)
+                if ((self.total_step_count_for_experiment != 0) and (self.total_step_count_for_experiment % settings.checkpoint_interval <= 500)):
+                    #if os.path.isfile(weight_file_name):
+                    #    print(f"trying to remove {weight_file_name}")
+                    #    os.remove(weight_file_name)
+                    #weight_file_name = os.path.splitext(weight_file_name)[0]
+                    print(weight_file_name)
+                    self.model.save(weight_file_name)
                 with open(weight_file_name+"_meta_data", "w") as file_hndle:
                     json.dump(msgs.meta_data, file_hndle)
             elif (msgs.mode == 'test'):

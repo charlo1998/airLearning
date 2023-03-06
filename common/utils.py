@@ -494,7 +494,7 @@ class gofai():
 
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {global_goal_distance}")
-        print(f"sensors: {np.round(sensors,1)}")
+        #print(f"sensors: {np.round(sensors,1)}")
         
         
         #sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want

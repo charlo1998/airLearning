@@ -46,7 +46,7 @@ class tangent_bug():
             #print(chosens)
             for idx in chosens:
                 sensors[idx] = 100
-        print(f"sensors bug: {np.round(sensors,1)}")
+        #print(f"sensors bug: {np.round(sensors,1)}")
         # -----------------------------------------------------------------
 
         angles =  np.arange(-math.pi,math.pi,self.arc)
