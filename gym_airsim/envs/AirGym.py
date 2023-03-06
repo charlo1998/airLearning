@@ -366,7 +366,7 @@ class AirSimEnv(gym.Env):
                     #    print(f"trying to remove {weight_file_name}")
                     #    os.remove(weight_file_name)
                     #weight_file_name = os.path.splitext(weight_file_name)[0]
-                    print(weight_file_name)
+                    #print(weight_file_name)
                     self.model.save(weight_file_name)
                 with open(weight_file_name+"_meta_data", "w") as file_hndle:
                     json.dump(msgs.meta_data, file_hndle)

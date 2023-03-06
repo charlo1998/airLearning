@@ -74,7 +74,8 @@ def plot_trajectories(file):
     print("collecting trajectories")
     data = parse_data(file)
     nbOfEpisodesToPlot = 50
-    assert(len(data['stepN']) >= 2*nbOfEpisodesToPlot)
+    print(len(data['stepN']))
+    assert(len(data['stepN']) >= nbOfEpisodesToPlot)
     nbOfSteps = 0
     #plot the first x episodes
     plt.figure()
