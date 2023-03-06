@@ -220,6 +220,7 @@ def plot_sensor_usage(data):
         temp = []
         #print(actions)
         for action in actions:
+            action = action.replace("\n  ", " ") 
             action = action.replace(" ", ", ") 
             #print(action)
             temp.append(np.sum(json.loads(action)))
