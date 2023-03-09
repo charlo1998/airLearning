@@ -183,15 +183,15 @@ this means the "percieved" latency doesn't increase linearly with the clockspeed
 # ---------------------------
 timedActions = False
 positionActions = True
-action_discretization = 25 #this needs to be a square number and greater than one if timedActions is set to true! 
+action_discretization = 16 #this needs to be a square number and greater than one if timedActions is set to true! 
 number_of_sensors = 25
 assert(action_discretization > 1)
 if timedActions:
     assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
 
 base_speed = 0.25
-mv_fw_dur = 0.1*5
-rot_dur = 0.1*5
+mv_fw_dur = 0.5
+rot_dur = 0.5
 # yaw_rate = (180/180)*math.pi #in degree
 mv_fw_spd_1 = 1
 mv_fw_spd_2 = 2
@@ -237,7 +237,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 250000
+training_steps_cap = 40000
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True
@@ -245,7 +245,7 @@ verbose = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = max_zone*150  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = max_zone*100  # note that if number of zones are x, #pay attention
 # then model get tested testing_nb_episodes_per_model/x
 # times per zone
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)

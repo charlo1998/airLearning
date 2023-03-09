@@ -74,7 +74,8 @@ def plot_trajectories(file):
     print("collecting trajectories")
     data = parse_data(file)
     nbOfEpisodesToPlot = 50
-    assert(len(data['stepN']) >= 2*nbOfEpisodesToPlot)
+    print(len(data['stepN']))
+    assert(len(data['stepN']) >= nbOfEpisodesToPlot)
     nbOfSteps = 0
     #plot the first x episodes
     plt.figure()
@@ -92,8 +93,7 @@ def plot_trajectories(file):
             ycoord.append(positions[1])
 
         nbOfSteps += episodeLength
-        if episodeLength >= 200:
-            plt.plot(xcoord, ycoord)
+        plt.plot(xcoord, ycoord)
 
     plt.xlabel("x")
     plt.ylabel("y")
@@ -118,8 +118,7 @@ def plot_trajectories(file):
             ycoord.append(positions[1])
 
         nbOfSteps += episodeLength
-        if episodeLength >= 200:
-            plt.plot(xcoord, ycoord)
+        plt.plot(xcoord, ycoord)
 
     plt.xlabel("x")
     plt.ylabel("y")
@@ -221,6 +220,7 @@ def plot_sensor_usage(data):
         temp = []
         #print(actions)
         for action in actions:
+            action = action.replace("\n  ", " ") 
             action = action.replace(" ", ", ") 
             #print(action)
             temp.append(np.sum(json.loads(action)))
@@ -440,11 +440,11 @@ class gofai():
     '''
 
     def __init__(self):
-        self.arc = 2*math.pi/settings.action_discretization #rad
+        self.arc = 2*math.pi/settings.number_of_sensors #rad
         self.heading_coeff = 1
         self.safety_coeff = 3
-        self.safety_dist = 1.75
-        self.previous_obs = [3]*(settings.action_discretization+4)
+        self.safety_dist = 1.5
+        self.previous_obs = [3]*(settings.number_of_sensors+4)
         self.bug = tangent_bug()
 
 
@@ -504,9 +504,9 @@ class gofai():
 
         bestBenefit = -1000
         action = 0
-        
+        angle_increment = 2*math.pi/settings.action_discretization
         for i in range(settings.action_discretization*4): #settings.action_discretization*4
-            theta = math.pi/2 - self.arc*(i%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw (drone body frame reference)
+            theta = math.pi/2 - angle_increment*(i%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw (drone body frame reference)
             #idx = 15 + 12 - i%settings.action_discretization
             #thetas = angles[idx-3:idx+5]
 

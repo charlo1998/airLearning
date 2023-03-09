@@ -186,7 +186,7 @@ class CheckPoint():
 		if len(file_path_list) < self.max_chck_pt_per_zone:
 			return incr_file_name(find_file_or_dir(file_path_list, 'newest'))
 		else:
-			return os.path.basename(find_file_or_dir(file_path_list, 'oldest'))
+			return find_file_or_dir(file_path_list, 'oldest')
 
 	# import settings
 

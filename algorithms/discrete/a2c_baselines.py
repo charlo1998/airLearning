@@ -12,7 +12,7 @@ from gym_airsim.envs.airlearningclient import *
 import callbacks
 from multi_modal_policy import MultiInputPolicy
 from stable_baselines.common.policies import MlpPolicy
-from stable_baselines.common.policies import CnnPolicy
+from stable_baselines.common.policies import MlpLstmPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
 #from stable_baselines.common import make_vec_env #this yields an error
 from stable_baselines import A2C
@@ -32,7 +32,7 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     vec_env = DummyVecEnv([lambda: env])  # The algorithms require a vectorized environment to run
     # Parallel environments
     #env = make_vec_env('CartPole-v1', n_envs=4)
-    agent = A2C(MlpPolicy, vec_env, verbose=1)
+    agent = A2C(MlpLstmPolicy , vec_env, verbose=1)
     env.set_model(agent)
 
     return env, agent
@@ -83,6 +83,7 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
             f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
             f.write("take_action_list:" + str(env.take_action_list) + "\n")
             f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
+            f.write("process_action_list:" + str(env.process_action_list) + "\n")
 
         action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(settings.i_run) + ".txt")
         with open(action_duration_file, "w") as f:
