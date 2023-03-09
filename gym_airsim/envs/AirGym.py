@@ -265,7 +265,7 @@ class AirSimEnv(gym.Env):
         if (success_ratio > 0.9):
             r = (settings.number_of_sensors-nb_sensors)/settings.number_of_sensors*5-4
         else:
-            r = (nb_sensors-settings.number_of_sensors)/settings.number_of_sensors*5-9
+            r = (nb_sensors-settings.number_of_sensors)/settings.number_of_sensors*5-5
 
         #print(r)
 
