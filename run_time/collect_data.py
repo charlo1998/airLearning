@@ -135,7 +135,7 @@ def main():
     #taskList.append(task4) #generate_csv
 
     for task_el in taskList:
-        #print(f'executing task {task_el}')
+        print(f'executing task {task_el}')
         runTask(task_el)
 
 

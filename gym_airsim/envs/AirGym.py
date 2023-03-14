@@ -19,6 +19,7 @@ from gym_airsim.envs.airlearningclient import *
 
 from utils import append_log_file
 from utils import gofai
+from tangent_bug import tangent_bug
 
 logger = logging.getLogger(__name__)
 
@@ -160,6 +161,7 @@ class AirSimEnv(gym.Env):
                 #this is for RL on choosing observations
                 self.action_space = spaces.MultiDiscrete([2]*settings.number_of_sensors) # one for each sensor 
                 self.DWA = gofai()
+                self.bug = tangent_bug()
 
 
         self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End"))
@@ -261,9 +263,9 @@ class AirSimEnv(gym.Env):
             success_ratio = 0
 
         if (success_ratio > 0.9):
-            r = 16-nb_sensors
+            r = (settings.number_of_sensors-nb_sensors)/settings.number_of_sensors*5-4
         else:
-            r = nb_sensors-16
+            r = (nb_sensors-settings.number_of_sensors)/settings.number_of_sensors*5-5
 
         #print(r)
 
@@ -359,8 +361,13 @@ class AirSimEnv(gym.Env):
                 if not(msgs.success):
                     return
                 weight_file_name = self.check_point.find_file_to_check_point(msgs.cur_zone_number)
-                weight_file_name = os.path.splitext(weight_file_name)[0]
-                self.model.save(weight_file_name)
+                if ((self.total_step_count_for_experiment != 0) and (self.total_step_count_for_experiment % settings.checkpoint_interval <= 500)):
+                    #if os.path.isfile(weight_file_name):
+                    #    print(f"trying to remove {weight_file_name}")
+                    #    os.remove(weight_file_name)
+                    #weight_file_name = os.path.splitext(weight_file_name)[0]
+                    #print(weight_file_name)
+                    self.model.save(weight_file_name)
                 with open(weight_file_name+"_meta_data", "w") as file_hndle:
                     json.dump(msgs.meta_data, file_hndle)
             elif (msgs.mode == 'test'):
@@ -525,6 +532,10 @@ class AirSimEnv(gym.Env):
 
 
         try:
+            
+            if (msgs.mode == 'train'):
+                self.airgym.client.simPause(False)
+
             #print("ENter Step"+str(self.stepN))
             #print(f"action taken: {action}")
             self.addToLog('action', action)
@@ -535,6 +546,7 @@ class AirSimEnv(gym.Env):
                     self.this_time = time.time()
                     if(self.stepN > 1):
                         self.loop_rate_list.append(self.this_time - self.prev_time)
+                        #print(f"total loop latency: {np.round((self.this_time - self.prev_time)*1000)} ms")
                     self.prev_time = time.time()
                     take_action_start = time.perf_counter()
 
@@ -551,9 +563,14 @@ class AirSimEnv(gym.Env):
                 process_action_start = time.perf_counter()
                 #action = action*0 +1 #artificially set all to 1
                 obs = self.airgym.take_meta_action(action, self.prev_state)
+                #print(f"meta action: {np.round((time.perf_counter() - process_action_start)*1000)} ms")
                 #determine move action based on DWA
-                moveAction = self.DWA.predict(obs)
+                goal = self.bug.predict(obs)
+                moveAction = self.DWA.predict(obs, goal)
                 process_action_end = time.perf_counter()
+                #print(f"dwa processing: {np.round((process_action_end - process_action_start)*1000)} ms")
+                
+                take_action_start = time.perf_counter()
                 if(settings.profile):
                     self.process_action_list.append(process_action_end - process_action_start)
                 if(msgs.algo == "DDPG"):
@@ -567,7 +584,7 @@ class AirSimEnv(gym.Env):
                 elif(msgs.algo == "SAC"):
                     self.actions_in_step.append([action[0], action[1]])
                     self.collided = self.airgym.take_continious_action(action)
-                else:
+                else: #A2C-b
                     if(settings.timedActions):
                         self.collided = self.airgym.take_timed_action(moveAction)
                     elif(settings.positionActions):
@@ -581,7 +598,6 @@ class AirSimEnv(gym.Env):
                     take_action_end = time.perf_counter()
                     self.take_action_list.append(take_action_end - take_action_start)
                     clct_state_start = time.time()
-            
             now = self.airgym.drone_pos()
             self.track = self.airgym.goal_direction(self.goal, now)
             
@@ -598,6 +614,9 @@ class AirSimEnv(gym.Env):
             if(settings.profile):
                 clct_state_end = time.time()
                 self.clct_state_list.append(clct_state_end - clct_state_start)
+                #print(f"action: {np.round((take_action_end - take_action_start)*1000)} ms")
+                #print(f"observation: {np.round((clct_state_end - clct_state_start)*1000)} ms")
+                gym_stuff_start = time.perf_counter()
 
 
             self.velocity = self.airgym.drone_velocity()
@@ -609,7 +628,8 @@ class AirSimEnv(gym.Env):
             #print(f"current pose: {np.round(now,2)}")
             #print("-------------------------------------------------------------------------------------------------------")
             #print(f"goal pose: {self.goal}")
-            
+            if (msgs.mode == 'train'):
+                self.airgym.client.simPause(True)
             
             if distance < settings.success_distance_to_goal: #we found the goal: 1000ptso
                 done = True
@@ -642,6 +662,8 @@ class AirSimEnv(gym.Env):
                 self.success = False
 
             #Todo: penalize for more crazy and unstable actions
+            if(msgs.algo != "GOFAI"):
+                self.bug.done = done
 
             self.allLogs['distance'] = [float(distance)]
             self.distance_in_step.append(distance)
@@ -660,6 +682,9 @@ class AirSimEnv(gym.Env):
             if (done):
                 self.on_episode_end()
 
+            if(settings.profile):
+                print(f"gym remaining steps: {np.round((time.perf_counter() - gym_stuff_start)*1000)} ms")
+            
 
             return state, reward, done, info
         except Exception as e:
@@ -708,14 +733,7 @@ class AirSimEnv(gym.Env):
                     print ("Action Time:" +str(np.mean(self.take_action_list)))
                     print("Collect State Time"+str(np.mean(self.clct_state_list)))
 
-            if(not self.collided): #no need to reset entire simulator
-                #print("enter reset")
-                vars_to_randomize = ["End"]
-                self.sampleGameConfig(*vars_to_randomize) #sample a new End position with arena range
-                self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End")) #set goal to new End position
-                scnd = time.time()
-                print(f"randomize_env: {np.round((scnd-first)*1000)} ms")
-            else:
+            if(self.collided or self.episodeN % 20 == 0): 
                 self.randomize_env()
                 if(os.name=="nt"):
                     connection_established = self.airgym.unreal_reset()
@@ -725,6 +743,13 @@ class AirSimEnv(gym.Env):
                 self.airgym.AirSim_reset()
                 scnd = time.time()
                 print(f"done AirSim resetting: {np.round((scnd-first)*1000)} ms")
+            else: #no collision, no need to reset entire simulator
+                #print("enter reset")
+                vars_to_randomize = ["End"]
+                self.sampleGameConfig(*vars_to_randomize) #sample a new End position with arena range
+                self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End")) #set goal to new End position
+                scnd = time.time()
+                print(f"randomize_env: {np.round((scnd-first)*1000)} ms")
 
 
             self.on_episode_start()

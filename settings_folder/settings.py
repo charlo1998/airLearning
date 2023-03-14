@@ -23,6 +23,7 @@ os.sys.path.insert(0, proj_root_path + "/algorithms/continuous/ddpg")
 os.sys.path.insert(0, proj_root_path + "/algorithms/continuous/ppo")
 os.sys.path.insert(0, proj_root_path + "/algorithms/continuous/sac")
 os.sys.path.insert(0, proj_root_path + "/algorithms/continuous/ddpg/agent")
+os.sys.path.insert(0, proj_root_path + "/policies")
 os.sys.path.insert(0, proj_root_path + "/settings_folder")
 os.sys.path.insert(0, proj_root_path + "/backup")
 os.sys.path.insert(0, proj_root_path + "/data/msgs_folder")
@@ -44,7 +45,7 @@ chk_p_name_style_baselines = "0.pkl"
 max_chck_pt_per_zone = 5  # pay attention
 
 logging_interval = 100
-checkpoint_interval = 25000
+checkpoint_interval = 10000
 
 # ---------------------------
 # zoning
@@ -183,15 +184,15 @@ this means the "percieved" latency doesn't increase linearly with the clockspeed
 # ---------------------------
 timedActions = False
 positionActions = True
-action_discretization = 36 #this needs to be a square number and greater than one if timedActions is set to true! 
-number_of_sensors = 36
+action_discretization = 16 #this needs to be a square number and greater than one if timedActions is set to true! 
+number_of_sensors = 100
 assert(action_discretization > 1)
 if timedActions:
     assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
 
 base_speed = 0.25
-mv_fw_dur = 0.1*5
-rot_dur = 0.1*5
+mv_fw_dur = 0.5
+rot_dur = 0.5
 # yaw_rate = (180/180)*math.pi #in degree
 mv_fw_spd_1 = 1
 mv_fw_spd_2 = 2
@@ -223,10 +224,10 @@ backup_folder_name_style = "bu_0"  # the backup obj will create a file with this
 # general params
 # ---------------------------
 list_algo = ["DQN", "DDPG", "A2C-B", "GOFAI"]  # a new algo needs to be added to this list for backup to back up its results
-nb_max_episodes_steps = 300  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
+nb_max_episodes_steps = 500  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
-success_distance_to_goal = 1
+success_distance_to_goal = 1.5
 slow_down_activation_distance = 2.5 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
 
 # ---------------------------
@@ -237,7 +238,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 150000
+training_steps_cap = 250
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True
@@ -245,7 +246,7 @@ verbose = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = max_zone*150  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = max_zone*100  # note that if number of zones are x, #pay attention
 # then model get tested testing_nb_episodes_per_model/x
 # times per zone
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)

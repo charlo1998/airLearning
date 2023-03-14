@@ -10,6 +10,7 @@ os.sys.path.insert(0, os.path.abspath('../../../settings_folder'))
 import settings
 import msgs
 from utils import gofai
+from tangent_bug import tangent_bug
 from gym_airsim.envs.airlearningclient import *
 import callbacks
 from stable_baselines.common.vec_env import DummyVecEnv
@@ -36,17 +37,30 @@ def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearni
 
 def test(env):
     msgs.mode = 'test'
+    print("test")
     process_action_list = []
     agent = gofai()
+    bug = tangent_bug()
     
+
     for i in range(settings.testing_nb_episodes_per_model):
+        print("resetting env")
         obs = env.reset()
         done = False
         while not done:
             begin = time.perf_counter()
-            action = agent.predict(obs)
+            #print("--------------------------------------bug---------------------------------------------")
+            goal = bug.predict(obs)
+            #print("--------------------------------------dwa---------------------------------------------")
+            action = agent.predict(obs,goal)
+            
             end = time.perf_counter()
+            #---------------------step by step mode----------------------
+            #env.airgym.client.simPause(True)
+            #answer = input()
+            #env.airgym.client.simPause(False)
             obs, rewards, done, info = env.step(action)
+            bug.done = done
 
             if settings.profile:
                 process_action_list.append(end-begin)
