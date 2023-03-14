@@ -23,6 +23,7 @@ os.sys.path.insert(0, proj_root_path + "/algorithms/continuous/ddpg")
 os.sys.path.insert(0, proj_root_path + "/algorithms/continuous/ppo")
 os.sys.path.insert(0, proj_root_path + "/algorithms/continuous/sac")
 os.sys.path.insert(0, proj_root_path + "/algorithms/continuous/ddpg/agent")
+os.sys.path.insert(0, proj_root_path + "/policies")
 os.sys.path.insert(0, proj_root_path + "/settings_folder")
 os.sys.path.insert(0, proj_root_path + "/backup")
 os.sys.path.insert(0, proj_root_path + "/data/msgs_folder")
@@ -44,7 +45,7 @@ chk_p_name_style_baselines = "0.pkl"
 max_chck_pt_per_zone = 5  # pay attention
 
 logging_interval = 100
-checkpoint_interval = 25000
+checkpoint_interval = 10000
 
 # ---------------------------
 # zoning
@@ -184,7 +185,7 @@ this means the "percieved" latency doesn't increase linearly with the clockspeed
 timedActions = False
 positionActions = True
 action_discretization = 16 #this needs to be a square number and greater than one if timedActions is set to true! 
-number_of_sensors = 25
+number_of_sensors = 100
 assert(action_discretization > 1)
 if timedActions:
     assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
@@ -237,7 +238,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 40000
+training_steps_cap = 250
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True
