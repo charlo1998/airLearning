@@ -539,8 +539,9 @@ class AirSimEnv(gym.Env):
             time.sleep(settings.delay)
             now = self.airgym.drone_pos()
             self.velocity = self.airgym.drone_velocity()
-            print(f"speed after delay: {np.round(np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2),2)}") 
-            print(f"pose after delay: {np.round(now,2)}")
+            #print(f"speed after delay: {np.round(np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2),2)}") 
+            #print(f"pose after delay: {np.round(now,2)}")
+            #print("--------------------------------------------------------")
 
             #print("ENter Step"+str(self.stepN))
             #print(f"action taken: {action}")
@@ -631,7 +632,7 @@ class AirSimEnv(gym.Env):
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             #print(distance)
             
-            print(f"pose right after action: {np.round(now,2)}")
+            #print(f"pose right after action: {np.round(now,2)}")
             #print("-------------------------------------------------------------------------------------------------------")
             #print(f"goal pose: {self.goal}")
             if (msgs.mode == 'train'):

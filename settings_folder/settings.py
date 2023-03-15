@@ -190,10 +190,10 @@ assert(action_discretization > 1)
 if timedActions:
     assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
 
-base_speed = 0.25
+base_speed = 0.1
 mv_fw_dur = 0.25
 rot_dur = 0.25
-delay = 0.075 #artificial latency
+delay = 0.0001 #artificial latency
 # yaw_rate = (180/180)*math.pi #in degree
 mv_fw_spd_1 = 1
 mv_fw_spd_2 = 2

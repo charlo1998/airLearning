@@ -482,6 +482,10 @@ class gofai():
         y_vel = obs[2]
         x_pos = obs[5]
         y_pos = obs[4]
+        predicted_delay = settings.delay*5 #accouting for predicted latency, and simulation time vs real time
+        x_offset = predicted_delay*x_vel*1.25
+        y_offset = predicted_delay*y_vel*1.25
+
         sensors = obs[6:]
         angles =  np.arange(-math.pi,math.pi,self.arc)
 
@@ -515,10 +519,9 @@ class gofai():
             #thetas = angles[idx-3:idx+5]
 
             #computing new distance to goal
-            travel_speed = settings.base_speed*2**(i//settings.action_discretization) #travelling speed can be 0.5, 1, 2, or 4 
-            predicted_delay = settings.delay*5 #accouting for predicted latency, and simulation time vs real time
-            x_dest = travel_speed*math.cos(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.75) + x_vel*(0.75+predicted_delay*0.5) # correcting for current speed since change in speed isn't instantaneous
-            y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.75) + y_vel*(0.75+predicted_delay*0.5)
+            travel_speed = min(2, settings.base_speed*3**(i//settings.action_discretization)) #travelling speed can be 0.5, 1, 2, or 4 
+            x_dest = travel_speed*math.cos(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + x_vel*(0.75+predicted_delay*1.25) # correcting for current speed since change in speed isn't instantaneous
+            y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + y_vel*(0.75+predicted_delay*1.25)
 
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
 
@@ -526,8 +529,8 @@ class gofai():
             minDist = self.safety_dist
             if (len(objects) > 0):
                 for object,angle in zip(objects,orientations):
-                    x_obj = object*math.cos(angle+self.arc/2)
-                    y_obj = object*math.sin(angle+self.arc/2)
+                    x_obj = object*math.cos(angle+self.arc/2) - x_offset
+                    y_obj = object*math.sin(angle+self.arc/2) - y_offset
                     dist = self.shortest_distance_on_trajectory(x_obj,y_obj,x_dest,y_dest)
                     if dist < minDist:
                         minDist = dist
@@ -547,7 +550,7 @@ class gofai():
         
 
         ### -----------printing info on the chosen action-------------------------------------------------------------
-        travel_speed = settings.base_speed*2**(action//settings.action_discretization) #travelling speed can be 0.5, 1, 2, or 4 
+        travel_speed = min(2, settings.base_speed*3**(action//settings.action_discretization)) #travelling speed can be 0.5, 1, 2, or 4 
         x_dest = travel_speed*math.cos(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5) + x_vel * (0.75+predicted_delay)  + x_pos # correcting for current speed since change in speed isn't instantaneous
         y_dest = travel_speed*math.sin(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5)  + y_vel * (0.75+predicted_delay) + y_pos
         #print(f"desired angle: {np.round(direction*180/math.pi,1)}")
@@ -561,10 +564,11 @@ class gofai():
         #print(f"destination: {[np.round(y_dest,1), np.round(x_dest,1)]}")
         #print(f"destination: {np.round(now,2)}")
         #print(f"min distance in chosen trajectory: {minDist}")
-        print(f"goal speed: {travel_speed}")
-        print(f"received speed: {np.round(np.sqrt(x_vel**2 + y_vel**2),2)}")
-        print(f"received pos: {[np.round(y_pos,2), np.round(x_pos,2)]}")
-        print(f"predicted destination: {[np.round(y_dest,2), np.round(x_dest,2)]}")
+        #print(f"goal speed: {travel_speed}")
+        #print(f"received speed: {np.round(np.sqrt(x_vel**2 + y_vel**2),2)}")
+        #print(f"received pos: {[np.round(y_pos,2), np.round(x_pos,2)]}")
+        #print(f"corrected pos: {[np.round(y_pos+y_offset,2), np.round(x_pos+x_offset,2)]}")
+        #print(f"predicted destination: {[np.round(y_dest,2), np.round(x_dest,2)]}")
         #print(f"new_dist: {new_dist}")
         #---------------------------------------------
 

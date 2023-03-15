@@ -472,7 +472,7 @@ class AirLearningClient(airsim.MultirotorClient):
             start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
         elif action < settings.action_discretization * 2:
             #medium short dist
-            speed = settings.base_speed*2
+            speed = settings.base_speed*3
             action = action % settings.action_discretization
             angle = 2*math.pi/settings.action_discretization*action
             vx =  speed*math.cos(angle)
@@ -481,7 +481,7 @@ class AirLearningClient(airsim.MultirotorClient):
             start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
         elif action < settings.action_discretization * 3:
             #medium long
-            speed = settings.base_speed*4
+            speed = settings.base_speed*9
             action = action % settings.action_discretization
             angle = 2*math.pi/settings.action_discretization*action
             vx =  speed*math.cos(angle)
@@ -490,7 +490,7 @@ class AirLearningClient(airsim.MultirotorClient):
             start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
         elif action < settings.action_discretization * 4:
             #long dist
-            speed = settings.base_speed*8
+            speed = settings.base_speed*20
             action = action % settings.action_discretization
             angle = 2*math.pi/settings.action_discretization*action
             vx =  speed*math.cos(angle)
