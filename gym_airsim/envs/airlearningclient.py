@@ -45,19 +45,21 @@ class AirLearningClient(airsim.MultirotorClient):
 
         #ToDo: Add RGB, velocity etc
         if(settings.goal_position): #This is for ablation purposes
-            pos = self.get_distance(goal)
+            dest = self.get_distance(goal)
 
         if(settings.velocity): #This is for ablation purposes
             vel = self.drone_velocity()
+            pos = self.drone_pos()
             #keep only x and y, and  TODO: normalize them
             vel = vel[0:2]
+            pos = pos[0:2]
 
         if(settings.goal_position and settings.velocity):
-            concat_state = np.concatenate((pos, vel, distances), axis = None)
+            concat_state = np.concatenate((dest, vel, pos, distances), axis = None)
         elif(settings.goal_position):
             concat_state = np.concatenate((pos, distances), axis = None)
         elif(settings.velocity):
-            concat_state = np.concatenate((vel, distances), axis = None)
+            concat_state = np.concatenate((vel, pos, distances), axis = None)
         else:
             concat_state = distances
 
@@ -555,7 +557,7 @@ class AirLearningClient(airsim.MultirotorClient):
         """
         #print(np.round(state,2))
         obs = state[0][0] #flattening the list
-        sensors = obs[4:]
+        sensors = obs[6:]
 
         action = action.flatten()
 
@@ -564,7 +566,7 @@ class AirLearningClient(airsim.MultirotorClient):
             if (usage == 0):
                 sensors[i] = 1.0 #set the distance to 100**1 which means it will not be used by DWA (anything over 99m isn't used.)
 
-        state[0][0][4:] = sensors
+        state[0][0][6:] = sensors
         #print(np.round(state,2))
 
         return state

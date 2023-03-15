@@ -58,10 +58,10 @@ class AirSimEnv(gym.Env):
         # left depth, center depth, right depth, yaw
         if(settings.concatenate_inputs):
             if(settings.goal_position and settings.velocity): #for ablation studies
-                STATE_POS = 2
+                STATE_POS = 4
                 STATE_VEL = 2
             elif(settings.goal_position):
-                STATE_POS = 2
+                STATE_POS = 4
                 STATE_VEL = 0
             elif(settings.velocity):
                 STATE_POS = 0
@@ -536,6 +536,12 @@ class AirSimEnv(gym.Env):
             if (msgs.mode == 'train'):
                 self.airgym.client.simPause(False)
 
+            time.sleep(settings.delay)
+            now = self.airgym.drone_pos()
+            self.velocity = self.airgym.drone_velocity()
+            print(f"speed after delay: {np.round(np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2),2)}") 
+            print(f"pose after delay: {np.round(now,2)}")
+
             #print("ENter Step"+str(self.stepN))
             #print(f"action taken: {action}")
             self.addToLog('action', action)
@@ -625,7 +631,7 @@ class AirSimEnv(gym.Env):
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             #print(distance)
             
-            #print(f"current pose: {np.round(now,2)}")
+            print(f"pose right after action: {np.round(now,2)}")
             #print("-------------------------------------------------------------------------------------------------------")
             #print(f"goal pose: {self.goal}")
             if (msgs.mode == 'train'):
@@ -682,8 +688,6 @@ class AirSimEnv(gym.Env):
             if (done):
                 self.on_episode_end()
 
-            if(settings.profile):
-                print(f"gym remaining steps: {np.round((time.perf_counter() - gym_stuff_start)*1000)} ms")
             
 
             return state, reward, done, info

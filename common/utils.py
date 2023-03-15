@@ -452,7 +452,7 @@ class gofai():
 
     def predict(self, obs, goal):
         '''
-        observation is in the form [angle, d_goal, y_vel, x_vel, d1, d2, ..., dn] where d1 starts at 180 deg and goes ccw, velocities are in drone's body frame ref
+        observation is in the form [angle, d_goal, y_vel, x_vel, y_pos, x_pos, d1, d2, ..., dn] where d1 starts at 180 deg and goes ccw, velocities are in drone's body frame ref
         actions are distributed as following:
         0-15: small circle
         16-31: medium small circle
@@ -461,7 +461,7 @@ class gofai():
         '''
 
         obs = obs[0][0] #flattening the list
-        #obs[4:] = 100**obs[4:] #reconverting from normalized to real values
+        #obs[6:] = 100**obs[6:] #reconverting from normalized to real values
         #obs[1] = 100**obs[1]
 
         
@@ -477,9 +477,12 @@ class gofai():
         #y_goal = global_goal_distance*math.cos(goal_angle)
         #print(f"observed goal (relative): {[x_goal,y_goal]}")
 
+        
         x_vel = obs[3]
         y_vel = obs[2]
-        sensors = obs[4:]
+        x_pos = obs[5]
+        y_pos = obs[4]
+        sensors = obs[6:]
         angles =  np.arange(-math.pi,math.pi,self.arc)
 
         objects =[]
@@ -493,10 +496,11 @@ class gofai():
                 objects.append(sensors[i])
                 orientations.append(angles[i])
             
-
+        closest_object = min(objects)
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {global_goal_distance}")
         #print(f"sensors: {np.round(sensors,1)}")
+        #print(len(objects))
         
         
         #sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want
@@ -511,9 +515,10 @@ class gofai():
             #thetas = angles[idx-3:idx+5]
 
             #computing new distance to goal
-            travel_dist = settings.base_speed*2**(i//settings.action_discretization)*(settings.mv_fw_dur) #travelled distance can be 0.5, 1, 2, or 4 times duration
-            x_dest = travel_dist*math.cos(theta)*0.5 + x_vel * 0.75 # correcting for current speed since change in speed isn't instantaneous
-            y_dest = travel_dist*math.sin(theta)*0.5 + y_vel * 0.75
+            travel_speed = settings.base_speed*2**(i//settings.action_discretization) #travelling speed can be 0.5, 1, 2, or 4 
+            predicted_delay = settings.delay*5 #accouting for predicted latency, and simulation time vs real time
+            x_dest = travel_speed*math.cos(theta)*0.5*(settings.mv_fw_dur+predicted_delay*0.5) + x_vel*(0.75+predicted_delay*0.5) # correcting for current speed since change in speed isn't instantaneous
+            y_dest = travel_speed*math.sin(theta)*0.5*(settings.mv_fw_dur+predicted_delay*0.5) + y_vel*(0.75+predicted_delay*0.5)
 
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
 
@@ -539,7 +544,12 @@ class gofai():
 
         self.previous_obs = sensors
 
+        
+
         ### -----------printing info on the chosen action-------------------------------------------------------------
+        travel_speed = settings.base_speed*2**(action//settings.action_discretization) #travelling speed can be 0.5, 1, 2, or 4 
+        x_dest = travel_speed*math.cos(direction)*0.5*settings.mv_fw_dur + x_vel * (0.75+predicted_delay)  + x_pos # correcting for current speed since change in speed isn't instantaneous
+        y_dest = travel_speed*math.sin(direction)*0.5*settings.mv_fw_dur  + y_vel * (0.75+predicted_delay) + y_pos
         #print(f"desired angle: {np.round(direction*180/math.pi,1)}")
         #print(f"current speed: {[np.round(y_vel,1), np.round(x_vel,1)]}")
         #print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
@@ -551,7 +561,9 @@ class gofai():
         #print(f"destination: {[np.round(y_dest,1), np.round(x_dest,1)]}")
         #print(f"destination: {np.round(now,2)}")
         #print(f"min distance in chosen trajectory: {minDist}")
-        #print(f"predicted destination: {np.round(now,2)}")
+        print(f"received speed: {np.round(np.sqrt(x_vel**2 + y_vel**2),2)}")
+        print(f"received pos: {[np.round(y_pos,2), np.round(x_pos,2)]}")
+        print(f"predicted destination: {[np.round(y_dest,2), np.round(x_dest,2)]}")
         #print(f"new_dist: {new_dist}")
         #---------------------------------------------
 
