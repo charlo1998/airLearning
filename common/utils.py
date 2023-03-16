@@ -500,7 +500,6 @@ class gofai():
                 objects.append(sensors[i])
                 orientations.append(angles[i])
             
-        closest_object = min(objects)
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {global_goal_distance}")
         #print(f"sensors: {np.round(sensors,1)}")
