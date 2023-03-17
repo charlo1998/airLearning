@@ -225,7 +225,7 @@ def plot_sensor_usage(data):
             #print(action)
             temp.append(np.sum(json.loads(action)))
         sensors_per_action.append(np.sum(temp)/len(temp))
-    #print(sensors_per_action)
+    print(f"total average sensors_per_action: {sum(sensors_per_action)/len(sensors_per_action)}")
     plt.plot(range(len(sensors_per_action)),sensors_per_action)
     plt.xlabel('Number of episodes')
     plt.ylabel('number of sensors')

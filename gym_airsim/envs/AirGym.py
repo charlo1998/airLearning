@@ -262,7 +262,7 @@ class AirSimEnv(gym.Env):
         else:
             success_ratio = 0
 
-        if (success_ratio > 0.92):
+        if (success_ratio > 0.95):
             r = (settings.number_of_sensors-nb_sensors)/settings.number_of_sensors*5-4
         else:
             r = (nb_sensors-settings.number_of_sensors)/settings.number_of_sensors*5-5
@@ -533,7 +533,7 @@ class AirSimEnv(gym.Env):
 
         try:
             
-            if (msgs.mode == 'train'):
+            if (msgs.algo == 'A2C-B'):
                 self.airgym.client.simPause(False)
 
             time.sleep(settings.delay)
@@ -635,7 +635,7 @@ class AirSimEnv(gym.Env):
             #print(f"pose right after action: {np.round(now,2)}")
             #print("-------------------------------------------------------------------------------------------------------")
             #print(f"goal pose: {self.goal}")
-            if (msgs.mode == 'train'):
+            if (msgs.algo == 'A2C-B'):
                 self.airgym.client.simPause(True)
             
             if distance < settings.success_distance_to_goal: #we found the goal: 1000ptso
