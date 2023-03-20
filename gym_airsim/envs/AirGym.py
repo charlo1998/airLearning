@@ -58,19 +58,21 @@ class AirSimEnv(gym.Env):
         # left depth, center depth, right depth, yaw
         if(settings.concatenate_inputs):
             if(settings.goal_position and settings.velocity): #for ablation studies
-                STATE_POS = 4
-                STATE_VEL = 2
+                STATE_POS = 2
+                STATE_VEL = 4
             elif(settings.goal_position):
-                STATE_POS = 4
+                STATE_POS = 2
                 STATE_VEL = 0
             elif(settings.velocity):
                 STATE_POS = 0
-                STATE_VEL = 2
+                STATE_VEL = 4
             else:
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DISTANCES = settings.number_of_sensors
+            STATE_DISTANCES = 0 #number of dimensions in PCA?
+            #STATE_DISTANCES = settings.number_of_sensors
+
             if(msgs.algo == "SAC"):
                 self.observation_space = spaces.Box(low=-1, high=1, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
@@ -109,6 +111,7 @@ class AirSimEnv(gym.Env):
         self.game_config_handler = GameConfigHandler()
         if(settings.concatenate_inputs):
             self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL + STATE_DISTANCES), dtype=np.uint8)
+            self.lasers = np.zeros(settings.number_of_sensors, dtype=np.uint8)
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
@@ -368,8 +371,6 @@ class AirSimEnv(gym.Env):
                     #weight_file_name = os.path.splitext(weight_file_name)[0]
                     #print(weight_file_name)
                     self.model.save(weight_file_name)
-                with open(weight_file_name+"_meta_data", "w") as file_hndle:
-                    json.dump(msgs.meta_data, file_hndle)
             elif (msgs.mode == 'test'):
                 append_log_file(self.episodeN-1, "verbose")
                 append_log_file(self.episodeN-1, "")
@@ -533,7 +534,7 @@ class AirSimEnv(gym.Env):
 
         try:
             
-            if (msgs.algo == 'A2C-B'):
+            if (msgs.algo == "A2C-B"):
                 self.airgym.client.simPause(False)
 
             time.sleep(settings.delay)
@@ -569,7 +570,7 @@ class AirSimEnv(gym.Env):
             else:  #determine observation based on meta-action
                 process_action_start = time.perf_counter()
                 #action = action*0 +1 #artificially set all to 1
-                obs = self.airgym.take_meta_action(action, self.prev_state)
+                obs = self.airgym.take_meta_action(action, self.concat_state, self.lasers)
                 #print(f"meta action: {np.round((time.perf_counter() - process_action_start)*1000)} ms")
                 #determine move action based on DWA
                 goal = self.bug.predict(obs)
@@ -610,6 +611,7 @@ class AirSimEnv(gym.Env):
             
             #get observation
             if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI"):
+                self.lasers = self.airgym.get_laser_state()
                 self.concat_state = self.airgym.getConcatState(self.track, self.goal)
             elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                 self.depth = self.airgym.getScreenDepthVis(self.track)
@@ -635,7 +637,7 @@ class AirSimEnv(gym.Env):
             #print(f"pose right after action: {np.round(now,2)}")
             #print("-------------------------------------------------------------------------------------------------------")
             #print(f"goal pose: {self.goal}")
-            if (msgs.algo == 'A2C-B'):
+            if (msgs.algo == "A2C-B"):
                 self.airgym.client.simPause(True)
             
             if distance < settings.success_distance_to_goal: #we found the goal: 1000ptso
@@ -722,6 +724,7 @@ class AirSimEnv(gym.Env):
         now = self.airgym.drone_pos()
         self.track = self.airgym.goal_direction(self.goal, now)
         self.concat_state = self.airgym.getConcatState(self.track, self.goal)
+        self.lasers = self.airgym.get_laser_state()
         #self.depth = self.airgym.getScreenDepthVis(self.track)
         #self.rgb = self.airgym.getScreenRGB()
         self.position = self.airgym.get_distance(self.goal)

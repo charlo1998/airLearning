@@ -41,7 +41,7 @@ class AirLearningClient(airsim.MultirotorClient):
         return track
 
     def getConcatState(self, track, goal): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
-        distances = self.get_laser_state()
+        #distances = self.get_laser_state()
 
         #ToDo: Add RGB, velocity etc
         if(settings.goal_position): #This is for ablation purposes
@@ -55,11 +55,40 @@ class AirLearningClient(airsim.MultirotorClient):
             pos = pos[0:2]
 
         if(settings.goal_position and settings.velocity):
-            concat_state = np.concatenate((dest, vel, pos, distances), axis = None)
+            concat_state = np.concatenate((dest, vel, pos), axis = None)
         elif(settings.goal_position):
-            concat_state = np.concatenate((pos, distances), axis = None)
+            concat_state = np.concatenate((dest), axis = None)
         elif(settings.velocity):
-            concat_state = np.concatenate((vel, pos, distances), axis = None)
+            concat_state = np.concatenate((vel, pos), axis = None)
+        else:
+            concat_state = distances
+
+        concat_state_shape = concat_state.shape
+        concat_state = concat_state.reshape(1, concat_state_shape[0])
+        concat_state = np.expand_dims(concat_state, axis=0)
+
+        return concat_state
+
+    def getObservation(self, track, goal): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
+        #distances = self.get_laser_state()
+
+        #ToDo: Add RGB, velocity etc
+        if(settings.goal_position): #This is for ablation purposes
+            dest = self.get_distance(goal)
+
+        if(settings.velocity): #This is for ablation purposes
+            vel = self.drone_velocity()
+            pos = self.drone_pos()
+            #keep only x and y, and  TODO: normalize them
+            vel = vel[0:2]
+            pos = pos[0:2]
+
+        if(settings.goal_position and settings.velocity):
+            concat_state = np.concatenate((dest, vel, pos), axis = None)
+        elif(settings.goal_position):
+            concat_state = np.concatenate((pos), axis = None)
+        elif(settings.velocity):
+            concat_state = np.concatenate((vel, pos), axis = None)
         else:
             concat_state = distances
 
@@ -551,23 +580,26 @@ class AirLearningClient(airsim.MultirotorClient):
         collided = (self.client.getMultirotorState().trip_stats.collision_count > 0)
         return collided
 
-    def take_meta_action(self, action, state):
+    def take_meta_action(self, action, state, sensors):
         """
         takes the full state and action as input, and returns a partial observation based on the chosen action
         """
         #print(np.round(state,2))
-        obs = state[0][0] #flattening the list
-        sensors = obs[6:]
+        #obs = state[0][0] #flattening the list
+        #sensors = obs[6:]
 
         action = action.flatten()
-
 
         for i, usage in enumerate(action):
             if (usage == 0):
                 sensors[i] = 1.0 #set the distance to 100**1 which means it will not be used by DWA (anything over 99m isn't used.)
 
-        state[0][0][6:] = sensors
+        obs = np.concatenate((state, sensors), axis = None)
+        concat_state_shape = obs.shape
+        concat_state = obs.reshape(1, concat_state_shape[0])
+        concat_state = np.expand_dims(concat_state, axis=0)
+        #state[0][0][6:] = sensors
         #print(np.round(state,2))
 
-        return state
+        return concat_state
 
