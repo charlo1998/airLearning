@@ -70,7 +70,7 @@ class AirSimEnv(gym.Env):
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DISTANCES = 0 #number of dimensions in PCA?
+            STATE_DISTANCES = 0 #settings.PCA_dimensions 
             #STATE_DISTANCES = settings.number_of_sensors
 
             if(msgs.algo == "SAC"):
@@ -79,7 +79,7 @@ class AirSimEnv(gym.Env):
                 self.observation_space = spaces.Box(low=-1, high=1,
                                                     shape=((1, STATE_POS + STATE_VEL + STATE_DISTANCES)))
         else:
-            self.observation_space = spaces.Box(low=0, high=255, shape=(STATE_DISTANCES))
+            self.observation_space = spaces.Box(low=0, high=255, shape=(STATE_DISTANCES)) #make sure the observation space is consistent when using checkpoints!!
 
         self.total_step_count_for_experiment = 0 # self explanatory
         self.ease_ctr = 0  #counting how many times we ease the randomization and tightened it
@@ -569,7 +569,6 @@ class AirSimEnv(gym.Env):
                 self.actions_in_step.append(str(action))
             else:  #determine observation based on meta-action
                 process_action_start = time.perf_counter()
-                #action = action*0 +1 #artificially set all to 1
                 obs = self.airgym.take_meta_action(action, self.concat_state, self.lasers)
                 #print(f"meta action: {np.round((time.perf_counter() - process_action_start)*1000)} ms")
                 #determine move action based on DWA

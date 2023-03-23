@@ -5,6 +5,7 @@ import time
 import cv2
 import settings
 from bisect import bisect
+from sklearn.decomposition import PCA
 
 from PIL import Image
 from pylab import array, uint8, arange
@@ -66,6 +67,7 @@ class AirLearningClient(airsim.MultirotorClient):
         concat_state_shape = concat_state.shape
         concat_state = concat_state.reshape(1, concat_state_shape[0])
         concat_state = np.expand_dims(concat_state, axis=0)
+        print(concat_state.shape)
 
         return concat_state
 
@@ -226,9 +228,45 @@ class AirLearningClient(airsim.MultirotorClient):
     def get_velocity(self):
         return np.array([self.client.get_velocity().x_val, self.client.get_velocity().y_val, self.client.get_velocity().z_val])
 
-    #def get_laser_pointer(self):
-    #    distance_sensor_data = self.client.getDistanceSensorData(distance_sensor_name = "distance1", vehicle_name = "drone1")
-    #    print(distance_sensor_data)
+    def get_laser_state_PCA(self):
+        """
+        lidar parameters are set in the settings.json files in documents/airsim. they are the following:
+        "Lidarfront": {
+       		"SensorType": 6, #the type corresponding to the LiDaR sensor
+        	"Enabled" : true,
+        	"NumberOfChannels": 3, #the number of lasers (we need a laser for each horizontal swipe to have vertical FOV)
+        	"RotationsPerSecond": 20, #frequency of sensing
+    		"PointsPerSecond": 100000, #the number of points taken in an horizontal swipe of the lidar (1 rotation).
+                #PointsPerSecond is not affected by the FOV, so anything outside the FOV seems to be wasted.
+    		"X": 0, "Y": 0, "Z": -1, #position relative to the vehicule
+       		"Roll": 0, "Pitch": 0, "Yaw" : 0,   orientation relative to the vehicule
+    		"VerticalFOVUpper": 10,
+    		"VerticalFOVLower": -30,
+       		"HorizontalFOVStart": -5,
+       		"HorizontalFOVEnd": 5,
+       		"DrawDebugPoints": true, #set to true to see in unreal what is being observed
+       		"DataFrame": "SensorLocalFrame"
+    		}
+        """
+
+        ## -- laser ranger -- ##
+        lidarDatafront = self.client.getLidarData(lidar_name="Lidarfront",vehicle_name="Drone1")
+        
+        
+        points = np.array(lidarDatafront.point_cloud, dtype=np.dtype('f4'))
+        if not (points.shape[0] == 1):
+            points = np.reshape(points, (int(points.shape[0]/3), 3))
+        else:
+            #no points in the lidarPointcloud
+            print("lidar not seeing anything ?!")
+            return [0 for i in range(settings.PCA_dimensions)]
+
+        pca = PCA(n_components = settings.PCA_dimensions)
+        pca.fit(points)
+
+        output = pca.singular_values_
+
+        return output 
 
     def get_laser_state(self):
         """
