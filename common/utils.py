@@ -73,13 +73,17 @@ def santize_data(file):
 def plot_trajectories(file):
     print("collecting trajectories")
     data = parse_data(file)
-    nbOfEpisodesToPlot = 50
+    nbOfEpisodesToPlot = 10
     print(len(data['stepN']))
     assert(len(data['stepN']) >= nbOfEpisodesToPlot)
     nbOfSteps = 0
     #plot the first x episodes
     plt.figure()
+    xgoal = []
+    ygoal = []
     for i in range(nbOfEpisodesToPlot): #this is the number of trajectories to plot
+        xgoal.append(data['goal'][i][0])
+        ygoal.append(data['goal'][i][1])
         xcoord = []
         ycoord = []
         episodeLength = data['stepN'][i]
@@ -93,13 +97,15 @@ def plot_trajectories(file):
             ycoord.append(positions[1])
 
         nbOfSteps += episodeLength
-        plt.plot(xcoord, ycoord)
+        plt.plot(xcoord, ycoord, label=str(i))
 
+    plt.scatter(xgoal, ygoal)
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title(f'first {nbOfEpisodesToPlot} episodes')
     plt.xlim([-50, 50])
     plt.ylim([-50, 50])
+    plt.legend()
 
     #plot the last 10 episodes
     nbOfSteps = data['total_step_count_for_experiment'][-nbOfEpisodesToPlot-1] #remove the steps before the last 10 episodes
@@ -120,12 +126,38 @@ def plot_trajectories(file):
         nbOfSteps += episodeLength
         plt.plot(xcoord, ycoord)
 
+    
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title(f'last {nbOfEpisodesToPlot} episodes')
     plt.xlim([-50, 50])
     plt.ylim([-50, 50])
+
+    #plot distance travelled vs birdview distance to goal
+    goal = data['goal'][0]
+    ideal_distances = [np.sqrt(goal[1]**2+goal[0]**2)]
+    travelled_distances = [data['distance_traveled'][0]]
+    for i in range(1,nbOfEpisodesToPlot):
+        start = data['goal'][i-1]
+        end = data['goal'][i]
+        
+        if data['success'][i-1] == "False" or i%20 == 0: #the sim is reset to 0 after a crash or after every 20 episodes
+                travelled_distances.append(data['distance_traveled'][i])
+                ideal_distances.append(np.sqrt(end[1]**2+end[0]**2))
+        else:
+            delta = data['distance_traveled'][i] - data['distance_traveled'][i-1]
+            travelled_distances.append(delta)
+            ideal_distances.append(np.sqrt((end[1]-start[1])**2+(end[0]-start[0])**2))
+
+    plt.figure()
+    plt.plot(range(nbOfEpisodesToPlot), ideal_distances, range(nbOfEpisodesToPlot), travelled_distances)
+    plt.xlabel("episodes")
+    plt.ylabel("distance (m)")
+    plt.legend(['ideal distances', 'travelled distances'])
+
     plt.show()
+
+
 
 def average(data):
     #initializing list
