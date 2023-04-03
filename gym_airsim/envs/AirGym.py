@@ -636,7 +636,7 @@ class AirSimEnv(gym.Env):
             if (msgs.algo == 'A2C-B'):
                 self.airgym.client.simPause(True)
             
-            if distance < settings.success_distance_to_goal: #we found the goal: 1000ptso
+            if distance < settings.success_distance_to_goal: #we found the goal: 100ptso
                 done = True
                 print("-----------success, be happy!--------")
                 self.success = True
