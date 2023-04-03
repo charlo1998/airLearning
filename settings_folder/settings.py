@@ -97,12 +97,12 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "EnvType": ["Indoor"],
                   "ArenaSize": [[100, 100, 10]],
                   "PlayerStart": [[0, 0, 0]],
-                  "NumberOfDynamicObjects": list(range(100, 120)), #hard seed: 100 obstacles
+                  "NumberOfDynamicObjects": list(range(50, 60)), #hard seed: 100 obstacles
                   "Walls1": [[255, 255, 10]],
                   "Seed": list(range(0,1000)), #hard seed: seed 0
                   "VelocityRange": [[0.0, 0.0]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(0,1))}
+                  "NumberOfObjects": list(range(50,60))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -228,7 +228,7 @@ list_algo = ["DQN", "DDPG", "A2C-B", "GOFAI"]  # a new algo needs to be added to
 nb_max_episodes_steps = 500  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
-success_distance_to_goal = 1.5
+success_distance_to_goal = 2
 slow_down_activation_distance = 2.5 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
 
 # ---------------------------
