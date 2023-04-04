@@ -126,6 +126,7 @@ class AirSimEnv(gym.Env):
 
         self.actions_in_step = []
         self.position_in_step = []
+        self.observations_in_step = []
         self.distance_in_step = []
         self.reward_in_step=[]
         self.total_reward = 0
@@ -436,10 +437,12 @@ class AirSimEnv(gym.Env):
         msgs.episodal_log_dic_verbose["reward_in_each_step"] = self.reward_in_step
         if (msgs.mode == "test"):
             msgs.episodal_log_dic_verbose["actions_in_each_step"] = self.actions_in_step
+            msgs.episodal_log_dic_verbose["observations_in_each_step"] = self.observations_in_step
             msgs.episodal_log_dic_verbose["distance_in_each_step"] = self.distance_in_step
             msgs.episodal_log_dic_verbose["position_in_each_step"] = self.position_in_step
         elif (msgs.mode == "train"):
             msgs.episodal_log_dic_verbose["actions_in_each_step"] = self.actions_in_step
+            msgs.episodal_log_dic_verbose["observations_in_each_step"] = self.observations_in_step
         else:
             raise Exception(msgs.mode + "is not supported as a mode")
 
@@ -514,6 +517,7 @@ class AirSimEnv(gym.Env):
         self.update_zone_if_necessary()
 
         self.actions_in_step = []
+        self.observations_in_step = []
         self.distance_in_step = []
         self.reward_in_step = []
         self.position_in_step
@@ -537,6 +541,9 @@ class AirSimEnv(gym.Env):
             time.sleep(settings.delay)
             now = self.airgym.drone_pos()
             self.velocity = self.airgym.drone_velocity()
+            observation = np.copy(self.prev_state[0][0])
+            observation[6:] = np.round(100**observation[6:],2) #de-normalize
+            self.observations_in_step.append(str(list(observation)))
             #print(f"speed after delay: {np.round(np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2),2)}") 
             #print(f"pose after delay: {np.round(now,2)}")
             #print("--------------------------------------------------------")
@@ -598,7 +605,6 @@ class AirSimEnv(gym.Env):
                         self.collided = self.airgym.take_discrete_action(moveAction)
                     self.actions_in_step.append(str(action))
                 
-            
             if(settings.profile):
                     take_action_end = time.perf_counter()
                     self.take_action_list.append(take_action_end - take_action_start)

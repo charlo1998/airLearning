@@ -73,7 +73,7 @@ def santize_data(file):
 def plot_trajectories(file):
     print("collecting trajectories")
     data = parse_data(file)
-    nbOfEpisodesToPlot = 10
+    nbOfEpisodesToPlot = 50
     print(len(data['stepN']))
     assert(len(data['stepN']) >= nbOfEpisodesToPlot)
     nbOfSteps = 0
@@ -214,6 +214,7 @@ def plot_data(file, data_to_inquire, mode="separate"):
     data = dataList #to do, average the values instead of plotting them all. warning: the runs have different length of episodes!
     if settings.verbose:
         plot_sensor_usage(data)
+        plot_action_vs_obs(data)
     for el in data_to_inquire:
         plt.figure()
         if (el[0] == "total_step_count_for_experiment"):
@@ -241,6 +242,58 @@ def generate_csv(file):
         data = parse_data(file.replace("log", "log" + str(i)))
         data_frame = pd.DataFrame(data)
         data_frame.to_csv(file.replace("log", "log" + str(i)).replace("txt", "csv"), index=False)
+
+def plot_action_vs_obs(data):
+    for k in range(settings.runs_to_do):
+        episode_actions = data[k]["actions_in_each_step"]
+        episode_observations = data[k]["observations_in_each_step"]
+
+    sensors_per_action = []
+    obs_per_action = []
+    for i, actions in enumerate(episode_actions):
+        temp = []
+        #print(actions)
+        for action in actions:
+            action = action.replace("\n  ", " ") 
+            action = action.replace(" ", ", ") 
+            #print(action)
+            temp = json.loads(action)
+        sensors_per_action.append(temp)
+
+    for i, observations in enumerate(episode_observations):
+        temp = []
+        #print(observations)
+        for observation in observations:
+            observation = observation.replace("\n  ", " ")
+            #print(observation)
+            temp = json.loads(observation)
+
+        obs_per_action.append(temp[6:])
+
+    r = np.arange(0, settings.number_of_sensors)
+    theta = 2 * np.pi * (r+0.5) / settings.number_of_sensors - np.pi
+    r2 = np.arange(0, 2*settings.number_of_sensors)
+    theta2 = 2 * np.pi * (r2+1) / (2*settings.number_of_sensors) - np.pi
+    
+    chosen_areas = [0]*2*settings.number_of_sensors
+    for i, sensor in enumerate(sensors_per_action[0]):
+        if sensor:
+            chosen_areas[2*i-1] = 66
+            chosen_areas[2*i] = 66
+            chosen_areas[2*i+1] = 66
+
+
+    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+    ax.plot(theta, obs_per_action[0])
+    plt.fill_between(theta2, 0, chosen_areas, alpha=0.2)
+    ax.set_rmax(66)
+    ax.set_rscale('symlog')
+    #ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
+    ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+    ax.grid(True)
+
+    ax.set_title("sensor observation", va='bottom')
+    plt.show()
 
 
 def plot_sensor_usage(data):
