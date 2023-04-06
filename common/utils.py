@@ -137,7 +137,7 @@ def plot_trajectories(file):
     goal = data['goal'][0]
     ideal_distances = [np.sqrt(goal[1]**2+goal[0]**2)]
     travelled_distances = [data['distance_traveled'][0]]
-    for i in range(1,nbOfEpisodesToPlot):
+    for i in range(1,len(data['distance_traveled'])):
         if data['success'][i] == "False":
             continue
 
@@ -260,7 +260,7 @@ def plot_action_vs_obs(data):
             action = action.replace("\n  ", " ") 
             action = action.replace(" ", ", ") 
             #print(action)
-            temp.append(json.loads(action))
+            temp.append(json.loads(action)[0])
         sensors_per_action.append(temp)
 
     for i, observations in enumerate(episode_observations):
@@ -284,6 +284,8 @@ def plot_action_vs_obs(data):
     ax.set_title("sensor observation", va='bottom')
     ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
     ax.grid(True)
+
+    #print(sensors_per_action[0])
 
     number_of_episodes_to_show = min(5, len(episode_actions))
     for episode in range(0,number_of_episodes_to_show):
