@@ -255,8 +255,13 @@ class AirLearningClient(airsim.MultirotorClient):
         angles = []
         for x,y in zip(X,Y):
             angles.append(math.atan2(x,y)*180.0/math.pi)
-        angle_left = min(angles)
-        angle_right = max(angles)
+
+        #use this for variable FOVs
+        #angle_left = min(angles)
+        #angle_right = max(angles)
+        angle_left = -180
+        angle_right = 180
+
         lidar_FOV =  math.ceil(angle_right - angle_left)
 
         #spliting points into ranges of angles
@@ -270,6 +275,7 @@ class AirLearningClient(airsim.MultirotorClient):
         #print(f"angle ranges: {thetas}")
         #print(f"angle left: {angle_left}")
         #print(f"angle right: {angle_right}")
+        #print(f"number of points: {len(angles)}")
 
         #adding points
         x_coords_by_sensor = [[] for i in range(nb_of_sensors)]
