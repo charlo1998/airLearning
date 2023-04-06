@@ -260,8 +260,8 @@ def plot_action_vs_obs(data):
             action = action.replace("\n  ", " ") 
             action = action.replace(" ", ", ") 
             #print(action)
-            temp = json.loads(action)
-            sensors_per_action.append(temp)
+            temp.append(json.loads(action))
+        sensors_per_action.append(temp)
 
     for i, observations in enumerate(episode_observations):
         temp = []
@@ -269,8 +269,9 @@ def plot_action_vs_obs(data):
         for observation in observations:
             observation = observation.replace("\n  ", " ")
             #print(observation)
-            temp = json.loads(observation)
-            obs_per_action.append(temp[6:])
+            obs = json.loads(observation)
+            temp.append(obs[6:])
+        obs_per_action.append(temp)
 
     r = np.arange(0, settings.number_of_sensors)
     theta = 2 * np.pi * (r+0.5) / settings.number_of_sensors - np.pi
@@ -284,24 +285,26 @@ def plot_action_vs_obs(data):
     ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
     ax.grid(True)
 
-    for step in range(len(episode_actions[0])):
-        chosen_areas = [0]*2*settings.number_of_sensors
-        for i, sensor in enumerate(sensors_per_action[step]):
-            if sensor:
-                chosen_areas[2*i-1] = 66
-                chosen_areas[2*i] = 66
-                chosen_areas[2*i+1] = 66
+    number_of_episodes_to_show = min(5, len(episode_actions))
+    for episode in range(0,number_of_episodes_to_show):
+        for step in range(len(episode_actions[episode])):
+            chosen_areas = [0]*2*settings.number_of_sensors
+            for i, sensor in enumerate(sensors_per_action[episode][step]):
+                if sensor:
+                    chosen_areas[2*i-1] = 66
+                    chosen_areas[2*i] = 66
+                    chosen_areas[2*i+1] = 66
 
-        ax.set_rmax(66)
-        ax.set_rscale('symlog')
-        ax.set_title("sensor observation", va='bottom')
-        ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
-        line1 = ax.plot(theta, obs_per_action[step])
-        line2 = plt.fill_between(theta2, 0, chosen_areas, alpha=0.2)
-        #ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
+            ax.set_rmax(66)
+            ax.set_rscale('symlog')
+            ax.set_title("sensor observation for episode " + str(episode), va='bottom')
+            ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+            line1 = ax.plot(theta, obs_per_action[episode][step])
+            line2 = plt.fill_between(theta2, 0, chosen_areas, alpha=0.2)
+            #ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
         
-        plt.pause(0.1)
-        plt.cla()
+            plt.pause(0.04)
+            plt.cla()
     plt.show()
 
 
