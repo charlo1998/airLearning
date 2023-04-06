@@ -208,7 +208,7 @@ class tangent_bug():
             gap = np.sqrt(objects[left]**2 + objects[right]**2 -2*objects[left]*objects[right]*math.cos(angles[right]-angles[left]))
             if gap < 2:
                 temp_objects[i] = min(objects[left], objects[right])
-                print(f"filled in gap at angle {angles[i]*180/math.pi}")
+                #print(f"filled in gap at angle {angles[i]*180/math.pi}")
 
         objects[:] = temp_objects[:]
 
