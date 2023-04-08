@@ -97,7 +97,7 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "EnvType": ["Indoor"],
                   "ArenaSize": [[100, 100, 10]],
                   "PlayerStart": [[0, 0, 0]],
-                  "NumberOfDynamicObjects": list(range(50, 60)), #hard seed: 100 obstacles
+                  "NumberOfDynamicObjects": list(range(40, 45)), #hard seed: 100 obstacles
                   "Walls1": [[255, 255, 10]],
                   "Seed": list(range(0,1000)), #hard seed: seed 0
                   "VelocityRange": [[0.0, 0.0]],

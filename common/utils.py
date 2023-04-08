@@ -260,7 +260,7 @@ def plot_action_vs_obs(data):
             action = action.replace("\n  ", " ") 
             action = action.replace(" ", ", ") 
             #print(action)
-            temp.append(json.loads(action)[0])
+            temp.append(json.loads(action)) #in training mode, no indexing! different for test mode?
         sensors_per_action.append(temp)
 
     for i, observations in enumerate(episode_observations):
@@ -288,7 +288,7 @@ def plot_action_vs_obs(data):
     #print(sensors_per_action[0])
 
     number_of_episodes_to_show = min(5, len(episode_actions))
-    for episode in range(0,number_of_episodes_to_show):
+    for episode in range(-number_of_episodes_to_show,0):
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_sensors
             for i, sensor in enumerate(sensors_per_action[episode][step]):
@@ -299,7 +299,7 @@ def plot_action_vs_obs(data):
 
             ax.set_rmax(66)
             ax.set_rscale('symlog')
-            ax.set_title("sensor observation for episode " + str(episode), va='bottom')
+            ax.set_title("sensor observation for episode " + str(episode+len(episode_actions)), va='bottom')
             ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
             line1 = ax.plot(theta, obs_per_action[episode][step])
             line2 = plt.fill_between(theta2, 0, chosen_areas, alpha=0.2)
