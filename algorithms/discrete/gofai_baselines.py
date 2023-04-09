@@ -37,7 +37,6 @@ def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearni
 
 def test(env):
     msgs.mode = 'test'
-    print("test")
     process_action_list = []
     agent = gofai()
     bug = tangent_bug()
