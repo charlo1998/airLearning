@@ -41,7 +41,7 @@ class tangent_bug():
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 23
+            n_sensors = 36
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
             #print(chosens)
             for idx in chosens:
@@ -62,14 +62,16 @@ class tangent_bug():
                 objects.append(min(sensors[i], self.max_dist))
                 orientations.append(angles[i])
 
-        segments = self.compute_discontinuities(objects)
-        #print(objects)
+        segments = self.compute_segments(objects)
 
         #print(f"sensors: {np.round(sensors,1)}")
         #print(f"distances: {np.round(objects,1)}")
         #print(f"segments: {segments}")
         print_angles = [x*180/math.pi for x in orientations]
         #print(f"angles: {np.round(print_angles,2)}")
+
+        #fill narrow gaps where the drone couldn't safely pass
+        objects = self.fill_gaps(objects, segments, angles)
 
         
         if self.done: #finished episode, reset distances
@@ -92,7 +94,7 @@ class tangent_bug():
                 direction = orientations[i]
                 best_idx = i
         #print(f"previous heuristic: {self.min_dist}")
-        if min_heuristic <= self.min_dist:
+        if min_heuristic <= self.min_dist-0.05:
             self.min_dist = min_heuristic
             foundPath = True
             self.foundPathCounter = 0
@@ -130,6 +132,7 @@ class tangent_bug():
 
 
             closest_obstacle_idx = np.argmin(objects)
+            
             tangent = orientations[closest_obstacle_idx]+math.pi/2*self.tangent_direction
             
             goal = [settings.mv_fw_spd_1*math.cos(tangent), settings.mv_fw_spd_1*math.sin(tangent)]
@@ -138,14 +141,14 @@ class tangent_bug():
             
             object_to_avoid = segments[closest_obstacle_idx]
             #print(f"avoiding segment no. : {object_to_avoid}")
-            self.d_leave, direction, idx = self.compute_d_leave(objects, angles, goal_distance, goal_angle)
+            self.d_leave, direction, idx = self.compute_d_leave(objects, angles, goal_distance, goal_angle, segments)
             self.d_min = self.compute_d_min(objects, angles, goal_distance, goal_angle, object_to_avoid, segments)
             #print(f"d_leave: {self.d_leave}  d_min: {self.d_min}")
-            print(f"boundary folling counter: {self.following_boundary_counter}")
-            print(f"tangent counter: {self.tangent_counter}")
+            #print(f"boundary folling counter: {self.following_boundary_counter}")
+            #print(f"tangent counter: {self.tangent_counter}")
 
             #check if goal reached or escape found, or far from any obstacles
-            if (self.done or self.d_leave < self.d_min):
+            if (self.done or self.d_leave < self.d_min*0.98 or min(objects) > 2.0):
                 self.following_boundary_counter += 1
                 if goal_distance > objects[idx]:
                     goal = [objects[idx]*math.cos(direction), objects[idx]*math.sin(direction)]  #drone body frame ref
@@ -153,8 +156,8 @@ class tangent_bug():
                     goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]  #drone body frame ref
 
                 
-                print(f"done: {self.done}")
-                if self.following_boundary_counter > 3:
+                #print(f"done: {self.done}")
+                if self.following_boundary_counter > 4:
                     self.following_boundary = False
                     self.foundPathCounter = 0
                     print("switched back to normal path")
@@ -187,30 +190,8 @@ class tangent_bug():
 
 
 
-    def compute_d_leave(self, objects, angles, goal_dist, goal_angle):
+    def compute_d_leave(self, objects, angles, goal_dist, goal_angle, segments):
 
-        #if the bug sees a escape window between two obstacles, but it is too narrow for the dwa to enter it, it will fail to avoid the local minimum.
-        #we want to mark it as "obstacle"
-        temp_objects = objects.copy()
-        for i, object in enumerate(objects):
-            if i == 0:
-                left = -1
-                right = 1
-            elif i == len(objects)-1:
-                left = len(objects)-2
-                right = 0
-            else:
-                left = i-1
-                right = i+1
-
-            #process gaps
-            #compute lenght of gap using al-kashi formula
-            gap = np.sqrt(objects[left]**2 + objects[right]**2 -2*objects[left]*objects[right]*math.cos(angles[right]-angles[left]))
-            if gap < 2:
-                temp_objects[i] = min(objects[left], objects[right])
-                #print(f"filled in gap at angle {angles[i]*180/math.pi}")
-
-        objects[:] = temp_objects[:]
 
         distMin = 150
         for i, object in enumerate(objects):
@@ -299,23 +280,30 @@ class tangent_bug():
             print(f"Heuristic: {goal_dist}")
             return goal_dist
 
-    def compute_discontinuities(self, objects):
+    def compute_segments(self, objects):
         """receives lidar data, and divides data into continuous segments. returns a list of the tags for each object.
         ex: for objects [1 1.1 1.2 1.3 5 5.1 3.1 3.2 3.1 0.9], will output [0 0 0 0 1 1 2 2 2 0] """
 
-        discontinuity_treshold = 0.9
+        discontinuity_treshold = 1.1
+        ratio_threshold = 1.25
+
+        ratios = []
         diff = []
         diff.append(objects[0]-objects[-1])
+        ratios.append(objects[0]/objects[-1])
         for i in range(len(objects)-1):
             diff.append(objects[i+1]-objects[i])
+            ratios.append(objects[i+1]/objects[i])
 
         segments = [0]*len(objects)
         discontinuities = 0
         for i, delta in enumerate(diff):
-            if abs(delta) > discontinuity_treshold:
+            #there is a discontinuity if there is a difference of at least 0.5m and at least 30% of the sensor mesurement
+            if abs(delta) > discontinuity_treshold and (ratios[i] > ratio_threshold or 1/ratios[i] > ratio_threshold):
                 discontinuities+=1
             segments[i] = discontinuities
 
+        #completing the loop (if end and beginning of circle is the same segment)
         if abs(diff[0]) < discontinuity_treshold:
             for i, segment in enumerate(segments):
                 if segment == discontinuities:
@@ -324,5 +312,58 @@ class tangent_bug():
         
         return segments
 
-    def find_obstacles(self, sensors):
-        """ receives an array of sensors and computes where the obstacles are (discontinuities)""" 
+    def find_discontinuities(self, segments):
+        """ receives an array of segments and computes where the discontinuities are.
+        Returns a list with the index of the right item where there is a discontinuity ([0] between last and first element)"""
+        discontinuities = []
+        for i, id in enumerate(segments):
+            left = segments[i-1]
+            right = segments[i]
+            if left != right:
+                discontinuities.append(i)
+
+        return discontinuities
+
+    def fill_gaps(self, objects, segments, angles):
+        #if the bug sees a escape window between two obstacles, but it is too narrow for the dwa to enter it, it will fail to avoid the local minimum.
+        #we want to mark it as "obstacle"
+        
+        discontinuities = self.find_discontinuities(segments)
+        temp_objects = objects.copy()
+        corrected = False
+        for idx, discontinuity in enumerate(discontinuities):
+            if idx == len(discontinuities)-1:
+                left = discontinuities[idx-1]
+                right = discontinuities[-1]
+            else:
+                left = discontinuities[idx-1]
+                right = discontinuities[idx+1]
+
+            #process gaps
+            #compute lenght of gap using al-kashi formula
+            gap = np.sqrt(objects[left]**2 + objects[right]**2 -2*objects[left]*objects[right]*math.cos(angles[right]-angles[left]))
+            
+            if gap < 2.5:
+                #print(f"gap between {left} and {right}: {gap}")
+                #print(f"segment: {segments}")
+                #print(f"discontinuities: {discontinuities}")
+                if left < right:
+                    for i in range(left, right):
+                        temp_objects[i] = min(objects[left], objects[right])
+                        #print(f"filled in gap for sensor {i}")
+                else:
+                    for i in range(right, left):
+                        temp_objects[i] = min(objects[left], objects[right])
+                        #print(f"filled in gap for sensor {i}")
+
+                corrected = True
+            
+   
+        if corrected:
+            #print(f"objects: {np.round(objects,1)}")
+            #print(f"corrected objects: {np.round(temp_objects,1)}")
+
+        objects[:] = temp_objects[:]
+
+        return objects
+

@@ -216,8 +216,9 @@ def plot_data(file, data_to_inquire, mode="separate"):
     #print(dataList)
     data = dataList #to do, average the values instead of plotting them all. warning: the runs have different length of episodes!
     if settings.verbose:
-        plot_sensor_usage(data)
-        plot_action_vs_obs(data)
+        if msgs.algo != "GOFAI"
+            plot_sensor_usage(data)
+            plot_action_vs_obs(data)
     for el in data_to_inquire:
         plt.figure()
         if (el[0] == "total_step_count_for_experiment"):
@@ -542,7 +543,7 @@ class gofai():
         self.arc = 2*math.pi/settings.number_of_sensors #rad
         self.heading_coeff = 1
         self.safety_coeff = 8
-        self.safety_dist = 1
+        self.safety_dist = 1.1
         self.previous_obs = [3]*(settings.number_of_sensors+4)
         self.bug = tangent_bug()
 
