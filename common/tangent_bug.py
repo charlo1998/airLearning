@@ -3,6 +3,7 @@ import numpy as np
 import settings
 import random
 import msgs
+import time
 
 
 class tangent_bug():
@@ -24,6 +25,17 @@ class tangent_bug():
         self.tangent_direction = 1
         self.tangent_counter = 0
 
+        # PID Constants
+        self.setpoint = 1.0  # Setpoint distance in meters
+        self.kp = 1.0  # Proportional gain
+        self.ki = 0.1  # Integral gain
+        self.kd = 0.01  # Derivative gain
+
+        # PID Variables
+        self.last_error = 0.0
+        self.integral_error = 0.0
+        self.sample_time = settings.mv_fw_dur  # PID loop sample time in seconds
+
 
 
     def predict(self, obs):
@@ -41,7 +53,7 @@ class tangent_bug():
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 36
+            n_sensors = 100
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
             #print(chosens)
             for idx in chosens:
@@ -74,7 +86,7 @@ class tangent_bug():
         objects = self.fill_gaps(objects, segments, angles)
 
         
-        if self.done: #finished episode, reset distances
+        if self.done: #finished episode, reset distances and PID state
             self.d_leave = 150
             self.d_min = 149
             self.min_dist = 150
@@ -83,6 +95,9 @@ class tangent_bug():
             self.foundPathCounter = 0
             self.tangent_direction = 1
             self.tangent_counter = 0
+            # PID Variables
+            self.last_error = 0.0
+            self.integral_error = 0.0
 
         #find direction that minimizes distance to goal
         foundPath = False
@@ -132,13 +147,15 @@ class tangent_bug():
 
 
             closest_obstacle_idx = np.argmin(objects)
-            
             tangent = orientations[closest_obstacle_idx]+math.pi/2*self.tangent_direction
-            
-            goal = [settings.mv_fw_spd_1*math.cos(tangent), settings.mv_fw_spd_1*math.sin(tangent)]
 
             #print(f"closest obstacle is at angle {orientations[closest_obstacle_idx]*180/math.pi} and distance {objects[closest_obstacle_idx]}. Tangent:  {tangent*180/math.pi}")
-            
+            command = self.calculate_pid_command(objects[closest_obstacle_idx])
+            #print(f"PID command: {command}")
+            tangent += command*self.tangent_direction
+            #print(f"corrected tangent: {tangent*180/math.pi}")
+            goal = [settings.mv_fw_spd_1*math.cos(tangent), settings.mv_fw_spd_1*math.sin(tangent)]
+
             object_to_avoid = segments[closest_obstacle_idx]
             #print(f"avoiding segment no. : {object_to_avoid}")
             self.d_leave, direction, idx = self.compute_d_leave(objects, angles, goal_distance, goal_angle, segments)
@@ -154,8 +171,6 @@ class tangent_bug():
                     goal = [objects[idx]*math.cos(direction), objects[idx]*math.sin(direction)]  #drone body frame ref
                 else:
                     goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]  #drone body frame ref
-
-                
                 #print(f"done: {self.done}")
                 if self.following_boundary_counter > 4:
                     self.following_boundary = False
@@ -330,23 +345,26 @@ class tangent_bug():
         
         discontinuities = self.find_discontinuities(segments)
         temp_objects = objects.copy()
+
+        #print(f"objects: {np.round(objects,1)}")
+        #print(f"segment: {segments}")
+        #print(f"discontinuities: {discontinuities}")
+
         corrected = False
         for idx, discontinuity in enumerate(discontinuities):
             if idx == len(discontinuities)-1:
-                left = discontinuities[idx-1]
-                right = discontinuities[-1]
+                left = discontinuities[idx]-1 #get to the end of the previous discontinuity
+                right = discontinuities[-1] #get to the start of the next discontinuity
             else:
-                left = discontinuities[idx-1]
+                left = discontinuities[idx]-1
                 right = discontinuities[idx+1]
 
             #process gaps
             #compute lenght of gap using al-kashi formula
             gap = np.sqrt(objects[left]**2 + objects[right]**2 -2*objects[left]*objects[right]*math.cos(angles[right]-angles[left]))
+            #print(f"gap between {left} and {right}: {gap}")
             
             if gap < 2.5:
-                #print(f"gap between {left} and {right}: {gap}")
-                #print(f"segment: {segments}")
-                #print(f"discontinuities: {discontinuities}")
                 if left < right:
                     for i in range(left, right):
                         temp_objects[i] = min(objects[left], objects[right])
@@ -359,11 +377,43 @@ class tangent_bug():
                 corrected = True
             
    
-        if corrected:
-            #print(f"objects: {np.round(objects,1)}")
-            #print(f"corrected objects: {np.round(temp_objects,1)}")
+        #if corrected:
+        #    print(f"objects before: {np.round(objects,1)}")
+        #    print(f"corrected objects: {np.round(temp_objects,1)}")
 
         objects[:] = temp_objects[:]
 
         return objects
 
+    def calculate_pid_command(self, distance):
+
+        # Calculate error and elapsed time
+        error = self.setpoint - distance
+
+        # Calculate proportional term
+        proportional_term = self.kp * error
+
+        # Calculate integral term
+        self.integral_error += error * self.sample_time
+        integral_term = self.ki * self.integral_error
+
+        # Calculate derivative term
+        derivative_error = (error - self.last_error) / self.sample_time
+        derivative_term = self.kd * derivative_error
+
+        # Calculate PID output
+        pid_output = proportional_term + integral_term + derivative_term
+        #print(f"error: {error} m")
+        #print(f"unbounded pid: {pid_output}")
+    
+        # Bound PID output
+        if pid_output < -1:
+            pid_output = -1
+        elif pid_output > 1:
+            pid_output = 1
+
+        # Store last error and elapsed time
+        self.last_error = error
+    
+
+        return math.asin(pid_output)

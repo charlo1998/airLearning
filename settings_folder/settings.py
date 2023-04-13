@@ -97,12 +97,12 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "EnvType": ["Indoor"],
                   "ArenaSize": [[100, 100, 10]],
                   "PlayerStart": [[0, 0, 0]],
-                  "NumberOfDynamicObjects": list(range(5, 6)), #hard seed: 100 obstacles
+                  "NumberOfDynamicObjects": list(range(60, 86)), #hard seed: 100 obstacles
                   "Walls1": [[255, 255, 10]],
                   "Seed": list(range(0,1000)), #hard seed: seed 0
                   "VelocityRange": [[0.0, 0.0]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(60,65))}
+                  "NumberOfObjects": list(range(0,1))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -185,7 +185,7 @@ this means the "percieved" latency doesn't increase linearly with the clockspeed
 timedActions = False
 positionActions = True
 action_discretization = 16 #this needs to be a square number and greater than one if timedActions is set to true! 
-number_of_sensors = 36
+number_of_sensors = 100
 assert(action_discretization > 1)
 if timedActions:
     assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
@@ -225,7 +225,7 @@ backup_folder_name_style = "bu_0"  # the backup obj will create a file with this
 # general params
 # ---------------------------
 list_algo = ["DQN", "DDPG", "A2C-B", "GOFAI"]  # a new algo needs to be added to this list for backup to back up its results
-nb_max_episodes_steps = 500  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
+nb_max_episodes_steps = 600  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
 success_distance_to_goal = 2

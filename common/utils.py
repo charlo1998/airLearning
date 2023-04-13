@@ -216,7 +216,7 @@ def plot_data(file, data_to_inquire, mode="separate"):
     #print(dataList)
     data = dataList #to do, average the values instead of plotting them all. warning: the runs have different length of episodes!
     if settings.verbose:
-        if msgs.algo != "GOFAI"
+        if msgs.algo != "GOFAI":
             plot_sensor_usage(data)
             plot_action_vs_obs(data)
     for el in data_to_inquire:

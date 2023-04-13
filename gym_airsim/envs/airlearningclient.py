@@ -247,6 +247,10 @@ class AirLearningClient(airsim.MultirotorClient):
             print("lidar not seeing anything ?!")
             return [0 for i in range(nb_of_sensors)]
 
+        #with open("pointcloud" + str(np.random.randint(100)) + ".npy", "wb") as file:
+        #    np.save(file,points)
+
+
         X = points[:,0]
         Y = points[:,1]
         Z = points[:,2]
