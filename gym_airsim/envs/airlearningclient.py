@@ -23,7 +23,7 @@ class AirLearningClient(airsim.MultirotorClient):
         self.client.confirmConnection()
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
-
+        
         self.home_pos = self.client.getPosition()
         self.home_ori = self.client.getOrientation()
         self.z = -4
@@ -247,8 +247,8 @@ class AirLearningClient(airsim.MultirotorClient):
             print("lidar not seeing anything ?!")
             return [0 for i in range(nb_of_sensors)]
 
-        #with open("pointcloud" + str(np.random.randint(100)) + ".npy", "wb") as file:
-        #    np.save(file,points)
+        with open("pointcloud" + str(np.random.randint(1000)) + ".npy", "wb") as file:
+            np.save(file,points)
 
 
         X = points[:,0]
@@ -402,11 +402,19 @@ class AirLearningClient(airsim.MultirotorClient):
         vel = self.client.getVelocity()
         vx = math.cos(yaw) * speed_x - math.sin(yaw) * speed_y
         vy = math.sin(yaw) * speed_x + math.cos(yaw) * speed_y
-        self.client.moveByVelocityZAsync(vx = vx,
-                             vy = vy, #do this to try and smooth the movement
-                             z = self.z,
-                             duration = duration).join()
-        start = time.time()
+        yaw = math.degrees(yaw)
+        #print(f"yaw: {yaw}")
+        if (np.abs(yaw) < 10):
+            self.client.moveByVelocityZAsync(vx = vx,
+                                 vy = vy, #do this to try and smooth the movement
+                                 z = self.z,
+                                 duration = duration).join()
+            start = time.time()
+        else:
+            print("correcting yaw!")
+            
+            start, duration = self.yaw_right(-yaw*2,0.25)
+
         return start, duration
 
     def move_position(self, x,y, velocity = 3, timeout_sec=1):
