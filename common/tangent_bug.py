@@ -26,10 +26,10 @@ class tangent_bug():
         self.tangent_counter = 0
 
         # PID Constants
-        self.setpoint = 1.0  # Setpoint distance in meters
-        self.kp = 1.0  # Proportional gain
-        self.ki = 0.1  # Integral gain
-        self.kd = 0.01  # Derivative gain
+        self.setpoint = 1.1  # Setpoint distance in meters should be the same as dwa?
+        self.kp = 0.6  # Proportional gain
+        self.ki = 0.05  # Integral gain
+        self.kd = 0.0  # Derivative gain
 
         # PID Variables
         self.last_error = 0.0
@@ -149,11 +149,11 @@ class tangent_bug():
             closest_obstacle_idx = np.argmin(objects)
             tangent = orientations[closest_obstacle_idx]+math.pi/2*self.tangent_direction
 
-            #print(f"closest obstacle is at angle {orientations[closest_obstacle_idx]*180/math.pi} and distance {objects[closest_obstacle_idx]}. Tangent:  {tangent*180/math.pi}")
+            print(f"closest obstacle is at angle {orientations[closest_obstacle_idx]*180/math.pi} and distance {objects[closest_obstacle_idx]}. Tangent:  {tangent*180/math.pi}")
             command = self.calculate_pid_command(objects[closest_obstacle_idx])
-            #print(f"PID command: {command}")
+            print(f"PID command: {command}")
             tangent += command*self.tangent_direction
-            #print(f"corrected tangent: {tangent*180/math.pi}")
+            print(f"corrected tangent: {tangent*180/math.pi}")
             goal = [settings.mv_fw_spd_1*math.cos(tangent), settings.mv_fw_spd_1*math.sin(tangent)]
 
             object_to_avoid = segments[closest_obstacle_idx]
