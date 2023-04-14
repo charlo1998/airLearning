@@ -542,9 +542,9 @@ class gofai():
     def __init__(self):
         self.arc = 2*math.pi/settings.number_of_sensors #rad
         self.heading_coeff = 1
-        self.safety_coeff = 8
-        self.safety_dist = 1.1
-        self.previous_obs = [3]*(settings.number_of_sensors+4)
+        self.safety_coeff = 5
+        self.safety_dist = 1.5
+        self.previous_obs = [3]*(settings.number_of_sensors+6)
         self.bug = tangent_bug()
 
 
@@ -565,13 +565,14 @@ class gofai():
         #obs[1] = 100**obs[1]
 
         
+        #read goal from observation (when not using tangent bug)
+        #goal_angle = obs[0]*math.pi #rad
+        #global_goal_distance = obs[1]
 
-        goal_angle = obs[0]*math.pi #rad
-        global_goal_distance = obs[1]
-
-        #read goal coordinates
+        #read goal coordinates from tangent bug
         x_goal = goal[0]
         y_goal = goal[1]
+        global_goal_distance = np.sqrt(x_goal**2 + y_goal**2)
         #print(f"received goal (relative): {[x_goal,y_goal]}")
         #x_goal = global_goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
         #y_goal = global_goal_distance*math.cos(goal_angle)
@@ -640,12 +641,16 @@ class gofai():
             #print(f"safety term: {self.safety_dist - minDist}")
             if benefit > bestBenefit:
                 bestBenefit = benefit
+                mindistAction = minDist
+                headingTerm = self.heading_coeff*(global_goal_distance-new_dist)
+                safetyTerm = self.safety_coeff*(self.safety_dist - minDist)
                 action =i
                 direction = theta
 
 
         self.previous_obs = sensors
-
+        #print(f"min predicted distance in chosen dwa action: {mindistAction}")
+        #print(f"heading term: {headingTerm} safety term: {safetyTerm}")
         
 
         ### -----------printing info on the chosen action-------------------------------------------------------------
