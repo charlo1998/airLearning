@@ -261,12 +261,12 @@ class AirSimEnv(gym.Env):
         if len(self.success_history) > 10:
             success_ratio = 0
             for i in range(10):
-                success_ratio += self.success_history[-i-1]/10
+                success_ratio += self.success_history[-i-1]/5
         else:
             success_ratio = 0
 
         #print(success_ratio)
-        r = 1 - nb_sensors*(success_ratio-0.93) - (0.95-success_ratio)*settings.number_of_sensors*1.5
+        r = 1 - nb_sensors*(success_ratio-0.90) - (0.95-success_ratio)*settings.number_of_sensors*1.5
 
         return r
 
