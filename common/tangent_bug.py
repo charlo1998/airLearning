@@ -26,7 +26,7 @@ class tangent_bug():
         self.tangent_counter = 0
 
         # PID Constants
-        self.setpoint = 1.1  # Setpoint distance in meters should be the same as dwa?
+        self.setpoint = 1.4  # Setpoint distance in meters should be the same as dwa?
         self.kp = 0.6  # Proportional gain
         self.ki = 0.05  # Integral gain
         self.kd = 0.0  # Derivative gain
@@ -53,7 +53,7 @@ class tangent_bug():
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 100
+            n_sensors = 72
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
             #print(chosens)
             for idx in chosens:
@@ -83,7 +83,7 @@ class tangent_bug():
         #print(f"angles: {np.round(print_angles,2)}")
 
         #fill narrow gaps where the drone couldn't safely pass
-        objects = self.fill_gaps(objects, segments, angles)
+        objects = self.fill_gaps(objects, segments, orientations)
 
         
         if self.done: #finished episode, reset distances and PID state
@@ -149,29 +149,30 @@ class tangent_bug():
             closest_obstacle_idx = np.argmin(objects)
             tangent = orientations[closest_obstacle_idx]+math.pi/2*self.tangent_direction
 
-            print(f"closest obstacle is at angle {orientations[closest_obstacle_idx]*180/math.pi} and distance {objects[closest_obstacle_idx]}. Tangent:  {tangent*180/math.pi}")
+            #print(f"closest obstacle is at angle {orientations[closest_obstacle_idx]*180/math.pi} and distance {objects[closest_obstacle_idx]}. Tangent:  {tangent*180/math.pi}")
             command = self.calculate_pid_command(objects[closest_obstacle_idx])
-            print(f"PID command: {command}")
+            #print(f"PID command: {command}")
             tangent += command*self.tangent_direction
-            print(f"corrected tangent: {tangent*180/math.pi}")
+            #print(f"corrected tangent: {tangent*180/math.pi}")
             goal = [settings.mv_fw_spd_1*math.cos(tangent), settings.mv_fw_spd_1*math.sin(tangent)]
 
             object_to_avoid = segments[closest_obstacle_idx]
             #print(f"avoiding segment no. : {object_to_avoid}")
-            self.d_leave, direction, idx = self.compute_d_leave(objects, angles, goal_distance, goal_angle, segments)
-            self.d_min = self.compute_d_min(objects, angles, goal_distance, goal_angle, object_to_avoid, segments)
+            self.d_leave, direction, idx = self.compute_d_leave(objects, orientations, goal_distance, goal_angle, segments)
+            self.d_min, d_min_direction = self.compute_d_min(objects, orientations, goal_distance, goal_angle, object_to_avoid, segments)
             #print(f"d_leave: {self.d_leave}  d_min: {self.d_min}")
+            #print(f"d_leave direction: {direction*180/math.pi}, d_min direction: {d_min_direction*180/math.pi}")
             #print(f"boundary folling counter: {self.following_boundary_counter}")
             #print(f"tangent counter: {self.tangent_counter}")
 
             #check if goal reached or escape found, or far from any obstacles
-            if (self.done or self.d_leave < self.d_min*0.98 or min(objects) > 2.0):
+            if (self.done or self.d_leave < self.d_min*0.98 or min(objects) > 3.0):
                 self.following_boundary_counter += 1
-                if goal_distance > objects[idx]:
+                if goal_distance > objects[idx]: #check if this gets the dwa stuck
                     goal = [objects[idx]*math.cos(direction), objects[idx]*math.sin(direction)]  #drone body frame ref
                 else:
                     goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]  #drone body frame ref
-                #print(f"done: {self.done}")
+                print(f"done: {self.done}, closest object: {min(objects)}, d_leave/d_min ratio: {self.d_leave/self.d_min}")
                 if self.following_boundary_counter > 4:
                     self.following_boundary = False
                     self.foundPathCounter = 0
@@ -235,6 +236,7 @@ class tangent_bug():
 
     def compute_d_min(self, objects, angles, goal_dist, goal_angle, object_to_avoid, segments):
         distMin = self.d_min
+        orientation = 1000.0
         for i, object in enumerate(objects):
             if segments[i] == object_to_avoid: #only update d_min if we confirmed this is on the boundary of the obstacle
                 x_obj = object*math.cos(angles[i]+self.arc/2)
@@ -247,8 +249,9 @@ class tangent_bug():
 
                 if dist_obj2goal < distMin:
                     distMin = dist_obj2goal
+                    orientation = angles[i]
 
-        return distMin
+        return distMin, orientation
 
     def compute_heuristic(self, object_dist, object_angle, goal_dist, goal_angle):
 
@@ -407,10 +410,10 @@ class tangent_bug():
         #print(f"unbounded pid: {pid_output}")
     
         # Bound PID output
-        if pid_output < -1:
-            pid_output = -1
-        elif pid_output > 1:
-            pid_output = 1
+        if pid_output < -0.5:
+            pid_output = -0.5
+        elif pid_output > 0.5:
+            pid_output = 0.5
 
         # Store last error and elapsed time
         self.last_error = error

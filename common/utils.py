@@ -542,7 +542,7 @@ class gofai():
     def __init__(self):
         self.arc = 2*math.pi/settings.number_of_sensors #rad
         self.heading_coeff = 1
-        self.safety_coeff = 5
+        self.safety_coeff = 4
         self.safety_dist = 1.5
         self.previous_obs = [3]*(settings.number_of_sensors+6)
         self.bug = tangent_bug()
