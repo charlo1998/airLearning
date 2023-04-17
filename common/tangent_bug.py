@@ -20,7 +20,7 @@ class tangent_bug():
         self.done =False
         self.min_dist = 150
         self.max_dist = 10
-        self.previous_obs = [3]*(settings.number_of_sensors+4)
+        self.previous_obs = [3]*(settings.number_of_sensors+6)
         self.foundPathCounter = 0
         self.tangent_direction = 1
         self.tangent_counter = 0
