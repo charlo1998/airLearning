@@ -77,9 +77,9 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
         while not done:
             action, _states = model.predict(obs)
             obs, rewards, done, info = env.step(action)
-            env.airgym.client.simPause(True)
-            answer = input()
-            env.airgym.client.simPause(False)
+            #env.airgym.client.simPause(True)
+            #answer = input()
+            #env.airgym.client.simPause(False)
 
     #env loop rate logging
     if settings.profile:
