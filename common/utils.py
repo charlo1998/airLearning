@@ -258,13 +258,15 @@ def plot_action_vs_obs(data):
         temp = []
         #print(actions)
         for action in actions:
-            action = action.replace("\n  ", " ") 
-            action = action.replace(" ", ", ") 
             #print(action)
             if msgs.mode == "train":
+                action = action.replace("\n  ", " ") 
+                action = action.replace(" ", ", ") 
                 temp.append(json.loads(action)) #in training mode, no indexing! different for test mode?
             elif msgs.mode == "test":
-                temp.append(json.loads(action[0]))
+                action = action.replace("\n ", "") 
+                action = action.replace(" ", ", ") 
+                temp.append(json.loads(action)[0])
         sensors_per_action.append(temp)
 
     for i, observations in enumerate(episode_observations):
