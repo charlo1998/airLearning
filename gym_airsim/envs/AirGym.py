@@ -70,12 +70,12 @@ class AirSimEnv(gym.Env):
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DISTANCES = settings.number_of_sensors
+            STATE_DISTANCES = settings.number_of_sensors #number of points in the pointcloud
             if(msgs.algo == "SAC"):
-                self.observation_space = spaces.Box(low=-1, high=1, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
+                self.observation_space = spaces.Box(low=-1, high=1, shape=((2, STATE_POS + STATE_VEL + STATE_DISTANCES)))
             else:
                 self.observation_space = spaces.Box(low=-1, high=1,
-                                                    shape=((1, STATE_POS + STATE_VEL + STATE_DISTANCES)))
+                                                    shape=((2, STATE_POS + STATE_VEL + STATE_DISTANCES)))
         else:
             self.observation_space = spaces.Box(low=0, high=255, shape=(STATE_DISTANCES))
 
@@ -108,7 +108,7 @@ class AirSimEnv(gym.Env):
         self.OU = OU()
         self.game_config_handler = GameConfigHandler()
         if(settings.concatenate_inputs):
-            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL + STATE_DISTANCES), dtype=np.uint8)
+            self.concat_state = np.zeros((1, 2, STATE_POS + STATE_VEL + STATE_DISTANCES), dtype=np.uint8)
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
@@ -263,7 +263,7 @@ class AirSimEnv(gym.Env):
             for i in range(5):
                 success_ratio += self.success_history[-i-1]/5
 
-            r = 1 - nb_sensors*(success_ratio-0.90) + (success_ratio-0.95)*settings.number_of_sensors
+            r = 1 - nb_sensors*(success_ratio-0.90) + (success_ratio-0.95)*settings.number_of_sensors*3
         else:
             r = 1 - nb_sensors*0.1
 
