@@ -263,7 +263,7 @@ class AirSimEnv(gym.Env):
             for i in range(5):
                 success_ratio += self.success_history[-i-1]/5
 
-            r = 1 - nb_sensors*(success_ratio-0.90) + (success_ratio-0.95)*settings.number_of_sensors
+            r = 1 - nb_sensors*(success_ratio-0.90) + (success_ratio-0.95)*settings.number_of_sensors*3
         else:
             r = 1 - nb_sensors*0.1
 
