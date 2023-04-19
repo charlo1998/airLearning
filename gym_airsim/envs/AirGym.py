@@ -99,6 +99,7 @@ class AirSimEnv(gym.Env):
         #self.cur_zone_number = 0
         self.cur_zone_number_buff = 0
         self.success_history = []
+        self.collision_history = []
         self.success_ratio_within_window = 0
         self.episodeNInZone = 0 #counts the numbers of the episodes per Zone
                                 #,hence gets reset upon moving on to new zone
@@ -258,10 +259,10 @@ class AirSimEnv(gym.Env):
     def computeReward(self, action):
         #if success ratio is more than 90%, try to penalize sensor usage. else, encourage more sensors for better performance.
         nb_sensors = np.sum(action)
-        if len(self.success_history) > 5:
-            success_ratio = 0
+        if len(self.collision_history) > 5:
+            success_ratio = 1
             for i in range(5):
-                success_ratio += self.success_history[-i-1]/5
+                success_ratio -= self.collision_history[-i-1]/5
 
             r = 1 - nb_sensors*(success_ratio-0.90) + (success_ratio-0.95)*settings.number_of_sensors*3
         else:
@@ -708,9 +709,12 @@ class AirSimEnv(gym.Env):
     def update_history(self, result):
         if (len(self.success_history) < settings.update_zone_window):
             self.success_history.append(result)
+            self.collision_history.append(self.collided)
         else:
             self.success_history.pop(0)
             self.success_history.append(result)
+            self.collision_history.pop(0)
+            self.collision_history.append(self.collided)
 
     def addToLog(self, key, value):
         if key not in self.allLogs:
