@@ -75,7 +75,7 @@ class AirLearningClient(airsim.MultirotorClient):
         concat_state = concat_state.reshape(1, concat_state_shape[0])
         concat_state = np.expand_dims(concat_state, axis=0)
 
-        print(concat_state)
+        #print(concat_state)
 
         return concat_state
 

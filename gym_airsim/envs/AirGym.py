@@ -258,15 +258,17 @@ class AirSimEnv(gym.Env):
     def computeReward(self, action):
         #if success ratio is more than 90%, try to penalize sensor usage. else, encourage more sensors for better performance.
         nb_sensors = np.sum(action)
-        if len(self.success_history) > 10:
+        if len(self.success_history) > 5:
             success_ratio = 0
-            for i in range(10):
+            for i in range(5):
                 success_ratio += self.success_history[-i-1]/5
+
+            r = 1 - nb_sensors*(success_ratio-0.90) + (success_ratio-0.95)*settings.number_of_sensors
         else:
-            success_ratio = 0
+            r = 1 - nb_sensors*0.1
 
         #print(success_ratio)
-        r = 1 - nb_sensors*(success_ratio-0.90) - (0.95-success_ratio)*settings.number_of_sensors*1.5
+        
 
         return r
 
