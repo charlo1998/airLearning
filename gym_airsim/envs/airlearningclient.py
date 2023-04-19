@@ -46,13 +46,21 @@ class AirLearningClient(airsim.MultirotorClient):
         #ToDo: Add RGB, velocity etc
         if(settings.goal_position): #This is for ablation purposes
             dest = self.get_distance(goal)
+            euclidean = dest[1]
+            angle = dest[0]
+            #normalizing values and bounding them to [-1,1]
+            euclidean = np.log10(euclidean+0.0001)/np.log10(100) #this way gives more range to the smaller distances (large distances are less important).
+            euclidean = min(1,max(-1,euclidean))
+            angle = angle/180 #since it is already between [-180,180] and we want a linear transformation.
+            dest[1] = euclidean
+            dest[0] = angle
 
         if(settings.velocity): #This is for ablation purposes
             vel = self.drone_velocity()
             pos = self.drone_pos()
-            #keep only x and y, and  TODO: normalize them
-            vel = vel[0:2]
-            pos = pos[0:2]
+            #keep only x and y, and  normalize them.
+            vel = vel[0:2]/(settings.base_speed*20) #max speed is 20*base speed (2m/s)
+            pos = pos[0:2]/50.0 #arena is 100x100m
 
         if(settings.goal_position and settings.velocity):
             concat_state = np.concatenate((dest, vel, pos, distances), axis = None)
@@ -66,6 +74,8 @@ class AirLearningClient(airsim.MultirotorClient):
         concat_state_shape = concat_state.shape
         concat_state = concat_state.reshape(1, concat_state_shape[0])
         concat_state = np.expand_dims(concat_state, axis=0)
+
+        print(concat_state)
 
         return concat_state
 
@@ -187,10 +197,6 @@ class AirLearningClient(airsim.MultirotorClient):
         euclidean = np.sqrt(np.power(xdistance,2) + np.power(ydistance,2))
         angle = self.goal_direction(goal, [now.x_val, now.y_val])
 
-        #normalizing values and bounding them to [-1,1]
-        euclidean = np.log10(euclidean+0.0001)/np.log10(100) #this way gives more range to the smaller distances (large distances are less important).
-        euclidean = min(1,max(-1,euclidean))
-        angle = angle/180 #since it is already between [-180,180] and we want a linear transformation.
 
         return np.array([angle, euclidean])
 
