@@ -50,10 +50,14 @@ def test(env):
             begin = time.perf_counter()
             #print("--------------------------------------bug---------------------------------------------")
             goal = bug.predict(obs)
+            bug_end = time.perf_counter()
             #print("--------------------------------------dwa---------------------------------------------")
             action = agent.predict(obs,goal)
-            
             end = time.perf_counter()
+
+            #print(f"bug processing: {np.round((bug_end - begin)*1000)} ms")
+            #print(f"dwa processing: {np.round((end - begin)*1000)} ms")
+            
             #---------------------step by step mode----------------------
             #env.airgym.client.simPause(True)
             #answer = input()

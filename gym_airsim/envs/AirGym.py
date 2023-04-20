@@ -575,14 +575,20 @@ class AirSimEnv(gym.Env):
                     self.collided = self.airgym.take_discrete_action(action)
                 self.actions_in_step.append(str(action))
             else:  #determine observation based on meta-action
-                process_action_start = time.perf_counter()
+                
                 #action = action*0 +1 #artificially set all to 1
+                
+                #determine move action based on DWA
+                bug_start - time.perf_counter()
+                goal = self.bug.predict(self.prev_state)
+                bug_end = time.perf_counter()
+                process_action_start = time.perf_counter()
                 obs = self.airgym.take_meta_action(action, self.prev_state)
                 #print(f"meta action: {np.round((time.perf_counter() - process_action_start)*1000)} ms")
-                #determine move action based on DWA
-                goal = self.bug.predict(obs)
+                
                 moveAction = self.DWA.predict(obs, goal)
                 process_action_end = time.perf_counter()
+                #print(f"bug processing: {np.round((bug_end - bug_start)*1000)} ms")
                 #print(f"dwa processing: {np.round((process_action_end - process_action_start)*1000)} ms")
                 
                 take_action_start = time.perf_counter()

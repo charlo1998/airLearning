@@ -50,17 +50,6 @@ class tangent_bug():
         x_vel = obs[3]
         y_vel = obs[2]
 
-        # ---------------- random baseline -----------------------------
-        if(msgs.algo == "GOFAI"):
-            #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 72
-            chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
-            #print(chosens)
-            for idx in chosens:
-                sensors[idx] = 100
-        #print(f"sensors bug: {np.round(sensors,1)}")
-        # -----------------------------------------------------------------
-
         angles =  np.arange(-math.pi,math.pi,self.arc)
         objects =[]
         orientations = []
@@ -68,16 +57,15 @@ class tangent_bug():
         #values over 99 are the sensors that are "removed" by the RL agent
         #any distance greater than the treshold will be ceiled.
         for i, sensor in enumerate(sensors):
-            if sensor < 99:
-                if sensor >= 66:
-                    sensors[i] = self.previous_obs[i]
-                objects.append(min(sensors[i], self.max_dist))
-                orientations.append(angles[i])
+            if sensor >= 66:
+                sensors[i] = self.previous_obs[i]
+            objects.append(min(sensors[i], self.max_dist))
+            orientations.append(angles[i])
 
         segments = self.compute_segments(objects)
 
         #print(f"sensors: {np.round(sensors,1)}")
-        #print(f"distances: {np.round(objects,1)}")
+        #print(f"bug distances: {np.round(objects,1)}")
         #print(f"segments: {segments}")
         print_angles = [x*180/math.pi for x in orientations]
         #print(f"angles: {np.round(print_angles,2)}")
@@ -172,7 +160,7 @@ class tangent_bug():
                     goal = [objects[idx]*math.cos(direction), objects[idx]*math.sin(direction)]  #drone body frame ref
                 else:
                     goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]  #drone body frame ref
-                print(f"done: {self.done}, closest object: {min(objects)}, d_leave/d_min ratio: {self.d_leave/self.d_min}")
+                #print(f"done: {self.done}, closest object: {min(objects)}, d_leave/d_min ratio: {self.d_leave/self.d_min}")
                 if self.following_boundary_counter > 4:
                     self.following_boundary = False
                     self.foundPathCounter = 0

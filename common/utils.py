@@ -595,6 +595,19 @@ class gofai():
         sensors = obs[6:]
         angles =  np.arange(-math.pi,math.pi,self.arc)
 
+
+        # ---------------- random baseline -----------------------------
+        if(msgs.algo == "GOFAI"):
+            #randomly chooses a subset of sensors to process (imitating RL agent)
+            n_sensors = 5
+            chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
+            #print(chosens)
+            for idx in chosens:
+                sensors[idx] = 100
+        #print(f"sensors dwa: {np.round(sensors,1)}")
+        # -----------------------------------------------------------------
+
+
         objects =[]
         orientations = []
         #create objects list to evaluate obstacles positions, and replace missing values with old observations
