@@ -658,9 +658,9 @@ class AirSimEnv(gym.Env):
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             #print(distance)
             
-            print(f"pose right after action: {np.round(now,2)}")
+            #print(f"pose right after action: {np.round(now,2)}")
             #print("-------------------------------------------------------------------------------------------------------")
-            print(f"goal pose: {self.goal}")
+            #print(f"goal pose: {self.goal}")
             if (msgs.algo == 'A2C-B'):
                 self.airgym.client.simPause(True)
             
