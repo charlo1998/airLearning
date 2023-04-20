@@ -257,19 +257,32 @@ class AirSimEnv(gym.Env):
     #    return r, distance_now
 
     def computeReward(self, action):
-        #if success ratio is more than 90%, try to penalize sensor usage. else, encourage more sensors for better performance.
+        #base sensor reward is -1. we then add two terms: a proximity term (distance of the object) and a heading term (if the boject is in the way of the goal)
+        arc = 2*math.pi/settings.number_of_sensors
+        angles =  np.arange(-math.pi,math.pi,arc)
+        goal_angle = math.pi/2 - self.track*math.pi/180 #converting to math conventional body frame
+        angles = angles-goal_angle
+        sensors = self.prev_state[0][0][6:]
         nb_sensors = np.sum(action)
-        if len(self.collision_history) > 5:
-            success_ratio = 1
-            for i in range(5):
-                success_ratio -= self.collision_history[-i-1]/5
 
-            r = 1 - nb_sensors*(success_ratio-0.90) + (success_ratio-0.95)*settings.number_of_sensors*3
-        else:
-            r = 1 - nb_sensors*0.1
-
-        #print(success_ratio)
+        #print(f"number of sensors: {nb_sensors}")
+        #print(f"goal_angle: {goal_angle}")
+        #print(f"angles: {angles}")
+        #print(f"sensors: {np.round(sensors,1)}")
+        #print(f"action: {action}")
+        #print(f"heading: {np.cos(angles)*action}")
+        #print(f"heading half sum: {np.sum(np.cos(angles)*action)*0.5}")
+        #print(f"proximity: {[min(1/distance,2) for distance in sensors]*action}")
+        #print(f"proximity: {np.sum([max(1/distance,2) for distance in sensors]*action)}")
         
+
+        heading = np.sum(np.cos(angles)*action)*0.5
+        proximity = np.sum([min(1/distance,2) for distance in sensors]*action)
+        
+        r = -1*nb_sensors + heading + proximity
+        
+        
+        #print(f"total reward: {r}")
 
         return r
 
@@ -579,7 +592,7 @@ class AirSimEnv(gym.Env):
                 #action = action*0 +1 #artificially set all to 1
                 
                 #determine move action based on DWA
-                bug_start - time.perf_counter()
+                bug_start = time.perf_counter()
                 goal = self.bug.predict(self.prev_state)
                 bug_end = time.perf_counter()
                 process_action_start = time.perf_counter()
@@ -645,9 +658,9 @@ class AirSimEnv(gym.Env):
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             #print(distance)
             
-            #print(f"pose right after action: {np.round(now,2)}")
+            print(f"pose right after action: {np.round(now,2)}")
             #print("-------------------------------------------------------------------------------------------------------")
-            #print(f"goal pose: {self.goal}")
+            print(f"goal pose: {self.goal}")
             if (msgs.algo == 'A2C-B'):
                 self.airgym.client.simPause(True)
             
@@ -676,7 +689,7 @@ class AirSimEnv(gym.Env):
                 done = True
                 reward = -100
                 self.success = False
-            else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def of computeReward)
+            else: #not finished, compute reward like this: r = -1 + proximity term + heading term
                 reward= self.computeReward(action)
                 done = False
                 self.success = False
