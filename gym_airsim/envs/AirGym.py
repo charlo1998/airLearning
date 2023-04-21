@@ -257,7 +257,7 @@ class AirSimEnv(gym.Env):
     #    return r, distance_now
 
     def computeReward(self, action):
-        #base sensor reward is -1. we then add two terms: a proximity term (distance of the object) and a heading term (if the boject is in the way of the goal)
+        #base sensor reward is -0.55. we then add two terms: a proximity term (distance of the object) and a heading term (if the boject is in the way of the goal)
         arc = 2*math.pi/settings.number_of_sensors
         angles =  np.arange(-math.pi,math.pi,arc)
         goal_angle = math.pi/2 - self.track*math.pi/180 #converting to math conventional body frame
@@ -279,12 +279,12 @@ class AirSimEnv(gym.Env):
         heading = np.sum(np.cos(angles)*action)*0.5
         proximity = np.sum([min(1/distance,2) for distance in sensors]*action)
         
-        r = -1*nb_sensors + heading + proximity
+        r = -0.55*nb_sensors + heading + proximity
         
         
         #print(f"total reward: {r}")
 
-        return r
+        return r/settings.number_of_sensors
 
     def ddpg_add_noise_action(self, actions):
         noise_t = np.zeros([1, self.action_space.shape[0]])
