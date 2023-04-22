@@ -536,7 +536,7 @@ class AirSimEnv(gym.Env):
         self.observations_in_step = []
         self.distance_in_step = []
         self.reward_in_step = []
-        self.position_in_step
+        self.position_in_step = []
         self.total_reward = 0
 
         self.allLogs['distance'] = [float(np.sqrt(np.power((self.goal[0]), 2) + np.power(self.goal[1], 2)))]
@@ -703,7 +703,7 @@ class AirSimEnv(gym.Env):
             self.count +=1
             self.reward_in_step.append(reward)
             self.total_reward = sum(self.reward_in_step)
-            self.position_in_step.append(str(now))
+            self.position_in_step.append(now.tolist())
             info = {"x_pos":now[0], "y_pos":now[1]}
 
             state = self.state()
