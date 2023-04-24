@@ -115,8 +115,7 @@ def plot_trajectories(file):
         ycoord = []
         episodeLength = data['stepN'][i]
         #converting string into list of floats
-        coords = [x.strip('[]').split(' ') for x in data["position_in_each_step"][i][nbOfSteps:nbOfSteps+episodeLength]] #since the positions are appended, we need to remove the first nbOfSteps elements
-        coords = [list(filter(None, x)) for x in coords]
+        coords = data["position_in_each_step"][i]
         #print(len(coords))
         for coord in coords:
             positions = ([float(x) for x in coord])
