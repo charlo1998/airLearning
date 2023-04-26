@@ -551,7 +551,7 @@ class AirLearningClient(airsim.MultirotorClient):
 
         for i, usage in enumerate(action):
             if (usage == 0):
-                sensors[i] = 1.0 #set the distance to 100**1 which means it will not be used by DWA (anything over 99m isn't used.)
+                sensors[i] = 100 #set the distance to 100**1 which means it will not be used by DWA (anything over 99m isn't used.)
 
         state[0][0][6:] = sensors
         #print(np.round(state,2))

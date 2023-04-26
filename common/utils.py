@@ -88,8 +88,8 @@ def plot_trajectories(file):
         ycoord = []
         episodeLength = data['stepN'][i]
         #converting string into list of floats
-        coords = [x.strip('[]').split(' ') for x in data["position_in_each_step"][i][nbOfSteps:nbOfSteps+episodeLength]] #since the positions are appended, we need to remove the first nbOfSteps elements
-        coords = [list(filter(None, x)) for x in coords]
+        coords = data["position_in_each_step"][i]
+        
         #print(len(coords))
         for coord in coords:
             positions = ([float(x) for x in coord])
@@ -115,8 +115,7 @@ def plot_trajectories(file):
         ycoord = []
         episodeLength = data['stepN'][i]
         #converting string into list of floats
-        coords = [x.strip('[]').split(' ') for x in data["position_in_each_step"][i][nbOfSteps:nbOfSteps+episodeLength]] #since the positions are appended, we need to remove the first nbOfSteps elements
-        coords = [list(filter(None, x)) for x in coords]
+        coords = data["position_in_each_step"][i]
         #print(len(coords))
         for coord in coords:
             positions = ([float(x) for x in coord])
@@ -251,9 +250,13 @@ def plot_action_vs_obs(data):
     for k in range(settings.runs_to_do):
         episode_actions = data[k]["actions_in_each_step"]
         episode_observations = data[k]["observations_in_each_step"]
+        if msgs.mode == "test":
+            episode_positions = data[k]["position_in_each_step"]
+            goals = data[k]["goal"]
 
     sensors_per_action = []
     obs_per_action = []
+    pos_per_action = []
     for i, actions in enumerate(episode_actions):
         temp = []
         #print(actions)
@@ -279,6 +282,14 @@ def plot_action_vs_obs(data):
             temp.append(obs[6:])
         obs_per_action.append(temp)
 
+    if msgs.mode == "test":
+        for i, positions in enumerate(episode_positions):
+            temp = []
+            for position in positions:
+                temp.append(position[0:2])
+            pos_per_action.append(temp)
+    
+
     r = np.arange(0, settings.number_of_sensors)
     theta = 2 * np.pi * (r+0.5) / settings.number_of_sensors - np.pi
     r2 = np.arange(0, 2*settings.number_of_sensors)
@@ -293,7 +304,7 @@ def plot_action_vs_obs(data):
 
     #print(sensors_per_action[0])
 
-    number_of_episodes_to_show = min(5, len(episode_actions))
+    number_of_episodes_to_show = min(3, len(episode_actions))
     for episode in range(-number_of_episodes_to_show,0):
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_sensors
@@ -309,9 +320,18 @@ def plot_action_vs_obs(data):
             ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
             line1 = ax.plot(theta, obs_per_action[episode][step])
             line2 = plt.fill_between(theta2, 0, chosen_areas, alpha=0.2)
+            if msgs.mode == "test":
+                x_goal_rel = goals[episode][1]-pos_per_action[episode][step][1] #uav frame of ref
+                y_goal_rel = goals[episode][0]-pos_per_action[episode][step][0]
+                goal_norm = np.sqrt(x_goal_rel**2+y_goal_rel**2)
+                goal_angle = math.atan2(y_goal_rel,x_goal_rel)
+                line3 = ax.scatter(goal_angle, goal_norm, c= 'r')
             #ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
         
-            plt.pause(0.04)
+            if(step == len(episode_actions[episode])-1): #pause longer for last step of the episode
+                plt.pause(1.5)
+            else:
+                plt.pause(0.06)
             plt.cla()
     plt.show()
 
@@ -594,6 +614,19 @@ class gofai():
 
         sensors = obs[6:]
         angles =  np.arange(-math.pi,math.pi,self.arc)
+
+
+        # ---------------- random baseline -----------------------------
+        if(msgs.algo == "GOFAI"):
+            #randomly chooses a subset of sensors to process (imitating RL agent)
+            n_sensors = 3
+            chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
+            #print(chosens)
+            for idx in chosens:
+                sensors[idx] = 100
+        #print(f"sensors dwa: {np.round(sensors,1)}")
+        # -----------------------------------------------------------------
+
 
         objects =[]
         orientations = []

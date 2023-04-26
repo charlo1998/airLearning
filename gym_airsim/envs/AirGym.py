@@ -99,6 +99,7 @@ class AirSimEnv(gym.Env):
         #self.cur_zone_number = 0
         self.cur_zone_number_buff = 0
         self.success_history = []
+        self.collision_history = []
         self.success_ratio_within_window = 0
         self.episodeNInZone = 0 #counts the numbers of the episodes per Zone
                                 #,hence gets reset upon moving on to new zone
@@ -256,21 +257,34 @@ class AirSimEnv(gym.Env):
     #    return r, distance_now
 
     def computeReward(self, action):
-        #if success ratio is more than 90%, try to penalize sensor usage. else, encourage more sensors for better performance.
+        #base sensor reward is -0.55. we then add two terms: a proximity term (distance of the object) and a heading term (if the boject is in the way of the goal)
+        arc = 2*math.pi/settings.number_of_sensors
+        angles =  np.arange(-math.pi,math.pi,arc)
+        goal_angle = math.pi/2 - self.track*math.pi/180 #converting to math conventional body frame
+        angles = angles-goal_angle
+        sensors = self.prev_state[0][0][6:]
         nb_sensors = np.sum(action)
-        if len(self.success_history) > 5:
-            success_ratio = 0
-            for i in range(5):
-                success_ratio += self.success_history[-i-1]/5
 
-            r = 1 - nb_sensors*(success_ratio-0.90) + (success_ratio-0.95)*settings.number_of_sensors*3
-        else:
-            r = 1 - nb_sensors*0.1
-
-        #print(success_ratio)
+        #print(f"number of sensors: {nb_sensors}")
+        #print(f"goal_angle: {goal_angle}")
+        #print(f"angles: {angles}")
+        #print(f"sensors: {np.round(sensors,1)}")
+        #print(f"action: {action}")
+        #print(f"heading: {np.cos(angles)*action}")
+        #print(f"heading half sum: {np.sum(np.cos(angles)*action)*0.5}")
+        #print(f"proximity: {[min(1/distance,2) for distance in sensors]*action}")
+        #print(f"proximity: {np.sum([max(1/distance,2) for distance in sensors]*action)}")
         
 
-        return r
+        heading = np.sum(np.cos(angles)*action)*0.5
+        proximity = np.sum([min(1/distance,2) for distance in sensors]*action)
+        
+        r = -0.6*nb_sensors + heading + proximity
+        
+        
+        #print(f"total reward: {r}")
+
+        return r/settings.number_of_sensors
 
     def ddpg_add_noise_action(self, actions):
         noise_t = np.zeros([1, self.action_space.shape[0]])
@@ -522,7 +536,7 @@ class AirSimEnv(gym.Env):
         self.observations_in_step = []
         self.distance_in_step = []
         self.reward_in_step = []
-        self.position_in_step
+        self.position_in_step = []
         self.total_reward = 0
 
         self.allLogs['distance'] = [float(np.sqrt(np.power((self.goal[0]), 2) + np.power(self.goal[1], 2)))]
@@ -574,14 +588,20 @@ class AirSimEnv(gym.Env):
                     self.collided = self.airgym.take_discrete_action(action)
                 self.actions_in_step.append(str(action))
             else:  #determine observation based on meta-action
-                process_action_start = time.perf_counter()
+                
                 #action = action*0 +1 #artificially set all to 1
+                
+                #determine move action based on DWA
+                bug_start = time.perf_counter()
+                goal = self.bug.predict(self.prev_state)
+                bug_end = time.perf_counter()
+                process_action_start = time.perf_counter()
                 obs = self.airgym.take_meta_action(action, self.prev_state)
                 #print(f"meta action: {np.round((time.perf_counter() - process_action_start)*1000)} ms")
-                #determine move action based on DWA
-                goal = self.bug.predict(obs)
+                
                 moveAction = self.DWA.predict(obs, goal)
                 process_action_end = time.perf_counter()
+                #print(f"bug processing: {np.round((bug_end - bug_start)*1000)} ms")
                 #print(f"dwa processing: {np.round((process_action_end - process_action_start)*1000)} ms")
                 
                 take_action_start = time.perf_counter()
@@ -669,7 +689,7 @@ class AirSimEnv(gym.Env):
                 done = True
                 reward = -100
                 self.success = False
-            else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def of computeReward)
+            else: #not finished, compute reward like this: r = -1 + proximity term + heading term
                 reward= self.computeReward(action)
                 done = False
                 self.success = False
@@ -683,7 +703,7 @@ class AirSimEnv(gym.Env):
             self.count +=1
             self.reward_in_step.append(reward)
             self.total_reward = sum(self.reward_in_step)
-            self.position_in_step.append(str(now))
+            self.position_in_step.append(now.tolist())
             info = {"x_pos":now[0], "y_pos":now[1]}
 
             state = self.state()
@@ -708,9 +728,12 @@ class AirSimEnv(gym.Env):
     def update_history(self, result):
         if (len(self.success_history) < settings.update_zone_window):
             self.success_history.append(result)
+            self.collision_history.append(self.collided)
         else:
             self.success_history.pop(0)
             self.success_history.append(result)
+            self.collision_history.pop(0)
+            self.collision_history.append(self.collided)
 
     def addToLog(self, key, value):
         if key not in self.allLogs:
