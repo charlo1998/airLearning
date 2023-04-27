@@ -55,15 +55,16 @@ def test(env):
             action = agent.predict(obs,goal)
             end = time.perf_counter()
 
-            #print(f"bug processing: {np.round((bug_end - begin)*1000)} ms")
-            #print(f"dwa processing: {np.round((end - begin)*1000)} ms")
+            print(f"bug processing: {np.round((bug_end - begin)*1000)} ms")
+            print(f"dwa processing: {np.round((end - begin)*1000)} ms")
             
             #---------------------step by step mode----------------------
-            #env.airgym.client.simPause(True)
+            
             #answer = input()
-            #env.airgym.client.simPause(False)
+            env.airgym.client.simPause(False)
             obs, rewards, done, info = env.step(action)
             bug.done = done
+            env.airgym.client.simPause(True)
 
             if settings.profile:
                 process_action_list.append(end-begin)

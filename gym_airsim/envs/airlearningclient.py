@@ -232,14 +232,14 @@ class AirLearningClient(airsim.MultirotorClient):
         lidarDatafront = self.client.getLidarData(lidar_name="Lidarfront",vehicle_name="Drone1")
         
         
-        front = self.process_lidar(lidarDatafront.point_cloud, settings.number_of_sensors)
+        front = self.process_lidar(lidarDatafront.point_cloud, settings.number_of_points)
 
         output = front
         #print(output)
 
         return np.array(output)   
 
-    def process_lidar(self, lidarPointcloud, nb_of_sensors):
+    def process_lidar(self, lidarPointcloud, number_of_points):
         """
         1. processes a lidar point clouds into coordinates
         2. samples until it has 1024 points
@@ -251,29 +251,39 @@ class AirLearningClient(airsim.MultirotorClient):
         else:
             #no points in the lidarPointcloud
             print("lidar not seeing anything ?!")
-            return np.zeros(1024)
+            return np.zeros(number_of_points*2)
 
         #with open("pointcloud" + str(np.random.randint(1000)) + ".npy", "wb") as file:
         #    np.save(file,points)
 
         #sampling to correct the size to 1024 points
-        if points.shape[0] > 1024:
-            points = points[0:1024]
-            print("point cloud to big! slicing")
-        elif points.shape[0] < 1024:
-            while points.shape[0] != 1024:
-                #print(points.shape)
-                choice = points[np.random.randint(0,pts.shape[0])]
-                noise = (np.random.rand(1,2)-0.5)*0.001
-                #print(noise+choice)
+        if points.shape[0] > number_of_points:
+            idx = np.random.choice(points.shape[0],number_of_points)
+            points = points[idx]
+            #print(f"point cloud to big! sampling {number_of_points} random points")
+        elif points.shape[0] < number_of_points:
+            print("point cloud too small! resampling points to fill observation")
+            while points.shape[0] != number_of_points:
+                choice = points[np.random.randint(0,points.shape[0])]
+                noise = (np.random.rand(1,3)-0.5)*0.001
                 points = np.append(points,choice+noise,0)
 
         X = points[:,0]
         Y = points[:,1]
         
-        output = points[:,0:2]
-        #normalizing
-        output = np.clip(output/100, -1, 1)
+        distances = []
+        angles = []
+        for (x,y) in zip(X,Y):
+            distances.append(np.sqrt(x**2+y**2))
+            angles.append(math.atan2(x,y))
+
+        #normalizing values and bounding them to [-1,1]
+        distances = np.array(distances)
+        distances = np.log10(distances+0.0001)/np.log10(100) #this way gives more range to the smaller distances (large distances are less important).
+        distances = np.clip(distances,-1,1)
+        angles = np.array(angles)/np.pi
+
+        output = np.concatenate((distances,angles))
 
         return output
 

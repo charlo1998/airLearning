@@ -70,9 +70,9 @@ class AirSimEnv(gym.Env):
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DISTANCES = settings.number_of_sensors #number of points in the pointcloud
+            STATE_DISTANCES = settings.number_of_points*2 #number of points in the pointcloud
             if(msgs.algo == "SAC"):
-                self.observation_space = spaces.Box(low=-1, high=1, shape=((2, STATE_POS + STATE_VEL + STATE_DISTANCES)))
+                self.observation_space = spaces.Box(low=-1, high=1, shape=((1, STATE_POS + STATE_VEL + STATE_DISTANCES)))
             else:
                 self.observation_space = spaces.Box(low=-1, high=1,
                                                     shape=((2, STATE_POS + STATE_VEL + STATE_DISTANCES)))
@@ -109,7 +109,7 @@ class AirSimEnv(gym.Env):
         self.OU = OU()
         self.game_config_handler = GameConfigHandler()
         if(settings.concatenate_inputs):
-            self.concat_state = np.zeros((1, 2, STATE_POS + STATE_VEL + STATE_DISTANCES), dtype=np.uint8)
+            self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL + STATE_DISTANCES), dtype=np.uint8)
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
@@ -558,7 +558,7 @@ class AirSimEnv(gym.Env):
             now = self.airgym.drone_pos()
             self.velocity = self.airgym.drone_velocity()
             observation = np.copy(self.prev_state[0][0])
-            observation[6:] = np.round(100**observation[6:],2) #de-normalize
+            observation[6:settings.number_of_points+6] = np.round(100**observation[6:settings.number_of_points+6],2) #de-normalize
             self.observations_in_step.append(str(list(observation)))
             #print(f"speed after delay: {np.round(np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2),2)}") 
             #print(f"pose after delay: {np.round(now,2)}")

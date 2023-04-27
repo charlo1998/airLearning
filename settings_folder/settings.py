@@ -186,6 +186,7 @@ timedActions = False
 positionActions = True
 action_discretization = 16 #this needs to be a square number and greater than one if timedActions is set to true! 
 number_of_sensors = 72
+number_of_points = 1024
 assert(action_discretization > 1)
 if timedActions:
     assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)

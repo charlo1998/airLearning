@@ -586,8 +586,6 @@ class gofai():
         '''
 
         obs = obs[0][0] #flattening the list
-        #obs[6:] = 100**obs[6:] #reconverting from normalized to real values
-        #obs[1] = 100**obs[1]
 
         
         #read goal from observation (when not using tangent bug)
@@ -612,15 +610,15 @@ class gofai():
         x_offset = predicted_delay*x_vel*1.25
         y_offset = predicted_delay*y_vel*1.25
 
-        sensors = obs[6:]
-        angles =  np.arange(-math.pi,math.pi,self.arc)
+        sensors = obs[6:settings.number_of_points+6]
+        angles = obs[settings.number_of_points+6:]
 
 
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 3
-            chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
+            n_sensors = 1024
+            chosens = random.sample(range(len(sensors)),k=(settings.number_of_points-n_sensors))
             #print(chosens)
             for idx in chosens:
                 sensors[idx] = 100
