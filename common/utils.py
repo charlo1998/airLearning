@@ -617,7 +617,7 @@ class gofai():
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 1024
+            n_sensors = 428
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_points-n_sensors))
             #print(chosens)
             for idx in chosens:
