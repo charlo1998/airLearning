@@ -185,14 +185,14 @@ this means the "percieved" latency doesn't increase linearly with the clockspeed
 timedActions = False
 positionActions = True
 action_discretization = 16 #this needs to be a square number and greater than one if timedActions is set to true! 
-number_of_sensors = 72
+number_of_sensors = 36
 assert(action_discretization > 1)
 if timedActions:
     assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
 
 base_speed = 0.1
-mv_fw_dur = 0.25
-rot_dur = 0.25
+mv_fw_dur = 0.15
+rot_dur = 0.15
 delay = 0.0001 #artificial latency
 # yaw_rate = (180/180)*math.pi #in degree
 mv_fw_spd_1 = 1

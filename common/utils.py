@@ -209,8 +209,10 @@ def plot_data(file, data_to_inquire, mode="separate"):
             dataList.append(parse_data(file.replace("logverbose", "logverbose" + str(i))))
         else:
             dataList.append(parse_data(file.replace("log", "log" + str(i))))
-            action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(i) + ".txt")
-            plot_histogram(action_duration_file)
+        infer_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "inference_durations" + str(i) + ".txt")
+        plot_histogram(infer_duration_file)
+        plt.title('Distribution of the inference duration (latency) of the policy')
+        plt.show()
     
     #print(dataList)
     data = dataList #to do, average the values instead of plotting them all. warning: the runs have different length of episodes!
@@ -360,12 +362,13 @@ def plot_histogram(file="C:/Users/Charles/workspace/airlearning/airlearning-rl/d
     with open(file, 'r') as f:
         take_action_list = f.read()
 
-    print("processing env_log.txt data")
+    print("processing data")
     take_action_out = take_action_list.strip("[ ]\n") #removing brackets and spaces
     take_action_out = [float(value) for value in take_action_out.split(",")] #converting into list of floats
+    print(f"average: {sum(take_action_out)/len(take_action_out)}")
 
     n, bins, patches = plt.hist(take_action_out, bins = 'auto')
-    plt.xlabel('action duration')
+    plt.xlabel('Duration (s)')
     plt.ylabel('frequency')
     maxfreq = n.max()
     plt.ylim(ymax=np.ceil(maxfreq/10)*10 if maxfreq % 10 else maxfreq + 10)
@@ -619,7 +622,7 @@ class gofai():
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 3
+            n_sensors = 72
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
             #print(chosens)
             for idx in chosens:
