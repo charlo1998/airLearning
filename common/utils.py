@@ -209,10 +209,11 @@ def plot_data(file, data_to_inquire, mode="separate"):
             dataList.append(parse_data(file.replace("logverbose", "logverbose" + str(i))))
         else:
             dataList.append(parse_data(file.replace("log", "log" + str(i))))
-        infer_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "inference_durations" + str(i) + ".txt")
-        plot_histogram(infer_duration_file)
-        plt.title('Distribution of the inference duration (latency) of the policy')
-        plt.show()
+        if msgs.algo != "GOFAI":
+            infer_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "inference_durations" + str(i) + ".txt")
+            plot_histogram(infer_duration_file)
+            plt.title('Distribution of the inference duration (latency) of the policy')
+            plt.show()
     
     #print(dataList)
     data = dataList #to do, average the values instead of plotting them all. warning: the runs have different length of episodes!
