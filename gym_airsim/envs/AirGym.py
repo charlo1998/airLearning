@@ -70,7 +70,7 @@ class AirSimEnv(gym.Env):
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DISTANCES = settings.number_of_sensors
+            STATE_DISTANCES = settings.number_of_sensors*2
             if(msgs.algo == "SAC"):
                 self.observation_space = spaces.Box(low=-1, high=1, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
@@ -110,6 +110,9 @@ class AirSimEnv(gym.Env):
         self.game_config_handler = GameConfigHandler()
         if(settings.concatenate_inputs):
             self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL + STATE_DISTANCES), dtype=np.uint8)
+        
+        self.lidar_distances = []
+        self.lidar_angles = []
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
@@ -634,9 +637,12 @@ class AirSimEnv(gym.Env):
             now = self.airgym.drone_pos()
             self.track = self.airgym.goal_direction(self.goal, now)
             
-            #get observation
+            
+            #get new observation
             if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI"):
-                self.concat_state = self.airgym.getConcatState(self.track, self.goal)
+                [self.lidar_distances, self.lidar_angles] = self.airgym.get_laser_state()
+                sensors = self.airgym.process_lidar(self.lidar_distances, self.lidar_angles, -180, 180)
+                self.concat_state = self.airgym.getConcatState(self.track, self.goal, sensors)
             elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                 self.depth = self.airgym.getScreenDepthVis(self.track)
             else:
@@ -750,7 +756,9 @@ class AirSimEnv(gym.Env):
         self.episodeInWindow +=1
         now = self.airgym.drone_pos()
         self.track = self.airgym.goal_direction(self.goal, now)
-        self.concat_state = self.airgym.getConcatState(self.track, self.goal)
+        [self.lidar_distances, self.lidar_angles] = self.airgym.get_laser_state()
+        sensors = self.airgym.process_lidar(self.lidar_distances, self.lidar_angles, -180, 180)
+        self.concat_state = self.airgym.getConcatState(self.track, self.goal, sensors)
         #self.depth = self.airgym.getScreenDepthVis(self.track)
         #self.rgb = self.airgym.getScreenRGB()
         self.position = self.airgym.get_distance(self.goal)

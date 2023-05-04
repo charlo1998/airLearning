@@ -646,6 +646,7 @@ class gofai():
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {global_goal_distance}")
         #print(f"sensors: {np.round(sensors,1)}")
+        #print(f"dwa objects: {np.round(objects,1)}")
         #print(len(objects))
         
         
