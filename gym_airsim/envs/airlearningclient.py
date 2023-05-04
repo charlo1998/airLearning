@@ -41,7 +41,7 @@ class AirLearningClient(airsim.MultirotorClient):
         return track
 
     def getConcatState(self, track, goal, sensors): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
-        sensors = np.array(sensors)
+        sensors = np.array(sensors) #already normalized
 
         #ToDo: Add RGB, velocity etc
         if(settings.goal_position): #This is for ablation purposes
@@ -283,7 +283,7 @@ class AirLearningClient(airsim.MultirotorClient):
                 thetas.append(thetas[i-1]+theta)
 
         if len(angles) == 0: #lidar not seeing anything!
-            return [0 for s in range(nb_of_sensors)] + thetas
+            return [0 for s in range(nb_of_sensors)] + thetas/180.0
 
         #print(f"angle ranges: {thetas}")
         #print(f"angle left: {angle_left}")
@@ -314,7 +314,7 @@ class AirLearningClient(airsim.MultirotorClient):
         scnd = time.perf_counter()
         #print(f"creating sensors took: {np.round((scnd-first)*1000,2)} ms")
 
-        return sensors + thetas
+        return sensors + thetas/180.0
 
     def AirSim_reset(self):
         self.client.reset()
