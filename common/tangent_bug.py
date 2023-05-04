@@ -41,16 +41,19 @@ class tangent_bug():
     def predict(self, obs):
 
         obs = obs[0][0] #flattening the list
-        obs[6:] = 100**obs[6:] #reconverting from normalized to real values
+        obs[6:settings.number_of_sensors+6] = 100**obs[6:settings.number_of_sensors+6] #reconverting from normalized to real values
+        obs[settings.number_of_sensors+6:] = obs[settings.number_of_sensors+6:]*np.pi
         obs[1] = 100**obs[1]
-        sensors = obs[6:]
+        sensors = obs[6:settings.number_of_sensors+6]
+        obs[2:4] = obs[2:4]*(settings.base_speed*20.0) #reconverting from normalized values
+        obs[4:6] = obs[4:6]*50.0 
 
         goal_angle = obs[0]*math.pi #rad
         goal_distance = obs[1]
         x_vel = obs[3]
         y_vel = obs[2]
 
-        angles =  np.arange(-math.pi,math.pi,self.arc)
+        angles =  obs[settings.number_of_sensors+6:]
         objects =[]
         orientations = []
         #create objects list to evaluate obstacles positions, and replace missing values with old observations.
@@ -68,7 +71,6 @@ class tangent_bug():
         #print(f"bug distances: {np.round(objects,1)}")
         #print(f"segments: {segments}")
         print_angles = [x*180/math.pi for x in orientations]
-        #print(f"angles: {np.round(print_angles,2)}")
 
         #fill narrow gaps where the drone couldn't safely pass
         objects = self.fill_gaps(objects, segments, orientations)

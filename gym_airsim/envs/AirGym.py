@@ -265,7 +265,7 @@ class AirSimEnv(gym.Env):
         angles =  np.arange(-math.pi,math.pi,arc)
         goal_angle = math.pi/2 - self.track*math.pi/180 #converting to math conventional body frame
         angles = angles-goal_angle
-        sensors = self.prev_state[0][0][6:]
+        sensors = self.prev_state[0][0][6:settings.number_of_sensors+6]
         nb_sensors = np.sum(action)
 
         #print(f"number of sensors: {nb_sensors}")
@@ -279,7 +279,7 @@ class AirSimEnv(gym.Env):
         #print(f"proximity: {np.sum([max(1/distance,2) for distance in sensors]*action)}")
 
         heading = np.sum(np.cos(angles)*action)*0.5
-        proximity = np.sum(np.array([min(1/distance,2) for distance in sensors])*action)
+        proximity = np.sum([min(1/(distance-0.5),3) for distance in sensors]*action)
         
         r = -0.6*nb_sensors + heading + proximity
         
