@@ -282,7 +282,7 @@ def plot_action_vs_obs(data):
             observation = observation.replace("\n  ", " ")
             #print(observation)
             obs = json.loads(observation)
-            temp.append(obs[6:])
+            temp.append(obs[6:settings.number_of_sensors+6])
         obs_per_action.append(temp)
 
     if msgs.mode == "test":

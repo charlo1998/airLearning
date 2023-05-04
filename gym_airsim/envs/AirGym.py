@@ -265,7 +265,7 @@ class AirSimEnv(gym.Env):
         angles =  np.arange(-math.pi,math.pi,arc)
         goal_angle = math.pi/2 - self.track*math.pi/180 #converting to math conventional body frame
         angles = angles-goal_angle
-        sensors = self.prev_state[0][0][6:]
+        sensors = self.prev_state[0][0][6:settings.number_of_sensors+6]
         nb_sensors = np.sum(action)
 
         #print(f"number of sensors: {nb_sensors}")
@@ -280,7 +280,7 @@ class AirSimEnv(gym.Env):
         
 
         heading = np.sum(np.cos(angles)*action)*0.5
-        proximity = np.sum([min(1/distance,2) for distance in sensors]*action)
+        proximity = np.sum([min(1/(distance-0.5),3) for distance in sensors]*action)
         
         r = -0.6*nb_sensors + heading + proximity
         
@@ -561,7 +561,8 @@ class AirSimEnv(gym.Env):
             now = self.airgym.drone_pos()
             self.velocity = self.airgym.drone_velocity()
             observation = np.copy(self.prev_state[0][0])
-            observation[6:settings.number_of_sensors+6] = np.round(100**observation[6:settings.number_of_sensors+6],2) #de-normalize 
+            observation[6:settings.number_of_sensors+6] = np.round(100**observation[6:settings.number_of_sensors+6],2) #de-normalize
+            observation[settings.number_of_sensors+6:] = np.round(180*observation[settings.number_of_sensors+6:],2) #de-normalize 
             self.observations_in_step.append(str(list(observation)))
             #print(f"speed after delay: {np.round(np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2),2)}") 
             #print(f"pose after delay: {np.round(now,2)}")
