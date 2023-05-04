@@ -608,8 +608,8 @@ class AirSimEnv(gym.Env):
                 action = np.array(final_action)
                 self.prev_state = self.airgym.getConcatState(self.track, self.goal, total_state)
                 observation = np.copy(self.prev_state[0][0])
-                observation[6:settings.number_of_sensors+6] = 100**observation[6:settings.number_of_sensors+6] #reconverting from normalized to real values
-                observation[settings.number_of_sensors+6:] = observation[settings.number_of_sensors+6:]*180
+                observation[6:settings.number_of_sensors**2+6] = 100**observation[6:settings.number_of_sensors**2+6] #reconverting from normalized to real values
+                #observation[settings.number_of_sensors**2+6:] = observation[settings.number_of_sensors**2+6:]*180 #no angles in hrl state
                 self.observations_in_step.append(str(list(observation)))
                 
                 #determine move action based on DWA

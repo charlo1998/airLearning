@@ -270,9 +270,9 @@ def plot_action_vs_obs(data):
                 action = action.replace(" ", ", ") 
                 temp.append(json.loads(action)) #in training mode, no indexing! different for test mode?
             elif msgs.mode == "test":
-                action = action.replace("\n ", "") 
-                action = action.replace(" ", ", ") 
-                temp.append(json.loads(action)[0])
+                action = action.replace("\n ", " ") 
+                action = action.replace(" ", ", ")
+                temp.append(json.loads(action))
         sensors_per_action.append(temp)
 
     for i, observations in enumerate(episode_observations):
@@ -282,7 +282,7 @@ def plot_action_vs_obs(data):
             observation = observation.replace("\n  ", " ")
             #print(observation)
             obs = json.loads(observation)
-            temp.append(obs[6:settings.number_of_sensors+6])
+            temp.append(obs[6:settings.number_of_sensors**2+6])
         obs_per_action.append(temp)
 
     if msgs.mode == "test":
@@ -616,8 +616,8 @@ class gofai():
         x_offset = predicted_delay*x_vel*1.25
         y_offset = predicted_delay*y_vel*1.25
 
-        sensors = obs[6:settings.number_of_sensors+6] 
-        angles = obs[settings.number_of_sensors+6:]
+        sensors = obs[6:settings.number_of_sensors**2+6] 
+        angles  = np.arange(-math.pi, math.pi, self.arc)
 
 
         # ---------------- random baseline -----------------------------

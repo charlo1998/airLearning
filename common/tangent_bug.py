@@ -41,10 +41,8 @@ class tangent_bug():
     def predict(self, obs):
 
         obs = obs[0][0] #flattening the list
-        obs[6:settings.number_of_sensors+6] = 100**obs[6:settings.number_of_sensors+6] #reconverting from normalized to real values
-        obs[settings.number_of_sensors+6:] = obs[settings.number_of_sensors+6:]*np.pi
+        obs[6:settings.number_of_sensors**2+6] = 100**obs[6:settings.number_of_sensors**2+6] #reconverting from normalized to real values
         obs[1] = 100**obs[1]
-        sensors = obs[6:settings.number_of_sensors+6]
         obs[2:4] = obs[2:4]*(settings.base_speed*20.0) #reconverting from normalized values
         obs[4:6] = obs[4:6]*50.0 
 
@@ -52,8 +50,8 @@ class tangent_bug():
         goal_distance = obs[1]
         x_vel = obs[3]
         y_vel = obs[2]
-
-        angles =  obs[settings.number_of_sensors+6:]
+        sensors = obs[6:settings.number_of_sensors**2+6]
+        angles =  np.arange(-math.pi, math.pi, self.arc)
         objects =[]
         orientations = []
         #create objects list to evaluate obstacles positions, and replace missing values with old observations.
@@ -68,6 +66,7 @@ class tangent_bug():
         segments = self.compute_segments(objects)
 
         #print(f"sensors: {np.round(sensors,1)}")
+        #print(f"angles: {np.round(angles,1)}")
         #print(f"bug distances: {np.round(objects,1)}")
         #print(f"segments: {segments}")
         print_angles = [x*180/math.pi for x in orientations]
