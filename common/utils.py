@@ -293,10 +293,10 @@ def plot_action_vs_obs(data):
             pos_per_action.append(temp)
     
 
-    r = np.arange(0, settings.number_of_sensors)
-    theta = 2 * np.pi * (r+0.5) / settings.number_of_sensors - np.pi
-    r2 = np.arange(0, 2*settings.number_of_sensors)
-    theta2 = 2 * np.pi * (r2+1) / (2*settings.number_of_sensors) - np.pi
+    r = np.arange(0, settings.number_of_sensors**2)
+    theta = 2 * np.pi * (r+0.5) / settings.number_of_sensors**2 - np.pi
+    r2 = np.arange(0, 2*settings.number_of_sensors**2)
+    theta2 = 2 * np.pi * (r2+1) / (2*settings.number_of_sensors**2) - np.pi
     
     fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
     ax.set_rmax(66)
@@ -310,7 +310,7 @@ def plot_action_vs_obs(data):
     number_of_episodes_to_show = min(3, len(episode_actions))
     for episode in range(-number_of_episodes_to_show,0):
         for step in range(len(episode_actions[episode])):
-            chosen_areas = [0]*2*settings.number_of_sensors
+            chosen_areas = [0]*2*settings.number_of_sensors**2
             for i, sensor in enumerate(sensors_per_action[episode][step]):
                 if sensor:
                     chosen_areas[2*i-1] = 66
@@ -569,11 +569,11 @@ class gofai():
     '''
 
     def __init__(self):
-        self.arc = 2*math.pi/settings.number_of_sensors #rad
+        self.arc = 2*math.pi/settings.number_of_sensors**2 #rad
         self.heading_coeff = 1
         self.safety_coeff = 4
         self.safety_dist = 1.5
-        self.previous_obs = [3]*(settings.number_of_sensors+6)
+        self.previous_obs = [3]*(settings.number_of_sensors**2+6)
         self.bug = tangent_bug()
 
 
@@ -623,8 +623,8 @@ class gofai():
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 12
-            chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
+            n_sensors = 144
+            chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors**12-n_sensors))
             #print(chosens)
             for idx in chosens:
                 sensors[idx] = 100
@@ -646,6 +646,7 @@ class gofai():
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {global_goal_distance}")
         #print(f"sensors: {np.round(sensors,1)}")
+        #print(f"dwa objects: {np.round(objects,1)}")
         #print(len(objects))
         
         

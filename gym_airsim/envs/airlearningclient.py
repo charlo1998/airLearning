@@ -40,9 +40,8 @@ class AirLearningClient(airsim.MultirotorClient):
         track = ((math.degrees(track) - 180) % 360) - 180
         return track
 
-    def getConcatState(self, track, goal): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
-        [distances, angles] = self.get_laser_state()
-        sensors = self.process_lidar(distances, angles, -180, 180)
+    def getConcatState(self, track, goal, sensors): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
+        sensors = np.array(sensors)
 
         #ToDo: Add RGB, velocity etc
         if(settings.goal_position): #This is for ablation purposes
@@ -268,14 +267,12 @@ class AirLearningClient(airsim.MultirotorClient):
         1. processes a lidar point clouds into coordinates
         2. split the range into arcs of angle depending on the number of distance sensor simulated
         3. finds closest points in each of these arcs.
+        4. returns the distances as a list, going from left_angle to right_angle, and the angles of the distances appended at the end
         """        
         
         first = time.perf_counter()
         nb_of_sensors = settings.number_of_sensors
         lidar_FOV =  math.ceil(right_angle - left_angle)
-
-        if len(angles) == 0: #lidar not seeing anything!
-            return np.array([0 for s in range(nb_of_sensors)])
 
         #spliting points into ranges of angles
         theta = lidar_FOV/nb_of_sensors
@@ -284,6 +281,9 @@ class AirLearningClient(airsim.MultirotorClient):
                 thetas = [math.floor(left_angle)]
             else:
                 thetas.append(thetas[i-1]+theta)
+
+        if len(angles) == 0: #lidar not seeing anything!
+            return [0 for s in range(nb_of_sensors)] + thetas
 
         #print(f"angle ranges: {thetas}")
         #print(f"angle left: {angle_left}")
@@ -314,7 +314,7 @@ class AirLearningClient(airsim.MultirotorClient):
         scnd = time.perf_counter()
         #print(f"creating sensors took: {np.round((scnd-first)*1000,2)} ms")
 
-        return np.array(sensors)
+        return sensors + thetas
 
     def AirSim_reset(self):
         self.client.reset()
@@ -585,7 +585,7 @@ class AirLearningClient(airsim.MultirotorClient):
         obs = state[0][0] #flattening the list
         sensors = obs[6:]
 
-        action = action.flatten()
+        #print(f"action: {action}")
 
 
         for i, usage in enumerate(action):

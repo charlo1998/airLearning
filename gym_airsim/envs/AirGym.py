@@ -70,7 +70,7 @@ class AirSimEnv(gym.Env):
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DISTANCES = settings.number_of_sensors
+            STATE_DISTANCES = settings.number_of_sensors*2
             if(msgs.algo == "SAC"):
                 self.observation_space = spaces.Box(low=-1, high=1, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
@@ -110,6 +110,9 @@ class AirSimEnv(gym.Env):
         self.game_config_handler = GameConfigHandler()
         if(settings.concatenate_inputs):
             self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL + STATE_DISTANCES), dtype=np.uint8)
+        
+        self.lidar_distances = []
+        self.lidar_angles = []
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
@@ -258,7 +261,7 @@ class AirSimEnv(gym.Env):
 
     def computeReward(self, action):
         #base sensor reward is -0.55. we then add two terms: a proximity term (distance of the object) and a heading term (if the boject is in the way of the goal)
-        arc = 2*math.pi/settings.number_of_sensors
+        arc = 2*math.pi/(settings.number_of_sensors**2)
         angles =  np.arange(-math.pi,math.pi,arc)
         goal_angle = math.pi/2 - self.track*math.pi/180 #converting to math conventional body frame
         angles = angles-goal_angle
@@ -274,17 +277,16 @@ class AirSimEnv(gym.Env):
         #print(f"heading half sum: {np.sum(np.cos(angles)*action)*0.5}")
         #print(f"proximity: {[min(1/distance,2) for distance in sensors]*action}")
         #print(f"proximity: {np.sum([max(1/distance,2) for distance in sensors]*action)}")
-        
 
         heading = np.sum(np.cos(angles)*action)*0.5
-        proximity = np.sum([min(1/distance,2) for distance in sensors]*action)
+        proximity = np.sum(np.array([min(1/distance,2) for distance in sensors])*action)
         
         r = -0.6*nb_sensors + heading + proximity
         
         
         #print(f"total reward: {r}")
 
-        return r/settings.number_of_sensors
+        return r/settings.number_of_sensors**2
 
     def ddpg_add_noise_action(self, actions):
         noise_t = np.zeros([1, self.action_space.shape[0]])
@@ -557,9 +559,6 @@ class AirSimEnv(gym.Env):
             time.sleep(settings.delay)
             now = self.airgym.drone_pos()
             self.velocity = self.airgym.drone_velocity()
-            observation = np.copy(self.prev_state[0][0])
-            observation[6:] = np.round(100**observation[6:],2) #de-normalize
-            self.observations_in_step.append(str(list(observation)))
             #print(f"speed after delay: {np.round(np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2),2)}") 
             #print(f"pose after delay: {np.round(now,2)}")
             #print("--------------------------------------------------------")
@@ -589,7 +588,28 @@ class AirSimEnv(gym.Env):
                 self.actions_in_step.append(str(action))
             else:  #determine observation based on meta-action
                 
-                #action = action*0 +1 #artificially set all to 1
+                #hierarchical agent: applying policy to chosen sensors to further discretize
+                final_action = []
+                total_state = []
+                for i, chosen in enumerate(action.flatten()):
+                    #observe
+                    theta = 360/settings.number_of_sensors
+                    left_angle = -180 + theta*i
+                    right_angle = left_angle + theta
+                    sensors = self.airgym.process_lidar(self.lidar_distances, self.lidar_angles, left_angle, right_angle)
+                    total_state = total_state + sensors[0:settings.number_of_sensors] #discard the angles for dwa and bug, since they compute their own
+                    if chosen:
+                        local_obs = self.airgym.getConcatState(self.track, self.goal, sensors)
+                        local_action, _states = self.model.predict(local_obs)
+                        final_action = final_action + local_action.flatten().tolist()
+                    else:
+                        final_action = final_action + [0 for i in range(settings.number_of_sensors)]
+
+                action = np.array(final_action)
+                self.prev_state = self.airgym.getConcatState(self.track, self.goal, total_state)
+                observation = np.copy(self.prev_state[0][0])
+                observation[6:] = np.round(100**observation[6:],2) #de-normalize
+                self.observations_in_step.append(str(list(observation)))
                 
                 #determine move action based on DWA
                 bug_start = time.perf_counter()
@@ -634,9 +654,12 @@ class AirSimEnv(gym.Env):
             now = self.airgym.drone_pos()
             self.track = self.airgym.goal_direction(self.goal, now)
             
-            #get observation
+            
+            #get new observation
             if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI"):
-                self.concat_state = self.airgym.getConcatState(self.track, self.goal)
+                [self.lidar_distances, self.lidar_angles] = self.airgym.get_laser_state()
+                sensors = self.airgym.process_lidar(self.lidar_distances, self.lidar_angles, -180, 180)
+                self.concat_state = self.airgym.getConcatState(self.track, self.goal, sensors)
             elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                 self.depth = self.airgym.getScreenDepthVis(self.track)
             else:
@@ -750,7 +773,9 @@ class AirSimEnv(gym.Env):
         self.episodeInWindow +=1
         now = self.airgym.drone_pos()
         self.track = self.airgym.goal_direction(self.goal, now)
-        self.concat_state = self.airgym.getConcatState(self.track, self.goal)
+        [self.lidar_distances, self.lidar_angles] = self.airgym.get_laser_state()
+        sensors = self.airgym.process_lidar(self.lidar_distances, self.lidar_angles, -180, 180)
+        self.concat_state = self.airgym.getConcatState(self.track, self.goal, sensors)
         #self.depth = self.airgym.getScreenDepthVis(self.track)
         #self.rgb = self.airgym.getScreenRGB()
         self.position = self.airgym.get_distance(self.goal)

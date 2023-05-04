@@ -12,7 +12,7 @@ class tangent_bug():
     '''
 
     def __init__(self):
-        self.arc = 2*math.pi/settings.number_of_sensors #rad
+        self.arc = 2*math.pi/settings.number_of_sensors**2 #rad
         self.d_leave = 150
         self.d_min = 149
         self.following_boundary = False
@@ -20,7 +20,7 @@ class tangent_bug():
         self.done =False
         self.min_dist = 150
         self.max_dist = 10
-        self.previous_obs = [3]*(settings.number_of_sensors+6)
+        self.previous_obs = [3]*(settings.number_of_sensors**2+6)
         self.foundPathCounter = 0
         self.tangent_direction = 1
         self.tangent_counter = 0
