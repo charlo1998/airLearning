@@ -59,9 +59,9 @@ def test(env):
             #print(f"dwa processing: {np.round((end - begin)*1000)} ms")
             
             #---------------------step by step mode----------------------
-            #env.airgym.client.simPause(True)
-            #answer = input()
-            #env.airgym.client.simPause(False)
+            env.airgym.client.simPause(True)
+            answer = input()
+            env.airgym.client.simPause(False)
             obs, rewards, done, info = env.step(action)
             bug.done = done
 

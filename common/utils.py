@@ -616,8 +616,8 @@ class gofai():
         x_offset = predicted_delay*x_vel*1.25
         y_offset = predicted_delay*y_vel*1.25
 
-        sensors = obs[6:]
-        angles =  np.arange(-math.pi,math.pi,self.arc)
+        sensors = obs[6:settings.number_of_sensors+6] 
+        angles = obs[settings.number_of_sensors+6:]
 
 
         # ---------------- random baseline -----------------------------
