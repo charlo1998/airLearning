@@ -265,7 +265,7 @@ class AirSimEnv(gym.Env):
         angles =  np.arange(-math.pi,math.pi,arc)
         goal_angle = math.pi/2 - self.track*math.pi/180 #converting to math conventional body frame
         angles = angles-goal_angle
-        sensors = self.prev_state[0][0][6:settings.number_of_sensors+6]
+        sensors = self.prev_state[0][0][6:settings.number_of_sensors**2+6]
         nb_sensors = np.sum(action)
 
         #print(f"number of sensors: {nb_sensors}")
@@ -597,7 +597,7 @@ class AirSimEnv(gym.Env):
                     left_angle = -180 + theta*i
                     right_angle = left_angle + theta
                     sensors = self.airgym.process_lidar(self.lidar_distances, self.lidar_angles, left_angle, right_angle)
-                    total_state = total_state + sensors[0:settings.number_of_sensors] #discard the angles for dwa and bug, since they compute their own
+                    total_state = total_state + sensors[0:settings.number_of_sensors].tolist() #discard the angles for dwa and bug, since they compute their own
                     if chosen:
                         local_obs = self.airgym.getConcatState(self.track, self.goal, sensors)
                         local_action, _states = self.model.predict(local_obs)
@@ -608,7 +608,8 @@ class AirSimEnv(gym.Env):
                 action = np.array(final_action)
                 self.prev_state = self.airgym.getConcatState(self.track, self.goal, total_state)
                 observation = np.copy(self.prev_state[0][0])
-                observation[6:] = np.round(100**observation[6:],2) #de-normalize
+                observation[6:settings.number_of_sensors+6] = 100**observation[6:settings.number_of_sensors+6] #reconverting from normalized to real values
+                observation[settings.number_of_sensors+6:] = observation[settings.number_of_sensors+6:]*180
                 self.observations_in_step.append(str(list(observation)))
                 
                 #determine move action based on DWA
