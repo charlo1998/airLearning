@@ -164,7 +164,7 @@ class AirSimEnv(gym.Env):
                     self.action_space = spaces.Discrete(20)
             else:
                 #this is for RL on choosing observations
-                self.action_space = spaces.Box(np.zeros(settings.number_of_sensors),np.ones(settings.number_of_sensors)) # one for each sensor 
+                self.action_space = spaces.MultiBinary(settings.number_of_sensors) # one for each sensor 
                 self.DWA = gofai()
                 self.bug = tangent_bug()
 
