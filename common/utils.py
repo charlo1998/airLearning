@@ -209,7 +209,7 @@ def plot_data(file, data_to_inquire, mode="separate"):
             dataList.append(parse_data(file.replace("logverbose", "logverbose" + str(i))))
         else:
             dataList.append(parse_data(file.replace("log", "log" + str(i))))
-        if msgs.algo != "GOFAI":
+        if msgs.algo != "GOFAI" and msgs.mode == "test":
             infer_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "inference_durations" + str(i) + ".txt")
             plot_histogram(infer_duration_file)
             plt.title('Distribution of the inference duration (latency) of the policy')
@@ -647,6 +647,7 @@ class gofai():
         #print(f"distance to goal: {global_goal_distance}")
         #print(f"sensors: {np.round(sensors,1)}")
         #print(f"dwa objects: {np.round(objects,1)}")
+        #print(orientations)
         #print(len(objects))
         
         
@@ -706,7 +707,6 @@ class gofai():
         #print(f"objects: {np.round(objects,1)}")
         #print(f"orientations: {np.round(orientations,2)}")
         #print(f"sensors: {np.round(sensors,1)}")
-        #print(f"angles: {np.round(angles,2)}")
         #print(f"goal_distance: {global_goal_distance} angle: {goal_angle*180/math.pi}")
         #print(f"destination: {[np.round(y_dest,1), np.round(x_dest,1)]}")
         #print(f"destination: {np.round(now,2)}")

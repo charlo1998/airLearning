@@ -580,19 +580,22 @@ class AirLearningClient(airsim.MultirotorClient):
         """
         takes the full state and action as input, and returns a partial observation based on the chosen action
         """
-        #print(np.round(state,2))
-        obs = state[0][0] #flattening the list
-        sensors = obs[6:]
+        #print(f"full state: {np.round(state,2)}")
+        obs = state[0][0] #flattening the array
+        sensors = obs[6:settings.number_of_sensors+6]
 
         #print(f"action: {action}")
+        #find the k highest sensors, then save them for the dwa algorithm
+        chosen_idx = np.argpartition(action, -settings.k_sensors)[-settings.k_sensors:]
+        sensor_output = np.ones(settings.number_of_sensors)*100
+        for idx in chosen_idx:
+            sensor_score = action[idx]
+            if (sensor_score >= 0.5):
+                sensor_output[idx] = sensors[idx]
 
+        state[0][0][6:settings.number_of_sensors+6] = sensor_output
 
-        for i, usage in enumerate(action.flatten()):
-            if (usage == 0):
-                sensors[i] = 100 #set the distance to 100**1 which means it will not be used by DWA (anything over 99m isn't used.)
-
-        state[0][0][6:] = sensors
-        #print(np.round(state,2))
+        #print(f"outputed state: {obs}")
 
         return state
 
