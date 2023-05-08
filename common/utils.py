@@ -307,7 +307,7 @@ def plot_action_vs_obs(data):
 
     #print(sensors_per_action[0])
 
-    number_of_episodes_to_show = min(3, len(episode_actions))
+    number_of_episodes_to_show = min(1, len(episode_actions))
     for episode in range(-number_of_episodes_to_show,0):
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_sensors
@@ -334,7 +334,7 @@ def plot_action_vs_obs(data):
             if(step == len(episode_actions[episode])-1): #pause longer for last step of the episode
                 plt.pause(1.5)
             else:
-                plt.pause(0.06)
+                plt.pause(0.05)
             plt.cla()
     plt.show()
 

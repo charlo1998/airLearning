@@ -582,9 +582,11 @@ class AirLearningClient(airsim.MultirotorClient):
         """
         #print(f"full state: {np.round(state,2)}")
         obs = state[0][0] #flattening the array
+        action = action.flatten()
         sensors = obs[6:settings.number_of_sensors+6]
 
         #print(f"action: {action}")
+        #print(f"wanted sensors: {np.sum(action)}")
         #find the k highest sensors, then save them for the dwa algorithm
         chosen_idx = np.argpartition(action, -settings.k_sensors)[-settings.k_sensors:]
         sensor_output = np.ones(settings.number_of_sensors)*100
