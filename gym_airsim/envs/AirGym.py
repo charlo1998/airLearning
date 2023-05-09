@@ -167,6 +167,7 @@ class AirSimEnv(gym.Env):
                 self.action_space = spaces.MultiBinary(settings.number_of_sensors) # one for each sensor 
                 self.DWA = gofai()
                 self.bug = tangent_bug()
+                self.moveAction_in_step = []
 
 
         self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End"))
@@ -282,7 +283,7 @@ class AirSimEnv(gym.Env):
         heading = np.sum(np.cos(angles)*action)*0.5
         proximity = np.sum([min(1/(distance-0.5),3) for distance in sensors]*action)
         
-        r = -0.55*nb_sensors + heading + proximity
+        r = -0.53*nb_sensors + heading + proximity
         
         
         #print(f"total reward: {r}")
@@ -453,7 +454,8 @@ class AirSimEnv(gym.Env):
 
         #verbose
         msgs.episodal_log_dic_verbose = copy.deepcopy(msgs.episodal_log_dic)
-        msgs.episodal_log_dic_verbose["reward_in_each_step"] = self.reward_in_step
+        msgs.episodal_log_dic_verbose["reward_in_each_step"] = [round(reward,4) for reward in self.reward_in_step]
+        msgs.episodal_log_dic_verbose["DWA_action_in_each_step"] = self.moveAction_in_step
         if (msgs.mode == "test"):
             msgs.episodal_log_dic_verbose["actions_in_each_step"] = self.actions_in_step
             msgs.episodal_log_dic_verbose["observations_in_each_step"] = self.observations_in_step
@@ -537,6 +539,7 @@ class AirSimEnv(gym.Env):
 
         self.actions_in_step = []
         self.observations_in_step = []
+        self.moveAction_in_step = []
         self.distance_in_step = []
         self.reward_in_step = []
         self.position_in_step = []
@@ -604,6 +607,7 @@ class AirSimEnv(gym.Env):
                 #print(f"meta action: {np.round((time.perf_counter() - process_action_start)*1000)} ms")
                 
                 moveAction = self.DWA.predict(obs, goal)
+                self.moveAction_in_step.append(moveAction)
                 process_action_end = time.perf_counter()
                 #print(f"bug processing: {np.round((bug_end - bug_start)*1000)} ms")
                 #print(f"dwa processing: {np.round((process_action_end - process_action_start)*1000)} ms")
@@ -685,7 +689,7 @@ class AirSimEnv(gym.Env):
                 done = True
                 print("-----------drone ran out of time!--------")
                 reward = 0.0
-                self.success = False
+                self.success = True
             elif self.collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
                 print("------------drone collided!--------")
