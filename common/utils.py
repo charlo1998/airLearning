@@ -253,6 +253,7 @@ def plot_action_vs_obs(data):
     for k in range(settings.runs_to_do):
         episode_actions = data[k]["actions_in_each_step"]
         episode_observations = data[k]["observations_in_each_step"]
+        dwa_actions = data[k]["DWA_action_in_each_step"]
         if msgs.mode == "test":
             episode_positions = data[k]["position_in_each_step"]
             goals = data[k]["goal"]
@@ -260,6 +261,7 @@ def plot_action_vs_obs(data):
     sensors_per_action = []
     obs_per_action = []
     pos_per_action = []
+    dwa_goal_per_action = []
     for i, actions in enumerate(episode_actions):
         temp = []
         #print(actions)
@@ -277,13 +279,27 @@ def plot_action_vs_obs(data):
 
     for i, observations in enumerate(episode_observations):
         temp = []
+        predicted = []
         #print(observations)
-        for observation in observations:
+        for observation, dwa_action in zip(observations,dwa_actions[i]):
+            #reading observation
             observation = observation.replace("\n  ", " ")
             #print(observation)
             obs = json.loads(observation)
             temp.append(obs[6:settings.number_of_sensors+6])
-        obs_per_action.append(temp)
+            #processing dwa action
+            theta = math.pi/2 - (2*math.pi/settings.action_discretization)*(dwa_action%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw (drone body frame reference)
+            travel_speed = min(2, settings.base_speed*3**(dwa_action//settings.action_discretization)) #travelling speed can be 0.1, 0.3, 0.9, or 2 
+            x_vel = obs[3]
+            y_vel = obs[2]
+            x_dest = travel_speed*math.cos(theta)*0.4*(settings.mv_fw_dur) + x_vel*0.75 # correcting for current speed since change in speed isn't instantaneous
+            y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur) + y_vel*0.75
+            predicted_angle = math.atan2(y_dest,x_dest)
+            predicted_distance = np.sqrt(y_dest**2 + x_dest**2)
+            predicted.append([predicted_angle, predicted_distance])
+
+        dwa_goal_per_action.append(predicted)
+        obs_per_action.append(temp) #appending to all observations of episode to list of episodes
 
     if msgs.mode == "test":
         for i, positions in enumerate(episode_positions):
@@ -308,7 +324,7 @@ def plot_action_vs_obs(data):
     #print(sensors_per_action[0])
 
     number_of_episodes_to_show = min(1, len(episode_actions))
-    for episode in range(-number_of_episodes_to_show,0):
+    for episode in range(-40,-39):
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_sensors
             for i, sensor in enumerate(sensors_per_action[episode][step]):
@@ -329,10 +345,13 @@ def plot_action_vs_obs(data):
                 goal_norm = np.sqrt(x_goal_rel**2+y_goal_rel**2)
                 goal_angle = math.atan2(y_goal_rel,x_goal_rel)
                 line3 = ax.scatter(goal_angle, goal_norm, c= 'r')
+                wanted_angle = dwa_goal_per_action[episode][step][0]
+                wanted_norm = dwa_goal_per_action[episode][step][1]
+                line3 = ax.scatter(wanted_angle, wanted_norm, c= 'g')
             #ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
         
             if(step == len(episode_actions[episode])-1): #pause longer for last step of the episode
-                plt.pause(1.5)
+                plt.pause(2.5)
             else:
                 plt.pause(0.05)
             plt.cla()
