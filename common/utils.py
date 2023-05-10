@@ -268,13 +268,9 @@ def plot_action_vs_obs(data):
         for action in actions:
             #print(action)
             if msgs.mode == "train":
-                action = action.replace("\n  ", " ") 
-                action = action.replace(" ", ", ") 
-                temp.append(json.loads(action)) #in training mode, no indexing! different for test mode?
+                temp.append(action) #in training mode, no indexing! different for test mode?
             elif msgs.mode == "test":
-                action = action.replace("\n ", "") 
-                action = action.replace(" ", ", ") 
-                temp.append(json.loads(action)[0])
+                temp.append(action[0])
         sensors_per_action.append(temp)
 
     for i, observations in enumerate(episode_observations):
@@ -324,7 +320,7 @@ def plot_action_vs_obs(data):
     #print(sensors_per_action[0])
 
     number_of_episodes_to_show = min(1, len(episode_actions))
-    for episode in range(-40,-39):
+    for episode in range(-1,0):
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_sensors
             for i, sensor in enumerate(sensors_per_action[episode][step]):
@@ -367,10 +363,8 @@ def plot_sensor_usage(data):
         temp = []
         #print(actions)
         for action in actions:
-            action = action.replace("\n  ", " ") 
-            action = action.replace(" ", ", ") 
             #print(action)
-            temp.append(np.sum(json.loads(action)))
+            temp.append(np.sum(action))
         sensors_per_action.append(np.sum(temp)/len(temp))
     print(f"total average sensors_per_action: {sum(sensors_per_action)/len(sensors_per_action)}")
     plt.plot(range(len(sensors_per_action)),sensors_per_action)
