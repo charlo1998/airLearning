@@ -267,10 +267,7 @@ def plot_action_vs_obs(data):
         #print(actions)
         for action in actions:
             #print(action)
-            if msgs.mode == "train":
-                temp.append(action) #in training mode, no indexing! different for test mode?
-            elif msgs.mode == "test":
-                temp.append(action[0])
+            temp.append(action)
         sensors_per_action.append(temp)
 
     for i, observations in enumerate(episode_observations):
@@ -320,7 +317,7 @@ def plot_action_vs_obs(data):
     #print(sensors_per_action[0])
 
     number_of_episodes_to_show = min(1, len(episode_actions))
-    for episode in range(-1,0):
+    for episode in range(-90,-89):
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_sensors
             for i, sensor in enumerate(sensors_per_action[episode][step]):
@@ -636,7 +633,7 @@ class gofai():
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 12
+            n_sensors = 8
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
             #print(chosens)
             for idx in chosens:

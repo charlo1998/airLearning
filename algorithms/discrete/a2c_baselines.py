@@ -3,6 +3,7 @@
 import sys
 import gym
 import time
+import inspect
 
 import os
 import tensorflow as tf
@@ -18,7 +19,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 #from stable_baselines.common import make_vec_env #this yields an error
 from stable_baselines import A2C
 from keras.backend.tensorflow_backend import set_session
-from customPolicy import CustomLSTMPolicy
+from customPolicy import CustomLSTMPolicy, CustomPolicy
 
 def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     config = tf.ConfigProto()
@@ -35,7 +36,8 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     # Parallel environments
     #env = make_vec_env('CartPole-v1', n_envs=4)
     agent = A2C(CustomLSTMPolicy , vec_env, verbose=1, learning_rate=1e-4)
-    print(agent.policy)
+    print(agent.summary)
+
     env.set_model(agent)
 
     return env, agent

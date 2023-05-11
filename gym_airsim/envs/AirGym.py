@@ -131,6 +131,7 @@ class AirSimEnv(gym.Env):
         self.actions_in_step = []
         self.position_in_step = []
         self.observations_in_step = []
+        self.moveAction_in_step = []
         self.distance_in_step = []
         self.reward_in_step=[]
         self.total_reward = 0
@@ -243,31 +244,17 @@ class AirSimEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    #def computeReward(self, now):
-    #    # test if getPosition works here liek that
-    #    # get exact coordiantes of the tip
-    #    distance_now = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
-    #    distance_before = self.allLogs['distance'][-1]
-    #    distance_correction = (distance_before - distance_now)
-    #    r = -1
-
-    #    # check if you are too close to the goal, if yes, you need to reduce the yaw and speed
-    #    if distance_now < settings.slow_down_activation_distance:
-    #        yaw_correction =  abs(self.track) * distance_now 
-    #        velocity_correction = (settings.mv_fw_spd_5 - self.speed)* settings.mv_fw_dur
-    #        r = r + distance_correction + velocity_correction
-    #    else:
-    #        r = r + distance_correction
-    #    return r, distance_now
 
     def computeReward(self, action):
         #base sensor reward is -0.55. we then add two terms: a proximity term (distance of the object) and a heading term (if the boject is in the way of the goal)
+        # a third term is added to counter the insentive to get close to obstacles: safety term (points based on how far we are from any obstacle
         arc = 2*math.pi/settings.number_of_sensors
         angles =  np.arange(-math.pi,math.pi,arc)
         goal_angle = math.pi/2 - self.track*math.pi/180 #converting to math conventional body frame
         angles = angles-goal_angle
         sensors = self.prev_state[0][0][6:settings.number_of_sensors+6]
         nb_sensors = np.sum(action)
+        closest = min(sensors)
 
         #print(f"number of sensors: {nb_sensors}")
         #print(f"goal_angle: {goal_angle}")
@@ -279,11 +266,11 @@ class AirSimEnv(gym.Env):
         #print(f"proximity: {[min(1/distance,2) for distance in sensors]*action}")
         #print(f"proximity: {np.sum([max(1/distance,2) for distance in sensors]*action)}")
         
-
-        heading = np.sum(np.cos(angles)*action)*0.5
+        #safety = min(2.5, closest)*settings.number_of_sensors
+        heading = np.sum(np.cos(angles)*action)
         proximity = np.sum([min(1/(distance-0.5),3) for distance in sensors]*action)
         
-        r = -0.53*nb_sensors + heading + proximity
+        r = -0.53*nb_sensors + heading*0.5 + proximity
         
         
         #print(f"total reward: {r}")
@@ -633,7 +620,7 @@ class AirSimEnv(gym.Env):
                         self.collided = self.airgym.take_position_action(moveAction)
                     else:
                         self.collided = self.airgym.take_discrete_action(moveAction)
-                    self.actions_in_step.append(str(action))
+                    self.actions_in_step.append(list(action.flatten()))
                 
             if(settings.profile):
                     take_action_end = time.perf_counter()
@@ -690,6 +677,7 @@ class AirSimEnv(gym.Env):
                 print("-----------drone ran out of time!--------")
                 reward = 0.0
                 self.success = True
+                msgs.success = True
             elif self.collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
                 print("------------drone collided!--------")
