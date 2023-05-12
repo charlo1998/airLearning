@@ -246,18 +246,19 @@ class AirSimEnv(gym.Env):
 
 
     def computeReward(self, action):
-        #base sensor reward is -0.55. we then add two terms: a proximity term (distance of the object) and a heading term (if the boject is in the way of the goal)
-        # a third term is added to counter the insentive to get close to obstacles: safety term (points based on how far we are from any obstacle
+        #base sensor reward is -0.55. we then add two terms: a proximity term (distance of the object) and a heading term (if the object is in the direction of current velocity)
+        # a third term is added to counter the incentive to get close to obstacles: safety term (points based on how far we are from any obstacle
         arc = 2*math.pi/settings.number_of_sensors
         angles =  np.arange(-math.pi,math.pi,arc)
-        goal_angle = math.pi/2 - self.track*math.pi/180 #converting to math conventional body frame
-        angles = angles-goal_angle
+        vel_angle = self.prev_state[0][0][3]
+        velocity = self.prev_state[0][0][2]
+        angles = angles-vel_angle
         sensors = self.prev_state[0][0][6:settings.number_of_sensors+6]
         nb_sensors = np.sum(action)
         closest = min(sensors)
 
         #print(f"number of sensors: {nb_sensors}")
-        #print(f"goal_angle: {goal_angle}")
+        #print(f"goal_angle: {vel_angle*180/np.pi}")
         #print(f"angles: {angles}")
         #print(f"sensors: {np.round(sensors,1)}")
         #print(f"action: {action}")
@@ -267,10 +268,10 @@ class AirSimEnv(gym.Env):
         #print(f"proximity: {np.sum([max(1/distance,2) for distance in sensors]*action)}")
         
         #safety = min(2.5, closest)*settings.number_of_sensors
-        heading = np.sum(np.cos(angles)*action)
-        proximity = np.sum([min(1/(distance-0.5),3) for distance in sensors]*action)
+        heading = np.sum(np.cos(angles)*action)*0.5
+        proximity = np.sum([min(1/(distance-1.2),10) for distance in sensors]*action)
         
-        r = -0.55*nb_sensors + heading*0.5 + proximity
+        r = -0.55*nb_sensors + heading*velocity + proximity
         
         
         #print(f"total reward: {r}")
