@@ -283,10 +283,10 @@ def plot_action_vs_obs(data):
             #processing dwa action
             theta = math.pi/2 - (2*math.pi/settings.action_discretization)*(dwa_action%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw (drone body frame reference)
             travel_speed = min(2, settings.base_speed*3**(dwa_action//settings.action_discretization)) #travelling speed can be 0.1, 0.3, 0.9, or 2 
-            x_vel = obs[3]
-            y_vel = obs[2]
-            x_dest = travel_speed*math.cos(theta)*0.4*(settings.mv_fw_dur) + x_vel*0.75 # correcting for current speed since change in speed isn't instantaneous
-            y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur) + y_vel*0.75
+            vel_angle = obs[3]
+            vel_norm = obs[2]
+            x_dest = travel_speed*math.cos(theta)*0.4*(settings.mv_fw_dur) + vel_norm*math.cos(vel_angle)*0.75 # correcting for current speed since change in speed isn't instantaneous
+            y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur) + vel_norm*math.sin(vel_angle)*0.75
             predicted_angle = math.atan2(y_dest,x_dest)
             predicted_distance = np.sqrt(y_dest**2 + x_dest**2)
             predicted.append([predicted_angle, predicted_distance])
@@ -591,7 +591,7 @@ class gofai():
 
     def predict(self, obs, goal):
         '''
-        observation is in the form [angle, d_goal, y_vel, x_vel, y_pos, x_pos, d1, d2, ..., dn] where d1 starts at 180 deg and goes ccw, velocities are in drone's body frame ref
+        observation is in the form [angle, d_goal, vel_norm, vel_angle, y_pos, x_pos, d1, d2, ..., dn] where d1 starts at 180 deg and goes ccw, velocities are in drone's body frame ref
         actions are distributed as following:
         0-15: small circle
         16-31: medium small circle
@@ -618,13 +618,13 @@ class gofai():
         #print(f"observed goal (relative): {[x_goal,y_goal]}")
 
         
-        x_vel = obs[3]
-        y_vel = obs[2]
+        vel_angle = obs[3]
+        vel_norm = obs[2]
         x_pos = obs[5]
         y_pos = obs[4]
         predicted_delay = settings.delay*5 #accouting for predicted latency, and simulation time vs real time
-        x_offset = predicted_delay*x_vel*1.25
-        y_offset = predicted_delay*y_vel*1.25
+        x_offset = predicted_delay*vel_norm*math.cos(vel_angle)*1.25
+        y_offset = predicted_delay*vel_norm*math.sin(vel_angle)*1.25
 
         sensors = obs[6:settings.number_of_sensors+6] 
         angles = obs[settings.number_of_sensors+6:]
@@ -633,7 +633,7 @@ class gofai():
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 8
+            n_sensors = 24
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
             #print(chosens)
             for idx in chosens:
@@ -674,8 +674,8 @@ class gofai():
 
             #computing new distance to goal
             travel_speed = min(2, settings.base_speed*3**(i//settings.action_discretization)) #travelling speed can be 0.5, 1, 2, or 4 
-            x_dest = travel_speed*math.cos(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + x_vel*(0.75+predicted_delay*1.25) # correcting for current speed since change in speed isn't instantaneous
-            y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + y_vel*(0.75+predicted_delay*1.25)
+            x_dest = travel_speed*math.cos(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + vel_norm*math.cos(vel_angle)*(0.75+predicted_delay*1.25) # correcting for current speed since change in speed isn't instantaneous
+            y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + vel_norm*math.sin(vel_angle)*(0.75+predicted_delay*1.25)
 
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
 
@@ -709,10 +709,10 @@ class gofai():
 
         ### -----------printing info on the chosen action-------------------------------------------------------------
         travel_speed = min(2, settings.base_speed*3**(action//settings.action_discretization)) #travelling speed can be 0.5, 1, 2, or 4 
-        x_dest = travel_speed*math.cos(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5) + x_vel * (0.75+predicted_delay)  + x_pos # correcting for current speed since change in speed isn't instantaneous
-        y_dest = travel_speed*math.sin(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5)  + y_vel * (0.75+predicted_delay) + y_pos
+        x_dest = travel_speed*math.cos(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5) + vel_norm*math.cos(vel_angle) * (0.75+predicted_delay)  + x_pos # correcting for current speed since change in speed isn't instantaneous
+        y_dest = travel_speed*math.sin(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5)  + vel_norm*math.sin(vel_angle) * (0.75+predicted_delay) + y_pos
         #print(f"desired angle: {np.round(direction*180/math.pi,1)}")
-        #print(f"current speed: {[np.round(y_vel,1), np.round(x_vel,1)]}")
+        #print(f"current speed: {[np.round(vel_norm,1), np.round(vel_angle*180/np.pi,1)]}")
         #print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
         #print(f"objects: {np.round(objects,1)}")
         #print(f"orientations: {np.round(orientations,2)}")

@@ -57,8 +57,10 @@ class AirLearningClient(airsim.MultirotorClient):
         if(settings.velocity): #This is for ablation purposes
             vel = self.drone_velocity()
             pos = self.drone_pos()
-            #keep only x and y, and  normalize them.
-            vel = vel[0:2]/(settings.base_speed*20) #max speed is 20*base speed (2m/s)
+            #keep only norm and angle for velocity, and  normalize them.
+            vel_norm = min(np.sqrt(vel[0]**2+vel[1]**2)/(settings.base_speed*20),1) #max speed is 20*base speed (2m/s)
+            vel_angle = math.atan2(vel[0],vel[1])/math.pi
+            vel = [vel_norm, vel_angle]
             pos = pos[0:2]/50.0 #arena is 100x100m
 
         if(settings.goal_position and settings.velocity):

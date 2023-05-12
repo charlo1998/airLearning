@@ -270,7 +270,7 @@ class AirSimEnv(gym.Env):
         heading = np.sum(np.cos(angles)*action)
         proximity = np.sum([min(1/(distance-0.5),3) for distance in sensors]*action)
         
-        r = -0.53*nb_sensors + heading*0.5 + proximity
+        r = -0.55*nb_sensors + heading*0.5 + proximity
         
         
         #print(f"total reward: {r}")

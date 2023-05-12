@@ -44,14 +44,16 @@ class tangent_bug():
         obs[6:settings.number_of_sensors+6] = 100**obs[6:settings.number_of_sensors+6] #reconverting from normalized to real values
         obs[settings.number_of_sensors+6:] = obs[settings.number_of_sensors+6:]*np.pi
         obs[1] = 100**obs[1]
+        obs[0] = obs[0]*np.pi #rad
         sensors = obs[6:settings.number_of_sensors+6]
-        obs[2:4] = obs[2:4]*(settings.base_speed*20.0) #reconverting from normalized values
+        obs[2] = obs[2]*(settings.base_speed*20.0) #reconverting from normalized values
+        obs[3] = obs[3]*np.pi
         obs[4:6] = obs[4:6]*50.0 
 
-        goal_angle = obs[0]*math.pi #rad
+        goal_angle = obs[0]
         goal_distance = obs[1]
-        x_vel = obs[3]
-        y_vel = obs[2]
+        vel_angle = obs[3]
+        vel_norm = obs[2]
 
         angles =  obs[settings.number_of_sensors+6:]
         objects =[]
