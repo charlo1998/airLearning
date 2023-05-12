@@ -258,23 +258,24 @@ class AirSimEnv(gym.Env):
         closest = min(sensors)
 
         #print(f"number of sensors: {nb_sensors}")
-        #print(f"goal_angle: {vel_angle*180/np.pi}")
+        #print(f"vel_angle: {vel_angle*180/np.pi}")
+        #print(f"velocity: {velocity}")
         #print(f"angles: {angles}")
         #print(f"sensors: {np.round(sensors,1)}")
         #print(f"action: {action}")
         #print(f"heading: {np.cos(angles)*action}")
         #print(f"heading half sum: {np.sum(np.cos(angles)*action)*0.5}")
-        #print(f"proximity: {[min(1/distance,2) for distance in sensors]*action}")
-        #print(f"proximity: {np.sum([max(1/distance,2) for distance in sensors]*action)}")
+        #print(f"proximity: {[min(3/distance,10) for distance in sensors]*action}")
+        #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
         
         #safety = min(2.5, closest)*settings.number_of_sensors
         heading = np.sum(np.cos(angles)*action)*0.5
-        proximity = np.sum([min(1/(distance-1.2),10) for distance in sensors]*action)
+        proximity = np.sum([min(3/distance,10) for distance in sensors]*action)
         
-        r = -0.55*nb_sensors + heading*velocity + proximity
+        r = -1.05*nb_sensors + heading*velocity + proximity
         
         
-        #print(f"total reward: {r}")
+        #print(f"total reward: {r/settings.number_of_sensors}")
 
         return r/settings.number_of_sensors
 
@@ -671,7 +672,7 @@ class AirSimEnv(gym.Env):
                 #print(self.goal)
                 #print(now)
                 # Todo: Add code for landing drone (Airsim API)
-                reward = 100
+                reward = 10
                 #self.collect_data()
             elif self.stepN >= settings.nb_max_episodes_steps: #ran out of time/battery: 100pts (avoided collision)
                 done = True
