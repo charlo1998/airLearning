@@ -280,7 +280,7 @@ class AirSimEnv(gym.Env):
         #print(f"proximity cost: {proximity}")
         #print(f"total reward: {r}")
 
-        return r
+        return r/settings.number_of_sensors
 
     def ddpg_add_noise_action(self, actions):
         noise_t = np.zeros([1, self.action_space.shape[0]])
