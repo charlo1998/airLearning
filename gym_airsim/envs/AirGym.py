@@ -267,17 +267,20 @@ class AirSimEnv(gym.Env):
         #print(f"heading half sum: {np.sum(np.cos(angles)*action)*0.5}")
         #print(f"proximity: {[min(3/distance,10) for distance in sensors]*action}")
         #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
+        proximity = 0
+        future_distances = sensors - velocity*np.cos(angles)
         
-        #safety = min(2.5, closest)*settings.number_of_sensors
-        heading = np.sum(np.cos(angles)*action)*0.5
-        proximity = np.sum([min(3/distance,10) for distance in sensors]*action)
+        for i in range(settings.number_of_sensors):
+            if future_distances[i] < 2:
+                proximity += 1-action[i]
         
-        r = -1.05*nb_sensors + heading*velocity + proximity
+        r = settings.number_of_sensors -0.5*nb_sensors - proximity
         
-        
-        #print(f"total reward: {r/settings.number_of_sensors}")
+        #print(f"predicted distances: {future_distances}")
+        #print(f"proximity cost: {proximity}")
+        #print(f"total reward: {r}")
 
-        return r/settings.number_of_sensors
+        return r
 
     def ddpg_add_noise_action(self, actions):
         noise_t = np.zeros([1, self.action_space.shape[0]])
