@@ -267,6 +267,13 @@ class AirSimEnv(gym.Env):
         #print(f"heading half sum: {np.sum(np.cos(angles)*action)*0.5}")
         #print(f"proximity: {[min(3/distance,10) for distance in sensors]*action}")
         #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
+        if (msgs.cur_zone_number == 0):
+            cost = 0.05
+        elif (msgs.cur_zone_number == 1):
+            cost = 0.5
+        else:
+            cost = 0.95
+
         proximity = 0
         future_distances = sensors - velocity*np.cos(angles)
         
@@ -274,7 +281,7 @@ class AirSimEnv(gym.Env):
             if future_distances[i] < 2:
                 proximity += 1-action[i]
         
-        r = settings.number_of_sensors -0.5*nb_sensors - proximity
+        r = settings.number_of_sensors -cost*nb_sensors - proximity
         
         #print(f"predicted distances: {future_distances}")
         #print(f"proximity cost: {proximity}")

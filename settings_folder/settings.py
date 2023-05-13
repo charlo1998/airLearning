@@ -52,10 +52,10 @@ checkpoint_interval = 10000
 # ---------------------------
 # how many zones for each variable for the entire range. Note that frequency
 # of moving to a new zone is not determined here
-zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 1}  # pay attention
+zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 3}  # pay attention
 
 # update_zone_success_threshold = 50
-acceptable_success_rate_to_update_zone = 0.75  # after what ratio of success up the zone # pay attention
+acceptable_success_rate_to_update_zone = 0.95  # after what ratio of success up the zone # pay attention
 update_zone_window = 100  # the window within which the  update_zone_accpetable_success_rate
 # needs to be achieved. Note that at the begining of every new window we zero out the achieved ratio
 
