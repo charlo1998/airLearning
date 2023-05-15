@@ -114,7 +114,11 @@ class GameConfigHandler:
 
         # end
         if "End" in arg and self.game_config_range.get_item("End")[0] == "Mutable":
-            self.cur_game_config.set_item("End",utils.get_random_end_point(self.cur_game_config.get_item("ArenaSize"),self.zone_dic["End"],self.zone_dic["End"])) #second arg of get_random_end_point() was game_config_zones.get_item("End")[0] to get the current zone, but we ignore it to use all the space from the beginning
+            self.cur_game_config.set_item("End",
+                                          utils.get_random_end_point( \
+                                              self.cur_game_config.get_item("ArenaSize"), \
+                                              self.game_config_zones.get_item("End")[0], \
+                                              self.zone_dic["End"]))
 
         #write the new settings in the envgen json file
         outputfile = self.input_file_addr

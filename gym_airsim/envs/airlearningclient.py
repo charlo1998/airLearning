@@ -596,6 +596,11 @@ class AirLearningClient(airsim.MultirotorClient):
             sensor_score = action[idx]
             if (sensor_score >= 0.5):
                 sensor_output[idx] = sensors[idx]
+        #for i, sensor in enumerate(sensors):
+        #    if sensor < 2.5:
+        #        sensor_output[i] = sensors[i]
+        #closest = np.argmin(sensors)
+        #sensor_output[closest] = 100
 
         state[0][0][6:settings.number_of_sensors+6] = sensor_output
 
