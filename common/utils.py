@@ -317,7 +317,7 @@ def plot_action_vs_obs(data):
     #print(sensors_per_action[0])
 
     number_of_episodes_to_show = min(1, len(episode_actions))
-    for episode in range(-90,-89):
+    for episode in range(-14,-13):
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_sensors
             for i, sensor in enumerate(sensors_per_action[episode][step]):
@@ -344,9 +344,9 @@ def plot_action_vs_obs(data):
             #ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
         
             if(step == len(episode_actions[episode])-1): #pause longer for last step of the episode
-                plt.pause(2.5)
+                plt.pause(2)
             else:
-                plt.pause(0.05)
+                plt.pause(0.5)
             plt.cla()
     plt.show()
 

@@ -52,7 +52,7 @@ checkpoint_interval = 10000
 # ---------------------------
 # how many zones for each variable for the entire range. Note that frequency
 # of moving to a new zone is not determined here
-zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 3}  # pay attention
+zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 1}  # pay attention
 
 # update_zone_success_threshold = 50
 acceptable_success_rate_to_update_zone = 0.96  # after what ratio of success up the zone # pay attention
@@ -239,8 +239,8 @@ runs_to_do = 1
 i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
-use_checkpoint = True
-training_steps_cap = 150000
+use_checkpoint = False
+training_steps_cap = 50000
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True
