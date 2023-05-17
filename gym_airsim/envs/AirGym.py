@@ -268,12 +268,7 @@ class AirSimEnv(gym.Env):
         #print(f"proximity: {[min(3/distance,10) for distance in sensors]*action}")
         #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
 
-        if (msgs.cur_zone_number == 0): 
-            cost = 0.95 
-        elif (msgs.cur_zone_number == 1): 
-            cost = 1.05 
-        else: 
-            cost = 1.15
+        cost = 0.95
  
         
         #safety = min(2.5, closest)*settings.number_of_sensors

@@ -73,9 +73,7 @@ def santize_data(file):
 def plot_trajectories(file):
     print("collecting trajectories")
     data = parse_data(file)
-    nbOfEpisodesToPlot = 50
-    print(len(data['stepN']))
-    assert(len(data['stepN']) >= nbOfEpisodesToPlot)
+    nbOfEpisodesToPlot = min(50,len(data['stepN'])-1)
     nbOfSteps = 0
     #plot the first x episodes
     plt.figure()
@@ -108,7 +106,7 @@ def plot_trajectories(file):
     plt.legend()
 
     #plot the last 10 episodes
-    nbOfSteps = data['total_step_count_for_experiment'][-nbOfEpisodesToPlot-1] #remove the steps before the last 10 episodes
+    nbOfSteps = data['total_step_count_for_experiment'][-nbOfEpisodesToPlot-1] #slice the steps before the last 10 episodes
     plt.figure()
     for i in range(-nbOfEpisodesToPlot,0): #this is the number of trajectories to plot
         xcoord = []
@@ -317,7 +315,7 @@ def plot_action_vs_obs(data):
     #print(sensors_per_action[0])
 
     number_of_episodes_to_show = min(1, len(episode_actions))
-    for episode in range(-14,-13):
+    for episode in range(-2,-1):
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_sensors
             for i, sensor in enumerate(sensors_per_action[episode][step]):
@@ -346,7 +344,7 @@ def plot_action_vs_obs(data):
             if(step == len(episode_actions[episode])-1): #pause longer for last step of the episode
                 plt.pause(2)
             else:
-                plt.pause(0.5)
+                plt.pause(0.05)
             plt.cla()
     plt.show()
 
@@ -469,6 +467,7 @@ def get_random_end_point(arena_size, split_index, total_num_of_splits):
     # distance from the walls
     wall_halo = floor_halo = roof_halo = 1
     goal_halo = settings.slow_down_activation_distance + 1
+    
 
     sampling_quanta = .5  # sampling increment
 
@@ -633,7 +632,7 @@ class gofai():
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 24
+            n_sensors = 12
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
             #print(chosens)
             for idx in chosens:
