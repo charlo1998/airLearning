@@ -187,7 +187,7 @@ timedActions = False
 positionActions = True
 action_discretization = 16 #this needs to be a square number and greater than one if timedActions is set to true! 
 number_of_sensors = 12
-k_sensors = 3  #the maximum amount of sensors the agent can choose at any time
+k_sensors = number_of_sensors  #the maximum amount of sensors the agent can choose at any time
 assert(action_discretization > 1)
 if timedActions:
     assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
@@ -249,7 +249,7 @@ verbose = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = max_zone*50  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = max_zone*20  # note that if number of zones are x, #pay attention
 random.seed(hard_range_dic["Seed"][0])
 deterministic = True
 goals_list = []

@@ -639,7 +639,8 @@ class gofai():
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #chooses k closest sensors
-            chosen_idx = np.argpartition(sensors, settings.k_sensors)[:settings.k_sensors]
+            k_sensors = 3
+            chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
             sensor_output = np.ones(settings.number_of_sensors)*100
             for idx in chosen_idx:
                 sensor_output[idx] = sensors[idx]
