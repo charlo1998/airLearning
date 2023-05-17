@@ -464,6 +464,13 @@ def reset_msg_logs():
 
 
 def get_random_end_point(arena_size, split_index, total_num_of_splits):
+
+    if settings.deterministic:
+        [rnd_idx0, rnd_idx1, grounded_idx2] = settings.goals_list[settings.goals_idx]
+        settings.goals_idx +=1 
+        return [rnd_idx0, rnd_idx1, grounded_idx2]
+
+
     # distance from the walls
     wall_halo = floor_halo = roof_halo = 1
     goal_halo = settings.slow_down_activation_distance + 1

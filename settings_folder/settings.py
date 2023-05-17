@@ -106,7 +106,7 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "NumberOfObjects": list(range(30,33))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
-random.seed(hard_range_dic["Seed"][0])
+
 # ------------------------------------------------------------
 #                               -game related-
 # ------------------------------------------------------------
@@ -249,7 +249,15 @@ verbose = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = max_zone*20  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = max_zone*50  # note that if number of zones are x, #pay attention
+random.seed(hard_range_dic["Seed"][0])
+deterministic = True
+goals_list = []
+for i in range(testing_nb_episodes_per_model+1):
+    x_goal = random.choice(range(-49,49))
+    y_goal = random.choice(range(-49,49))
+    goals_list.append([x_goal, y_goal, 0])
+goals_idx = 0
 # then model get tested testing_nb_episodes_per_model/x
 # times per zone
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)
