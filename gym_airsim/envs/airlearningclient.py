@@ -583,9 +583,9 @@ class AirLearningClient(airsim.MultirotorClient):
         takes the full state and action as input, and returns a partial observation based on the chosen action
         """
         #print(f"full state: {np.round(state,2)}")
-        obs = state[0][0] #flattening the array
+        obs = state.copy()
         action = action.flatten()
-        sensors = obs[6:settings.number_of_sensors+6]
+        sensors = obs[0][0][6:settings.number_of_sensors+6]
 
         #print(f"action: {action}")
         #print(f"wanted sensors: {np.sum(action)}")
@@ -602,9 +602,10 @@ class AirLearningClient(airsim.MultirotorClient):
         #closest = np.argmin(sensors)
         #sensor_output[closest] = 100
 
-        state[0][0][6:settings.number_of_sensors+6] = sensor_output
+        obs[0][0][6:settings.number_of_sensors+6] = sensor_output
 
-        #print(f"outputed state: {obs}")
+        #print(f" state: {state}")
+        #print(f"outputed obs: {obs}")
 
-        return state
+        return obs
 

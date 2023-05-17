@@ -627,10 +627,16 @@ class gofai():
 
         sensors = obs[6:settings.number_of_sensors+6] 
         angles = obs[settings.number_of_sensors+6:]
-
+        #print(f"sensors: {np.round(sensors,1)}")
 
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
+            #chooses k closest sensors
+            chosen_idx = np.argpartition(sensors, settings.k_sensors)[:settings.k_sensors]
+            sensor_output = np.ones(settings.number_of_sensors)*100
+            for idx in chosen_idx:
+                sensor_output[idx] = sensors[idx]
+            sensors = sensor_output
             #randomly chooses a subset of sensors to process (imitating RL agent)
             n_sensors = 12
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
@@ -654,7 +660,7 @@ class gofai():
             
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {global_goal_distance}")
-        #print(f"sensors: {np.round(sensors,1)}")
+        
         #print(f"dwa objects: {np.round(objects,1)}")
         #print(orientations)
         #print(len(objects))
