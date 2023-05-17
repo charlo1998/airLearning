@@ -2,6 +2,8 @@
 
 import sys
 import gym
+import time
+import inspect
 
 import os
 import tensorflow as tf
@@ -17,7 +19,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 #from stable_baselines.common import make_vec_env #this yields an error
 from stable_baselines import A2C
 from keras.backend.tensorflow_backend import set_session
-from customPolicy import CustomLSTMPolicy
+from customPolicy import CustomLSTMPolicy, CustomPolicy
 
 def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     config = tf.ConfigProto()
@@ -33,8 +35,9 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     vec_env = DummyVecEnv([lambda: env])  # The algorithms require a vectorized environment to run
     # Parallel environments
     #env = make_vec_env('CartPole-v1', n_envs=4)
-    agent = A2C(CustomLSTMPolicy , vec_env, verbose=1, learning_rate=7e-5)
-    print(agent.policy)
+    agent = A2C(CustomLSTMPolicy , vec_env, verbose=1, learning_rate=1e-4)
+    print(agent.summary)
+
     env.set_model(agent)
 
     return env, agent
@@ -69,13 +72,16 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
     msgs.weight_file_under_test = filepath
 
     model = A2C.load(filepath)
-    
+    infer_latency_list = []
     
     for i in range(settings.testing_nb_episodes_per_model):
         obs = env.reset()
         done = False
         while not done:
+            infer_start = time.perf_counter()
             action, _states = model.predict(obs)
+            infer_end = time.perf_counter()
+            infer_latency_list.append(infer_end-infer_start)
             obs, rewards, done, info = env.step(action)
             #env.airgym.client.simPause(True)
             #answer = input()
@@ -90,9 +96,9 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
             f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
             f.write("process_action_list:" + str(env.process_action_list) + "\n")
 
-        action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(settings.i_run) + ".txt")
-        with open(action_duration_file, "w") as f:
-            f.write(str(env.take_action_list))
+        inference_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "inference_durations" + str(settings.i_run) + ".txt")
+        with open(inference_duration_file, "w") as f:
+            f.write(str(infer_latency_list[1:]))
 
 
 

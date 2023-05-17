@@ -40,8 +40,7 @@ class AirLearningClient(airsim.MultirotorClient):
         track = ((math.degrees(track) - 180) % 360) - 180
         return track
 
-    def getConcatState(self, track, goal): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
-        distances = self.get_laser_state()
+    def getConcatState(self, track, goal, sensors): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
 
         #ToDo: Add RGB, velocity etc
         if(settings.goal_position): #This is for ablation purposes
@@ -58,18 +57,20 @@ class AirLearningClient(airsim.MultirotorClient):
         if(settings.velocity): #This is for ablation purposes
             vel = self.drone_velocity()
             pos = self.drone_pos()
-            #keep only x and y, and  normalize them.
-            vel = vel[0:2]/(settings.base_speed*20) #max speed is 20*base speed (2m/s)
+            #keep only norm and angle for velocity, and  normalize them.
+            vel_norm = min(np.sqrt(vel[0]**2+vel[1]**2)/(settings.base_speed*20),1) #max speed is 20*base speed (2m/s)
+            vel_angle = math.atan2(vel[0],vel[1])/math.pi
+            vel = [vel_norm, vel_angle]
             pos = pos[0:2]/50.0 #arena is 100x100m
 
         if(settings.goal_position and settings.velocity):
-            concat_state = np.concatenate((dest, vel, pos, distances), axis = None)
+            concat_state = np.concatenate((dest, vel, pos, sensors), axis = None)
         elif(settings.goal_position):
-            concat_state = np.concatenate((pos, distances), axis = None)
+            concat_state = np.concatenate((pos, sensors), axis = None)
         elif(settings.velocity):
-            concat_state = np.concatenate((vel, pos, distances), axis = None)
+            concat_state = np.concatenate((vel, pos, sensors), axis = None)
         else:
-            concat_state = distances
+            concat_state = sensors
 
         concat_state_shape = concat_state.shape
         concat_state = concat_state.reshape(1, concat_state_shape[0])
@@ -213,23 +214,26 @@ class AirLearningClient(airsim.MultirotorClient):
         "Lidarfront": {
        		"SensorType": 6, #the type corresponding to the LiDaR sensor
         	"Enabled" : true,
-        	"NumberOfChannels": 3, #the number of lasers (we need a laser for each horizontal swipe to have vertical FOV)
-        	"RotationsPerSecond": 20, #frequency of sensing
-    		"PointsPerSecond": 100000, #the number of points taken in an horizontal swipe of the lidar (1 rotation).
+        	"NumberOfChannels": 1, #the number of lasers (we need a laser for each horizontal swipe to have vertical FOV)
+        	"RotationsPerSecond": 7, #frequency of sensing
+    		"PointsPerSecond": 3000, #the number of points taken in an horizontal swipe of the lidar (1 rotation).
                 #PointsPerSecond is not affected by the FOV, so anything outside the FOV seems to be wasted.
     		"X": 0, "Y": 0, "Z": -1, #position relative to the vehicule
        		"Roll": 0, "Pitch": 0, "Yaw" : 0,   orientation relative to the vehicule
-    		"VerticalFOVUpper": 10,
-    		"VerticalFOVLower": -30,
-       		"HorizontalFOVStart": -5,
-       		"HorizontalFOVEnd": 5,
+    		"VerticalFOVUpper": -10,
+    		"VerticalFOVLower": -10,
+       		"HorizontalFOVStart": -180,
+       		"HorizontalFOVEnd": 180,
        		"DrawDebugPoints": true, #set to true to see in unreal what is being observed
        		"DataFrame": "SensorLocalFrame"
     		}
         """
 
         ## -- laser ranger -- ##
+        first = time.perf_counter()
         lidarDatafront = self.client.getLidarData(lidar_name="Lidarfront",vehicle_name="Drone1")
+        scnd = time.perf_counter()
+        #print(f"taking points took {np.round((scnd-first)*1000,2)} ms")
         
         
         front = self.process_lidar(lidarDatafront.point_cloud, settings.number_of_points)
@@ -552,19 +556,30 @@ class AirLearningClient(airsim.MultirotorClient):
         """
         takes the full state and action as input, and returns a partial observation based on the chosen action
         """
-        #print(np.round(state,2))
-        obs = state[0][0] #flattening the list
-        sensors = obs[6:]
-
+        #print(f"full state: {np.round(state,2)}")
+        obs = state.copy()
         action = action.flatten()
+        sensors = obs[0][0][6:settings.number_of_sensors+6]
 
+        #print(f"action: {action}")
+        #print(f"wanted sensors: {np.sum(action)}")
+        #find the k highest sensors, then save them for the dwa algorithm
+        chosen_idx = np.argpartition(action, -settings.k_sensors)[-settings.k_sensors:]
+        sensor_output = np.ones(settings.number_of_sensors)*100
+        for idx in chosen_idx:
+            sensor_score = action[idx]
+            if (sensor_score >= 0.5):
+                sensor_output[idx] = sensors[idx]
+        #for i, sensor in enumerate(sensors):
+        #    if sensor < 2.5:
+        #        sensor_output[i] = sensors[i]
+        #closest = np.argmin(sensors)
+        #sensor_output[closest] = 100
 
-        for i, usage in enumerate(action):
-            if (usage == 0):
-                sensors[i] = 100 #set the distance to 100**1 which means it will not be used by DWA (anything over 99m isn't used.)
+        obs[0][0][6:settings.number_of_sensors+6] = sensor_output
 
-        state[0][0][6:] = sensors
-        #print(np.round(state,2))
+        #print(f" state: {state}")
+        #print(f"outputed obs: {obs}")
 
-        return state
+        return obs
 

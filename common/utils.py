@@ -73,9 +73,7 @@ def santize_data(file):
 def plot_trajectories(file):
     print("collecting trajectories")
     data = parse_data(file)
-    nbOfEpisodesToPlot = 50
-    print(len(data['stepN']))
-    assert(len(data['stepN']) >= nbOfEpisodesToPlot)
+    nbOfEpisodesToPlot = min(50,len(data['stepN'])-1)
     nbOfSteps = 0
     #plot the first x episodes
     plt.figure()
@@ -108,7 +106,7 @@ def plot_trajectories(file):
     plt.legend()
 
     #plot the last 10 episodes
-    nbOfSteps = data['total_step_count_for_experiment'][-nbOfEpisodesToPlot-1] #remove the steps before the last 10 episodes
+    nbOfSteps = data['total_step_count_for_experiment'][-nbOfEpisodesToPlot-1] #slice the steps before the last 10 episodes
     plt.figure()
     for i in range(-nbOfEpisodesToPlot,0): #this is the number of trajectories to plot
         xcoord = []
@@ -209,8 +207,11 @@ def plot_data(file, data_to_inquire, mode="separate"):
             dataList.append(parse_data(file.replace("logverbose", "logverbose" + str(i))))
         else:
             dataList.append(parse_data(file.replace("log", "log" + str(i))))
-            action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(i) + ".txt")
-            plot_histogram(action_duration_file)
+        if msgs.algo != "GOFAI" and msgs.mode == "test":
+            infer_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "inference_durations" + str(i) + ".txt")
+            plot_histogram(infer_duration_file)
+            plt.title('Distribution of the inference duration (latency) of the policy')
+            plt.show()
     
     #print(dataList)
     data = dataList #to do, average the values instead of plotting them all. warning: the runs have different length of episodes!
@@ -250,6 +251,7 @@ def plot_action_vs_obs(data):
     for k in range(settings.runs_to_do):
         episode_actions = data[k]["actions_in_each_step"]
         episode_observations = data[k]["observations_in_each_step"]
+        dwa_actions = data[k]["DWA_action_in_each_step"]
         if msgs.mode == "test":
             episode_positions = data[k]["position_in_each_step"]
             goals = data[k]["goal"]
@@ -257,30 +259,38 @@ def plot_action_vs_obs(data):
     sensors_per_action = []
     obs_per_action = []
     pos_per_action = []
+    dwa_goal_per_action = []
     for i, actions in enumerate(episode_actions):
         temp = []
         #print(actions)
         for action in actions:
             #print(action)
-            if msgs.mode == "train":
-                action = action.replace("\n  ", " ") 
-                action = action.replace(" ", ", ") 
-                temp.append(json.loads(action)) #in training mode, no indexing! different for test mode?
-            elif msgs.mode == "test":
-                action = action.replace("\n ", "") 
-                action = action.replace(" ", ", ") 
-                temp.append(json.loads(action)[0])
+            temp.append(action)
         sensors_per_action.append(temp)
 
     for i, observations in enumerate(episode_observations):
         temp = []
+        predicted = []
         #print(observations)
-        for observation in observations:
+        for observation, dwa_action in zip(observations,dwa_actions[i]):
+            #reading observation
             observation = observation.replace("\n  ", " ")
             #print(observation)
             obs = json.loads(observation)
-            temp.append(obs[6:])
-        obs_per_action.append(temp)
+            temp.append(obs[6:settings.number_of_sensors+6])
+            #processing dwa action
+            theta = math.pi/2 - (2*math.pi/settings.action_discretization)*(dwa_action%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw (drone body frame reference)
+            travel_speed = min(2, settings.base_speed*3**(dwa_action//settings.action_discretization)) #travelling speed can be 0.1, 0.3, 0.9, or 2 
+            vel_angle = obs[3]
+            vel_norm = obs[2]
+            x_dest = travel_speed*math.cos(theta)*0.4*(settings.mv_fw_dur) + vel_norm*math.cos(vel_angle)*0.75 # correcting for current speed since change in speed isn't instantaneous
+            y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur) + vel_norm*math.sin(vel_angle)*0.75
+            predicted_angle = math.atan2(y_dest,x_dest)
+            predicted_distance = np.sqrt(y_dest**2 + x_dest**2)
+            predicted.append([predicted_angle, predicted_distance])
+
+        dwa_goal_per_action.append(predicted)
+        obs_per_action.append(temp) #appending to all observations of episode to list of episodes
 
     if msgs.mode == "test":
         for i, positions in enumerate(episode_positions):
@@ -304,8 +314,8 @@ def plot_action_vs_obs(data):
 
     #print(sensors_per_action[0])
 
-    number_of_episodes_to_show = min(3, len(episode_actions))
-    for episode in range(-number_of_episodes_to_show,0):
+    number_of_episodes_to_show = min(1, len(episode_actions))
+    for episode in range(-2,-1):
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_sensors
             for i, sensor in enumerate(sensors_per_action[episode][step]):
@@ -326,12 +336,15 @@ def plot_action_vs_obs(data):
                 goal_norm = np.sqrt(x_goal_rel**2+y_goal_rel**2)
                 goal_angle = math.atan2(y_goal_rel,x_goal_rel)
                 line3 = ax.scatter(goal_angle, goal_norm, c= 'r')
+                wanted_angle = dwa_goal_per_action[episode][step][0]
+                wanted_norm = dwa_goal_per_action[episode][step][1]
+                line3 = ax.scatter(wanted_angle, wanted_norm, c= 'g')
             #ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
         
             if(step == len(episode_actions[episode])-1): #pause longer for last step of the episode
-                plt.pause(1.5)
+                plt.pause(2)
             else:
-                plt.pause(0.06)
+                plt.pause(0.05)
             plt.cla()
     plt.show()
 
@@ -345,10 +358,8 @@ def plot_sensor_usage(data):
         temp = []
         #print(actions)
         for action in actions:
-            action = action.replace("\n  ", " ") 
-            action = action.replace(" ", ", ") 
             #print(action)
-            temp.append(np.sum(json.loads(action)))
+            temp.append(np.sum(action))
         sensors_per_action.append(np.sum(temp)/len(temp))
     print(f"total average sensors_per_action: {sum(sensors_per_action)/len(sensors_per_action)}")
     plt.plot(range(len(sensors_per_action)),sensors_per_action)
@@ -360,12 +371,13 @@ def plot_histogram(file="C:/Users/Charles/workspace/airlearning/airlearning-rl/d
     with open(file, 'r') as f:
         take_action_list = f.read()
 
-    print("processing env_log.txt data")
+    print("processing data")
     take_action_out = take_action_list.strip("[ ]\n") #removing brackets and spaces
     take_action_out = [float(value) for value in take_action_out.split(",")] #converting into list of floats
+    print(f"average: {sum(take_action_out)/len(take_action_out)}")
 
     n, bins, patches = plt.hist(take_action_out, bins = 'auto')
-    plt.xlabel('action duration')
+    plt.xlabel('Duration (s)')
     plt.ylabel('frequency')
     maxfreq = n.max()
     plt.ylim(ymax=np.ceil(maxfreq/10)*10 if maxfreq % 10 else maxfreq + 10)
@@ -452,9 +464,17 @@ def reset_msg_logs():
 
 
 def get_random_end_point(arena_size, split_index, total_num_of_splits):
+
+    if settings.deterministic:
+        [rnd_idx0, rnd_idx1, grounded_idx2] = settings.goals_list[settings.goals_idx]
+        settings.goals_idx +=1 
+        return [rnd_idx0, rnd_idx1, grounded_idx2]
+
+
     # distance from the walls
     wall_halo = floor_halo = roof_halo = 1
     goal_halo = settings.slow_down_activation_distance + 1
+    
 
     sampling_quanta = .5  # sampling increment
 
@@ -577,7 +597,7 @@ class gofai():
 
     def predict(self, obs, goal):
         '''
-        observation is in the form [angle, d_goal, y_vel, x_vel, y_pos, x_pos, d1, d2, ..., dn] where d1 starts at 180 deg and goes ccw, velocities are in drone's body frame ref
+        observation is in the form [angle, d_goal, vel_norm, vel_angle, y_pos, x_pos, d1, d2, ..., dn] where d1 starts at 180 deg and goes ccw, velocities are in drone's body frame ref
         actions are distributed as following:
         0-15: small circle
         16-31: medium small circle
@@ -602,20 +622,27 @@ class gofai():
         #print(f"observed goal (relative): {[x_goal,y_goal]}")
 
         
-        x_vel = obs[3]
-        y_vel = obs[2]
+        vel_angle = obs[3]
+        vel_norm = obs[2]
         x_pos = obs[5]
         y_pos = obs[4]
         predicted_delay = settings.delay*5 #accouting for predicted latency, and simulation time vs real time
-        x_offset = predicted_delay*x_vel*1.25
-        y_offset = predicted_delay*y_vel*1.25
+        x_offset = predicted_delay*vel_norm*math.cos(vel_angle)*1.25
+        y_offset = predicted_delay*vel_norm*math.sin(vel_angle)*1.25
 
-        sensors = obs[6:settings.number_of_points+6]
-        angles = obs[settings.number_of_points+6:]
-
+        sensors = obs[6:settings.number_of_sensors+6] 
+        angles = obs[settings.number_of_sensors+6:]
+        #print(f"sensors: {np.round(sensors,1)}")
 
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
+            #chooses k closest sensors
+            k_sensors = 3
+            chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
+            sensor_output = np.ones(settings.number_of_sensors)*100
+            for idx in chosen_idx:
+                sensor_output[idx] = sensors[idx]
+            sensors = sensor_output
             #randomly chooses a subset of sensors to process (imitating RL agent)
             n_sensors = 428
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_points-n_sensors))
@@ -639,7 +666,9 @@ class gofai():
             
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {global_goal_distance}")
-        #print(f"sensors: {np.round(sensors,1)}")
+        
+        #print(f"dwa objects: {np.round(objects,1)}")
+        #print(orientations)
         #print(len(objects))
         
         
@@ -656,8 +685,8 @@ class gofai():
 
             #computing new distance to goal
             travel_speed = min(2, settings.base_speed*3**(i//settings.action_discretization)) #travelling speed can be 0.5, 1, 2, or 4 
-            x_dest = travel_speed*math.cos(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + x_vel*(0.75+predicted_delay*1.25) # correcting for current speed since change in speed isn't instantaneous
-            y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + y_vel*(0.75+predicted_delay*1.25)
+            x_dest = travel_speed*math.cos(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + vel_norm*math.cos(vel_angle)*(0.75+predicted_delay*1.25) # correcting for current speed since change in speed isn't instantaneous
+            y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + vel_norm*math.sin(vel_angle)*(0.75+predicted_delay*1.25)
 
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
 
@@ -691,15 +720,14 @@ class gofai():
 
         ### -----------printing info on the chosen action-------------------------------------------------------------
         travel_speed = min(2, settings.base_speed*3**(action//settings.action_discretization)) #travelling speed can be 0.5, 1, 2, or 4 
-        x_dest = travel_speed*math.cos(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5) + x_vel * (0.75+predicted_delay)  + x_pos # correcting for current speed since change in speed isn't instantaneous
-        y_dest = travel_speed*math.sin(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5)  + y_vel * (0.75+predicted_delay) + y_pos
+        x_dest = travel_speed*math.cos(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5) + vel_norm*math.cos(vel_angle) * (0.75+predicted_delay)  + x_pos # correcting for current speed since change in speed isn't instantaneous
+        y_dest = travel_speed*math.sin(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5)  + vel_norm*math.sin(vel_angle) * (0.75+predicted_delay) + y_pos
         #print(f"desired angle: {np.round(direction*180/math.pi,1)}")
-        #print(f"current speed: {[np.round(y_vel,1), np.round(x_vel,1)]}")
+        #print(f"current speed: {[np.round(vel_norm,1), np.round(vel_angle*180/np.pi,1)]}")
         #print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
         #print(f"objects: {np.round(objects,1)}")
         #print(f"orientations: {np.round(orientations,2)}")
         #print(f"sensors: {np.round(sensors,1)}")
-        #print(f"angles: {np.round(angles,2)}")
         #print(f"goal_distance: {global_goal_distance} angle: {goal_angle*180/math.pi}")
         #print(f"destination: {[np.round(y_dest,1), np.round(x_dest,1)]}")
         #print(f"destination: {np.round(now,2)}")
