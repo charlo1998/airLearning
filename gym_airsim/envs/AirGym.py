@@ -70,12 +70,12 @@ class AirSimEnv(gym.Env):
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DISTANCES = settings.number_of_points*2 #number of points in the pointcloud
+            STATE_DISTANCES = settings.number_of_sensors*2
             if(msgs.algo == "SAC"):
-                self.observation_space = spaces.Box(low=-1, high=1, shape=((1, STATE_POS + STATE_VEL + STATE_DISTANCES)))
+                self.observation_space = spaces.Box(low=-1, high=1, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
                 self.observation_space = spaces.Box(low=-1, high=1,
-                                                    shape=((2, STATE_POS + STATE_VEL + STATE_DISTANCES)))
+                                                    shape=((1, STATE_POS + STATE_VEL + STATE_DISTANCES)))
         else:
             self.observation_space = spaces.Box(low=0, high=255, shape=(STATE_DISTANCES))
 
@@ -248,7 +248,7 @@ class AirSimEnv(gym.Env):
     def computeReward(self, action):
         #base sensor reward is -0.55. we then add two terms: a proximity term (distance of the object) and a heading term (if the object is in the direction of current velocity)
         # a third term is added to counter the incentive to get close to obstacles: safety term (points based on how far we are from any obstacle
-        arc = 2*math.pi/settings.number_of_points
+        arc = 2*math.pi/settings.number_of_sensors
         angles =  np.arange(-math.pi,math.pi,arc)
         vel_angle = self.prev_state[0][0][3]
         velocity = self.prev_state[0][0][2]
@@ -556,8 +556,8 @@ class AirSimEnv(gym.Env):
             now = self.airgym.drone_pos()
             self.velocity = self.airgym.drone_velocity()
             observation = np.copy(self.prev_state[0][0])
-            observation[6:settings.number_of_points+6] = np.round(100**observation[6:settings.number_of_points+6],2) #de-normalize
-            observation[settings.number_of_points+6:] = np.round(180*observation[settings.number_of_points+6:],2) #de-normalize 
+            observation[6:settings.number_of_sensors+6] = np.round(100**observation[6:settings.number_of_sensors+6],2) #de-normalize
+            observation[settings.number_of_sensors+6:] = np.round(180*observation[settings.number_of_sensors+6:],2) #de-normalize 
             self.observations_in_step.append(str(list(observation)))
             #print(f"speed after delay: {np.round(np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2),2)}") 
             #print(f"pose after delay: {np.round(now,2)}")
@@ -637,7 +637,8 @@ class AirSimEnv(gym.Env):
             
             #get new observation
             if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI"):
-                sensors = self.airgym.get_laser_state()
+                [self.lidar_distances, self.lidar_angles] = self.airgym.get_laser_state()
+                sensors = self.airgym.process_lidar(self.lidar_distances, self.lidar_angles, -180, 180)
                 self.concat_state = self.airgym.getConcatState(self.track, self.goal, sensors)
             elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                 self.depth = self.airgym.getScreenDepthVis(self.track)
@@ -753,7 +754,8 @@ class AirSimEnv(gym.Env):
         self.episodeInWindow +=1
         now = self.airgym.drone_pos()
         self.track = self.airgym.goal_direction(self.goal, now)
-        sensors = self.airgym.get_laser_state()
+        [self.lidar_distances, self.lidar_angles] = self.airgym.get_laser_state()
+        sensors = self.airgym.process_lidar(self.lidar_distances, self.lidar_angles, -180, 180)
         self.concat_state = self.airgym.getConcatState(self.track, self.goal, sensors)
         #self.depth = self.airgym.getScreenDepthVis(self.track)
         #self.rgb = self.airgym.getScreenRGB()
