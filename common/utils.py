@@ -604,7 +604,6 @@ class gofai():
         32-47: medium big circle
         48-63: big circle
         '''
-
         obs = obs[0][0] #flattening the list
 
         
@@ -663,6 +662,14 @@ class gofai():
                     sensors[i] = self.previous_obs[i]
                 objects.append(sensors[i])
                 orientations.append(angles[i])
+
+        x_objects = []
+        y_objects = []
+        for object,angle in zip(objects,orientations):
+            x_objects.append(object*math.cos(angle+self.arc/2) - x_offset)
+            y_objects.append(object*math.sin(angle+self.arc/2) - y_offset)
+        x_objects = np.array(x_objects)
+        y_objects = np.array(y_objects)
             
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {global_goal_distance}")
@@ -671,10 +678,8 @@ class gofai():
         #print(orientations)
         #print(len(objects))
         
-        
         #sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want
         #angles = np.concatenate((angles,angles))
-
         bestBenefit = -1000
         action = 0
         angle_increment = 2*math.pi/settings.action_discretization
@@ -689,16 +694,12 @@ class gofai():
             y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + vel_norm*math.sin(vel_angle)*(0.75+predicted_delay*1.25)
 
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
-
             #computing the closest obstacle to the trajectory
             minDist = self.safety_dist
             if (len(objects) > 0):
-                for object,angle in zip(objects,orientations):
-                    x_obj = object*math.cos(angle+self.arc/2) - x_offset
-                    y_obj = object*math.sin(angle+self.arc/2) - y_offset
-                    dist = self.shortest_distance_on_trajectory(x_obj,y_obj,x_dest,y_dest)
-                    if dist < minDist:
-                        minDist = dist
+                dist = self.shortest_distance_on_trajectory(x_objects,y_objects,x_dest,y_dest)
+                if dist < minDist:
+                    minDist = dist
 
             #computing the benefit
             benefit = self.heading_coeff*(global_goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
@@ -743,31 +744,27 @@ class gofai():
         
         return action
 
-    def shortest_distance_on_trajectory(self, x1,y1,x2,y2):
+    def shortest_distance_on_trajectory(self, X, Y, x2, y2):
         """
-        finds de the shortest distance to (x1,y1) by moving along the (x2,y2) line segment (from the origin)
+        finds the closest point from the given points (X,Y) to the (x2,y2) line segment (from the origin). outputs the closest distance to that segment
         """
-
-        dot = x1*x2 + y1*y2
         norm = x2*x2 + y2*y2
         if norm == 0:
-            norm = 0.0001
+            return np.sqrt(np.min(X**2+Y**2))
 
-        param = -1
-        param = dot/norm
+        dotProducts = X*x2 + Y*y2
 
-        if param < 0:
-            xx = 0
-            yy = 0
-        elif param > 1:
-            xx = x2
-            yy = y2
-        else:
-            xx = param*x2
-            yy = param*y2
+        params = np.ones(X.size)*-1
+        params = np.clip(dotProducts/norm,0,1)
 
-        dx = x1 - xx
-        dy = y1 - yy
+        xx = params*x2
+        yy = params*y2
 
-        return math.sqrt(dx**2+dy**2)
+        dx = X - xx
+        dy = Y - yy
+
+        norms = dx**2 + dy**2
+        minDist = np.sqrt(norms.min())
+
+        return minDist
 
