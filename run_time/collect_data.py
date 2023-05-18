@@ -122,15 +122,15 @@ def main():
 
 
     
-    #taskList.append(task1) #start gane
+    taskList.append(task1) #start gane
     if task_type == "train":
         for i in range(settings.runs_to_do):
             taskList.append(task2) #train
     else:
-        #taskList.append(task2) # don't do multiple runs for test
+        taskList.append(task2) # don't do multiple runs for test
         taskList.append(task6) #plot trajectories
 
-    #taskList.append(task3) #close game
+    taskList.append(task3) #close game
     
     taskList.append(task5) #plot
     #taskList.append(task4) #generate_csv
