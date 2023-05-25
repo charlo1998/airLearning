@@ -121,9 +121,9 @@ def plot_trajectories(file):
                 collisions += 1
             continue
 
-        start = data['goal'][i-1]
+        start = data['position_in_each_step'][i][0]
         end = data['goal'][i]
-        if data['success'][i-1] == "False" or i%50 == 0: #the sim is reset to 0 after a crash or after every 50 episodes
+        if (data['success'][i-1] == "False" and data['stepN'][i-1] != 600) or i%50 == 0: #the sim is reset to 0 after a crash or after every 50 episodes
                 travelled_distances.append(data['distance_traveled'][i])
                 ideal_distances.append(np.sqrt(end[1]**2+end[0]**2)-settings.success_distance_to_goal)
                 mission_times.append(data['flight_time'][i])
@@ -138,7 +138,6 @@ def plot_trajectories(file):
     plt.figure()
     #plt.plot(range(nbOfEpisodesToPlot), ideal_distances, range(nbOfEpisodesToPlot), travelled_distances)
     ratio = [travelled_distance/ideal_distance for (travelled_distance, ideal_distance) in zip(travelled_distances, ideal_distances)]
-    print(ratio)
     n, bins, patches = plt.hist(ratio, bins = 'auto')
     plt.xlabel("traveled distance/birdview distance ratio")
     plt.ylabel("frequency")

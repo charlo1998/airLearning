@@ -450,7 +450,8 @@ class AirSimEnv(gym.Env):
         msgs.episodal_log_dic_verbose["DWA_action_in_each_step"] = self.moveAction_in_step
         if (msgs.mode == "test"):
             msgs.episodal_log_dic_verbose["actions_in_each_step"] = self.actions_in_step
-            msgs.episodal_log_dic_verbose["observations_in_each_step"] = self.observations_in_step
+            if msgs.algo != "GOFAI":
+                msgs.episodal_log_dic_verbose["observations_in_each_step"] = self.observations_in_step
             msgs.episodal_log_dic_verbose["distance_in_each_step"] = self.distance_in_step
             msgs.episodal_log_dic_verbose["position_in_each_step"] = self.position_in_step
         elif (msgs.mode == "train"):
