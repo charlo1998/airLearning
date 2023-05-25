@@ -252,7 +252,7 @@ verbose = True
 # ---------------------------
 testing_nb_episodes_per_model = max_zone*20  # note that if number of zones are x, #pay attention
 random.seed(hard_range_dic["Seed"][0])
-deterministic = True
+deterministic = False
 goals_list = []
 for i in range(testing_nb_episodes_per_model+1):
     x_goal = random.choice(range(-49,49))

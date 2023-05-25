@@ -127,6 +127,7 @@ def main():
         for i in range(settings.runs_to_do):
             taskList.append(task2) #train
     else:
+        settings.deterministic = True
         taskList.append(task2) # don't do multiple runs for test
         taskList.append(task6) #plot trajectories
 

@@ -680,8 +680,7 @@ class AirSimEnv(gym.Env):
                 done = True
                 print("-----------drone ran out of time!--------")
                 reward = 0.0
-                self.success = True
-                msgs.success = True
+                self.success = False
             elif self.collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
                 print("------------drone collided!--------")
