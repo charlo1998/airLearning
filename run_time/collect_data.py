@@ -105,7 +105,7 @@ def main():
 
 
 
-    algo = "A2C-B"
+    algo = "GOFAI"
     task_type = "test"
     msgs.mode = task_type
     model_weights_list_to_test = [os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"] # change A2C for baselines
@@ -127,6 +127,7 @@ def main():
         for i in range(settings.runs_to_do):
             taskList.append(task2) #train
     else:
+        settings.deterministic = True
         taskList.append(task2) # don't do multiple runs for test
         taskList.append(task6) #plot trajectories
 

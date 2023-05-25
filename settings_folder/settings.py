@@ -186,7 +186,7 @@ this means the "percieved" latency doesn't increase linearly with the clockspeed
 timedActions = False
 positionActions = True
 action_discretization = 16 #this needs to be a square number and greater than one if timedActions is set to true! 
-number_of_sensors = 12
+number_of_sensors = 24
 k_sensors = number_of_sensors  #the maximum amount of sensors the agent can choose at any time
 assert(action_discretization > 1)
 if timedActions:
@@ -240,8 +240,8 @@ runs_to_do = 1
 i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
-use_checkpoint = False
-training_steps_cap = 200000
+use_checkpoint = True
+training_steps_cap = 100000
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True
@@ -251,7 +251,7 @@ verbose = True
 # ---------------------------
 testing_nb_episodes_per_model = max_zone*50  # note that if number of zones are x, #pay attention
 random.seed(hard_range_dic["Seed"][0])
-deterministic = True
+deterministic = False
 goals_list = []
 for i in range(testing_nb_episodes_per_model+1):
     x_goal = random.choice(range(-49,49))

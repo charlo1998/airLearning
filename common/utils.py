@@ -105,54 +105,49 @@ def plot_trajectories(file):
     plt.ylim([-50, 50])
     plt.legend()
 
-    #plot the last 10 episodes
-    nbOfSteps = data['total_step_count_for_experiment'][-nbOfEpisodesToPlot-1] #slice the steps before the last 10 episodes
-    plt.figure()
-    for i in range(-nbOfEpisodesToPlot,0): #this is the number of trajectories to plot
-        xcoord = []
-        ycoord = []
-        episodeLength = data['stepN'][i]
-        #converting string into list of floats
-        coords = data["position_in_each_step"][i]
-        #print(len(coords))
-        for coord in coords:
-            positions = ([float(x) for x in coord])
-            xcoord.append(positions[0])
-            ycoord.append(positions[1])
 
-        nbOfSteps += episodeLength
-        plt.plot(xcoord, ycoord)
-
-    
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title(f'last {nbOfEpisodesToPlot} episodes')
-    plt.xlim([-50, 50])
-    plt.ylim([-50, 50])
-
-    #plot distance travelled vs birdview distance to goal
+    #plot distance travelled vs birdview distance to goal and mission time
     goal = data['goal'][0]
     ideal_distances = [np.sqrt(goal[1]**2+goal[0]**2)]
     travelled_distances = [data['distance_traveled'][0]]
+    mission_times = [data['flight_time'][0]]
+    collisions = 0
+    fails = 0
     for i in range(1,len(data['distance_traveled'])):
-        if data['success'][i] == "False":
+        if data['success'][i] == "False": #only register the successful runs (running out of time increases distance travelled way to much, collision makes it too small)
+            if data['stepN'][i] == 600:
+                fails += 1
+            else:
+                collisions += 1
             continue
 
         start = data['goal'][i-1]
         end = data['goal'][i]
-        if data['success'][i-1] == "False" or i%20 == 0: #the sim is reset to 0 after a crash or after every 20 episodes
+        if data['success'][i-1] == "False" or i%50 == 0: #the sim is reset to 0 after a crash or after every 50 episodes
                 travelled_distances.append(data['distance_traveled'][i])
                 ideal_distances.append(np.sqrt(end[1]**2+end[0]**2))
+                mission_times.append(data['flight_time'][i])
         else:
             delta = data['distance_traveled'][i] - data['distance_traveled'][i-1]
             travelled_distances.append(delta)
             ideal_distances.append(np.sqrt((end[1]-start[1])**2+(end[0]-start[0])**2))
+            mission_times.append(data['flight_time'][i] - data['flight_time'][i-1])
+
+    print(f"There was {collisions/len(data['goal'])*100.0}% collisions and {fails/len(data['goal'])*100.0}% fails to reach the goal")
 
     plt.figure()
     #plt.plot(range(nbOfEpisodesToPlot), ideal_distances, range(nbOfEpisodesToPlot), travelled_distances)
     ratio = [travelled_distance/ideal_distance for (travelled_distance, ideal_distance) in zip(travelled_distances, ideal_distances)]
     n, bins, patches = plt.hist(ratio, bins = 'auto')
-    plt.xlabel("travelled distance/birdview distance ratio")
+    plt.xlabel("traveled distance/birdview distance ratio")
+    plt.ylabel("frequency")
+    print(f"Average ratio of traveled distance/bird view distance: {sum(ratio)/len(ratio)}")
+    print(f"Ratio of total traveled distance/bird view distance: {sum(travelled_distances)/sum(ideal_distances)}")
+
+    print(f"Average mission time: {sum(mission_times)/len(mission_times)}")
+    plt.figure()
+    n, bins, patches = plt.hist(mission_times, bins = 'auto')
+    plt.xlabel("mission length (s)")
     plt.ylabel("frequency")
 
     plt.show()

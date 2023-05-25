@@ -12,7 +12,7 @@ class CustomPolicy(FeedForwardPolicy):
     def __init__(self, *args, **kwargs):
         super(CustomPolicy, self).__init__(*args, **kwargs,
                                            net_arch=[dict(pi=[64, 64],
-                                                          vf=[128, 64, 128, 128, 128])],
+                                                          vf=[64, 64, 64])],
                                            feature_extraction="mlp")
 
 
