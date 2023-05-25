@@ -310,7 +310,7 @@ def plot_action_vs_obs(data):
     #print(sensors_per_action[0])
 
     number_of_episodes_to_show = min(1, len(episode_actions))
-    for episode in range(-2,-1):
+    for episode in range(-3,-1):
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_points
             for i, sensor in enumerate(sensors_per_action[episode][step]):
@@ -628,7 +628,7 @@ class gofai():
         angles = obs[settings.number_of_points+6:]
         #print(f"sensors: {np.round(sensors,1)}")
 
-        # ---------------- random baseline -----------------------------
+        # ---------------- random and greedy baselines -----------------------------
         if(msgs.algo == "GOFAI"):
             #chooses k closest sensors
             #k_sensors = 3
@@ -678,13 +678,11 @@ class gofai():
         bestBenefit = -1000
         action = 0
         angle_increment = 2*math.pi/settings.action_discretization
-        for i in range(settings.action_discretization*4): #settings.action_discretization*4
+        for i in range(settings.action_discretization*4): #4 velocities time 16 directions
             theta = math.pi/2 - angle_increment*(i%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw (drone body frame reference)
-            #idx = 15 + 12 - i%settings.action_discretization
-            #thetas = angles[idx-3:idx+5]
 
             #computing new distance to goal
-            travel_speed = min(2, settings.base_speed*3**(i//settings.action_discretization)) #travelling speed can be 0.5, 1, 2, or 4 
+            travel_speed = min(2, settings.base_speed*3**(i//settings.action_discretization)) #travelling speed can be 0.1, 0.3, 0.9, or 2 m/s 
             x_dest = travel_speed*math.cos(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + vel_norm*math.cos(vel_angle)*(0.75+predicted_delay*1.25) # correcting for current speed since change in speed isn't instantaneous
             y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + vel_norm*math.sin(vel_angle)*(0.75+predicted_delay*1.25)
 
