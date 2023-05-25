@@ -105,49 +105,54 @@ def plot_trajectories(file):
     plt.ylim([-50, 50])
     plt.legend()
 
+    #plot the last 10 episodes
+    nbOfSteps = data['total_step_count_for_experiment'][-nbOfEpisodesToPlot-1] #slice the steps before the last 10 episodes
+    plt.figure()
+    for i in range(-nbOfEpisodesToPlot,0): #this is the number of trajectories to plot
+        xcoord = []
+        ycoord = []
+        episodeLength = data['stepN'][i]
+        #converting string into list of floats
+        coords = data["position_in_each_step"][i]
+        #print(len(coords))
+        for coord in coords:
+            positions = ([float(x) for x in coord])
+            xcoord.append(positions[0])
+            ycoord.append(positions[1])
 
-    #plot distance travelled vs birdview distance to goal and mission time
+        nbOfSteps += episodeLength
+        plt.plot(xcoord, ycoord)
+
+    
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title(f'last {nbOfEpisodesToPlot} episodes')
+    plt.xlim([-50, 50])
+    plt.ylim([-50, 50])
+
+    #plot distance travelled vs birdview distance to goal
     goal = data['goal'][0]
     ideal_distances = [np.sqrt(goal[1]**2+goal[0]**2)]
     travelled_distances = [data['distance_traveled'][0]]
-    mission_times = [data['flight_time'][0]]
-    collisions = 0
-    fails = 0
     for i in range(1,len(data['distance_traveled'])):
-        if data['success'][i] == "False": #only register the successful runs (running out of time increases distance travelled way to much, collision makes it too small)
-            if data['stepN'][i] == 600:
-                fails += 1
-            else:
-                collisions += 1
+        if data['success'][i] == "False":
             continue
 
         start = data['goal'][i-1]
         end = data['goal'][i]
-        if data['success'][i-1] == "False" or i%50 == 0: #the sim is reset to 0 after a crash or after every 50 episodes
+        if data['success'][i-1] == "False" or i%20 == 0: #the sim is reset to 0 after a crash or after every 20 episodes
                 travelled_distances.append(data['distance_traveled'][i])
                 ideal_distances.append(np.sqrt(end[1]**2+end[0]**2))
-                mission_times.append(data['flight_time'][i])
         else:
             delta = data['distance_traveled'][i] - data['distance_traveled'][i-1]
             travelled_distances.append(delta)
             ideal_distances.append(np.sqrt((end[1]-start[1])**2+(end[0]-start[0])**2))
-            mission_times.append(data['flight_time'][i] - data['flight_time'][i-1])
-
-    print(f"There was {collisions/len(data['goal'])*100.0}% collisions and {fails/len(data['goal'])*100.0}% fails to reach the goal")
 
     plt.figure()
     #plt.plot(range(nbOfEpisodesToPlot), ideal_distances, range(nbOfEpisodesToPlot), travelled_distances)
     ratio = [travelled_distance/ideal_distance for (travelled_distance, ideal_distance) in zip(travelled_distances, ideal_distances)]
     n, bins, patches = plt.hist(ratio, bins = 'auto')
-    plt.xlabel("traveled distance/birdview distance ratio")
-    plt.ylabel("frequency")
-    print(f"Average ratio of traveled distance/bird view distance: {sum(ratio)/len(ratio)}")
-    print(f"Ratio of total traveled distance/bird view distance: {sum(travelled_distances)/sum(ideal_distances)}")
-
-    print(f"Average mission time: {sum(mission_times)/len(mission_times)}")
-    plt.figure()
-    n, bins, patches = plt.hist(mission_times, bins = 'auto')
-    plt.xlabel("mission length (s)")
+    plt.xlabel("travelled distance/birdview distance ratio")
     plt.ylabel("frequency")
 
     plt.show()
@@ -310,7 +315,7 @@ def plot_action_vs_obs(data):
     #print(sensors_per_action[0])
 
     number_of_episodes_to_show = min(1, len(episode_actions))
-    for episode in range(-3,-1):
+    for episode in range(-2,-1):
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_sensors
             for i, sensor in enumerate(sensors_per_action[episode][step]):
@@ -631,10 +636,10 @@ class gofai():
         angles = obs[settings.number_of_sensors+6:]
         #print(f"sensors: {np.round(sensors,1)}")
 
-        # ---------------- random and greedy baselines -----------------------------
+        # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #chooses k closest sensors
-            k_sensors = 1
+            k_sensors = 3
             chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
             sensor_output = np.ones(settings.number_of_sensors)*100
             for idx in chosen_idx:
@@ -675,11 +680,13 @@ class gofai():
         bestBenefit = -1000
         action = 0
         angle_increment = 2*math.pi/settings.action_discretization
-        for i in range(settings.action_discretization*4): #4 velocities time 16 directions
+        for i in range(settings.action_discretization*4): #settings.action_discretization*4
             theta = math.pi/2 - angle_increment*(i%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw (drone body frame reference)
+            #idx = 15 + 12 - i%settings.action_discretization
+            #thetas = angles[idx-3:idx+5]
 
             #computing new distance to goal
-            travel_speed = min(2, settings.base_speed*3**(i//settings.action_discretization)) #travelling speed can be 0.1, 0.3, 0.9, or 2 m/s 
+            travel_speed = min(2, settings.base_speed*3**(i//settings.action_discretization)) #travelling speed can be 0.5, 1, 2, or 4 
             x_dest = travel_speed*math.cos(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + vel_norm*math.cos(vel_angle)*(0.75+predicted_delay*1.25) # correcting for current speed since change in speed isn't instantaneous
             y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + vel_norm*math.sin(vel_angle)*(0.75+predicted_delay*1.25)
 

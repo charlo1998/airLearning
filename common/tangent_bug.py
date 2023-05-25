@@ -115,7 +115,7 @@ class tangent_bug():
             goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]
 
         #if the heuristic didn't decrease after last couple actions, we need to enter into boundary following
-        if self.foundPathCounter >= 10 and not self.following_boundary:
+        if self.foundPathCounter >= 8 and not self.following_boundary:
             print("entering boundary following")
             self.following_boundary = True
             self.following_boundary_counter=0
@@ -165,7 +165,7 @@ class tangent_bug():
                 else:
                     goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]  #drone body frame ref
                 #print(f"done: {self.done}, closest object: {min(objects)}, d_leave/d_min ratio: {self.d_leave/self.d_min}")
-                if self.following_boundary_counter > 3:
+                if self.following_boundary_counter > 4:
                     self.following_boundary = False
                     self.foundPathCounter = 0
                     print("switched back to normal path")
