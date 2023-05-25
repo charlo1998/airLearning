@@ -555,9 +555,16 @@ class AirSimEnv(gym.Env):
             time.sleep(settings.delay)
             now = self.airgym.drone_pos()
             self.velocity = self.airgym.drone_velocity()
+
+            #copy, de-normalize, and log observation
             observation = np.copy(self.prev_state[0][0])
-            observation[6:settings.number_of_sensors+6] = np.round(100**observation[6:settings.number_of_sensors+6],2) #de-normalize
-            observation[settings.number_of_sensors+6:] = np.round(180*observation[settings.number_of_sensors+6:],2) #de-normalize 
+            observation[6:settings.number_of_sensors+6] = np.round(100**observation[6:settings.number_of_sensors+6],2)
+            observation[settings.number_of_sensors+6:] = np.round(180*observation[settings.number_of_sensors+6:],2)
+            observation[1] = 100**observation[1]
+            observation[0] = observation[0]*np.pi #rad
+            observation[2] = observation[2]*(settings.base_speed*20.0)
+            observation[3] = observation[3]*np.pi
+            observation[4:6] = observation[4:6]*50.0 
             self.observations_in_step.append(str(list(observation)))
             #print(f"speed after delay: {np.round(np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2),2)}") 
             #print(f"pose after delay: {np.round(now,2)}")
@@ -681,8 +688,7 @@ class AirSimEnv(gym.Env):
                 done = True
                 print("-----------drone ran out of time!--------")
                 reward = 0.0
-                self.success = True
-                msgs.success = True
+                self.success = False
             elif self.collided == True: #we collided with something: between -1000 and -250, and worst if the collision appears sooner
                 done = True
                 print("------------drone collided!--------")
@@ -773,7 +779,7 @@ class AirSimEnv(gym.Env):
                     print ("Action Time:" +str(np.mean(self.take_action_list)))
                     print("Collect State Time"+str(np.mean(self.clct_state_list)))
 
-            if(self.collided or self.episodeN % 20 == 0): 
+            if(self.collided or self.episodeN % 50 == 0): 
                 self.randomize_env()
                 if(os.name=="nt"):
                     connection_established = self.airgym.unreal_reset()
