@@ -70,6 +70,7 @@ def test(env):
 
     #env loop rate logging
     if settings.profile:
+        print(f"Average processing time: {sum(process_action_list)/len(process_action_list)*1000} ms")
         with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),
             "w") as f:
             f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")

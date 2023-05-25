@@ -108,7 +108,7 @@ def plot_trajectories(file):
 
     #plot distance travelled vs birdview distance to goal and mission time
     goal = data['goal'][0]
-    ideal_distances = [np.sqrt(goal[1]**2+goal[0]**2)]
+    ideal_distances = [np.sqrt(goal[1]**2+goal[0]**2)-settings.success_distance_to_goal]
     travelled_distances = [data['distance_traveled'][0]]
     mission_times = [data['flight_time'][0]]
     collisions = 0
@@ -125,12 +125,12 @@ def plot_trajectories(file):
         end = data['goal'][i]
         if data['success'][i-1] == "False" or i%50 == 0: #the sim is reset to 0 after a crash or after every 50 episodes
                 travelled_distances.append(data['distance_traveled'][i])
-                ideal_distances.append(np.sqrt(end[1]**2+end[0]**2))
+                ideal_distances.append(np.sqrt(end[1]**2+end[0]**2)-settings.success_distance_to_goal)
                 mission_times.append(data['flight_time'][i])
         else:
             delta = data['distance_traveled'][i] - data['distance_traveled'][i-1]
             travelled_distances.append(delta)
-            ideal_distances.append(np.sqrt((end[1]-start[1])**2+(end[0]-start[0])**2))
+            ideal_distances.append(np.sqrt((end[1]-start[1])**2+(end[0]-start[0])**2)-settings.success_distance_to_goal)
             mission_times.append(data['flight_time'][i] - data['flight_time'][i-1])
 
     print(f"There was {collisions/len(data['goal'])*100.0}% collisions and {fails/len(data['goal'])*100.0}% fails to reach the goal")
@@ -138,6 +138,7 @@ def plot_trajectories(file):
     plt.figure()
     #plt.plot(range(nbOfEpisodesToPlot), ideal_distances, range(nbOfEpisodesToPlot), travelled_distances)
     ratio = [travelled_distance/ideal_distance for (travelled_distance, ideal_distance) in zip(travelled_distances, ideal_distances)]
+    print(ratio)
     n, bins, patches = plt.hist(ratio, bins = 'auto')
     plt.xlabel("traveled distance/birdview distance ratio")
     plt.ylabel("frequency")
