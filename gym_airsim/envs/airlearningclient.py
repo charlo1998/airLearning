@@ -266,7 +266,7 @@ class AirLearningClient(airsim.MultirotorClient):
             points = points[idx]
             #print(f"point cloud to big! sampling {number_of_points} random points")
         elif points.shape[0] < number_of_points:
-            print("point cloud too small! resampling points to fill observation")
+            #print(f"point cloud too small! resampling {number_of_points-points.shape[0]} points to fill observation")
             while points.shape[0] != number_of_points:
                 choice = points[np.random.randint(0,points.shape[0])]
                 noise = (np.random.rand(1,3)-0.5)*0.001
