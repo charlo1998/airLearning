@@ -777,7 +777,7 @@ class AirSimEnv(gym.Env):
                     print ("Action Time:" +str(np.mean(self.take_action_list)))
                     print("Collect State Time"+str(np.mean(self.clct_state_list)))
 
-            if(self.collided or self.episodeN % 20 == 0): 
+            if(self.collided or self.episodeN % 50 == 0): 
                 self.randomize_env()
                 if(os.name=="nt"):
                     connection_established = self.airgym.unreal_reset()

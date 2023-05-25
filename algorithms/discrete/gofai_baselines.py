@@ -55,8 +55,8 @@ def test(env):
             action = agent.predict(obs,goal)
             end = time.perf_counter()
 
-            print(f"bug processing: {np.round((bug_end - begin)*1000)} ms")
-            print(f"dwa processing: {np.round((end - begin)*1000)} ms")
+            #print(f"bug processing: {np.round((bug_end - begin)*1000)} ms")
+            #print(f"dwa processing: {np.round((end - begin)*1000)} ms")
             
             #---------------------step by step mode----------------------
             
@@ -71,6 +71,7 @@ def test(env):
 
     #env loop rate logging
     if settings.profile:
+        print(f"Average processing time: {sum(process_action_list)/len(process_action_list)*1000} ms")
         with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),
             "w") as f:
             f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
