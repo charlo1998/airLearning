@@ -277,7 +277,7 @@ def plot_action_vs_obs(data):
             observation = observation.replace("\n  ", " ")
             #print(observation)
             obs = json.loads(observation)
-            temp.append(obs[6:settings.number_of_sensors+6])
+            temp.append(obs[6:settings.number_of_points+6])
             #processing dwa action
             theta = math.pi/2 - (2*math.pi/settings.action_discretization)*(dwa_action%settings.action_discretization)  #in the action space, the circle starts at 90 deg and goes cw (drone body frame reference)
             travel_speed = min(2, settings.base_speed*3**(dwa_action//settings.action_discretization)) #travelling speed can be 0.1, 0.3, 0.9, or 2 
@@ -300,10 +300,10 @@ def plot_action_vs_obs(data):
             pos_per_action.append(temp)
     
 
-    r = np.arange(0, settings.number_of_sensors)
-    theta = 2 * np.pi * (r+0.5) / settings.number_of_sensors - np.pi
-    r2 = np.arange(0, 2*settings.number_of_sensors)
-    theta2 = 2 * np.pi * (r2+1) / (2*settings.number_of_sensors) - np.pi
+    r = np.arange(0, settings.number_of_points)
+    theta = 2 * np.pi * (r+0.5) / settings.number_of_points - np.pi
+    r2 = np.arange(0, 2*settings.number_of_points)
+    theta2 = 2 * np.pi * (r2+1) / (2*settings.number_of_points) - np.pi
     
     fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
     ax.set_rmax(66)
@@ -317,7 +317,7 @@ def plot_action_vs_obs(data):
     number_of_episodes_to_show = min(1, len(episode_actions))
     for episode in range(-2,-1):
         for step in range(len(episode_actions[episode])):
-            chosen_areas = [0]*2*settings.number_of_sensors
+            chosen_areas = [0]*2*settings.number_of_points
             for i, sensor in enumerate(sensors_per_action[episode][step]):
                 if sensor:
                     chosen_areas[2*i-1] = 66
@@ -585,11 +585,11 @@ class gofai():
     '''
 
     def __init__(self):
-        self.arc = 2*math.pi/settings.number_of_sensors #rad
+        self.arc = 2*math.pi/settings.number_of_points #rad
         self.heading_coeff = 1
         self.safety_coeff = 4
         self.safety_dist = 1.5
-        self.previous_obs = [3]*(settings.number_of_sensors+6)
+        self.previous_obs = [3]*(settings.number_of_points+6)
         self.bug = tangent_bug()
 
 
@@ -604,10 +604,7 @@ class gofai():
         32-47: medium big circle
         48-63: big circle
         '''
-
         obs = obs[0][0] #flattening the list
-        #obs[6:] = 100**obs[6:] #reconverting from normalized to real values
-        #obs[1] = 100**obs[1]
 
         
         #read goal from observation (when not using tangent bug)
@@ -632,22 +629,22 @@ class gofai():
         x_offset = predicted_delay*vel_norm*math.cos(vel_angle)*1.25
         y_offset = predicted_delay*vel_norm*math.sin(vel_angle)*1.25
 
-        sensors = obs[6:settings.number_of_sensors+6] 
-        angles = obs[settings.number_of_sensors+6:]
+        sensors = obs[6:settings.number_of_points+6] 
+        angles = obs[settings.number_of_points+6:]
         #print(f"sensors: {np.round(sensors,1)}")
 
         # ---------------- random baseline -----------------------------
         if(msgs.algo == "GOFAI"):
             #chooses k closest sensors
-            k_sensors = 3
-            chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
-            sensor_output = np.ones(settings.number_of_sensors)*100
-            for idx in chosen_idx:
-                sensor_output[idx] = sensors[idx]
-            sensors = sensor_output
+            #k_sensors = 3
+            #chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
+            #sensor_output = np.ones(settings.number_of_points)*100
+            #for idx in chosen_idx:
+            #    sensor_output[idx] = sensors[idx]
+            #sensors = sensor_output
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 12
-            chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
+            n_sensors = 428
+            chosens = random.sample(range(len(sensors)),k=(settings.number_of_points-n_sensors))
             #print(chosens)
             for idx in chosens:
                 sensors[idx] = 100
@@ -665,6 +662,14 @@ class gofai():
                     sensors[i] = self.previous_obs[i]
                 objects.append(sensors[i])
                 orientations.append(angles[i])
+
+        x_objects = []
+        y_objects = []
+        for object,angle in zip(objects,orientations):
+            x_objects.append(object*math.cos(angle+self.arc/2) - x_offset)
+            y_objects.append(object*math.sin(angle+self.arc/2) - y_offset)
+        x_objects = np.array(x_objects)
+        y_objects = np.array(y_objects)
             
         #print(f"angle to goal: {goal_angle*180/math.pi}")
         #print(f"distance to goal: {global_goal_distance}")
@@ -673,10 +678,8 @@ class gofai():
         #print(orientations)
         #print(len(objects))
         
-        
         #sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want
         #angles = np.concatenate((angles,angles))
-
         bestBenefit = -1000
         action = 0
         angle_increment = 2*math.pi/settings.action_discretization
@@ -691,16 +694,12 @@ class gofai():
             y_dest = travel_speed*math.sin(theta)*0.4*(settings.mv_fw_dur+predicted_delay*0.25) + vel_norm*math.sin(vel_angle)*(0.75+predicted_delay*1.25)
 
             new_dist = np.sqrt((x_goal-x_dest)**2+(y_goal-y_dest)**2)
-
             #computing the closest obstacle to the trajectory
             minDist = self.safety_dist
             if (len(objects) > 0):
-                for object,angle in zip(objects,orientations):
-                    x_obj = object*math.cos(angle+self.arc/2) - x_offset
-                    y_obj = object*math.sin(angle+self.arc/2) - y_offset
-                    dist = self.shortest_distance_on_trajectory(x_obj,y_obj,x_dest,y_dest)
-                    if dist < minDist:
-                        minDist = dist
+                dist = self.shortest_distance_on_trajectory(x_objects,y_objects,x_dest,y_dest)
+                if dist < minDist:
+                    minDist = dist
 
             #computing the benefit
             benefit = self.heading_coeff*(global_goal_distance-new_dist) - self.safety_coeff*(self.safety_dist - minDist)
@@ -745,31 +744,27 @@ class gofai():
         
         return action
 
-    def shortest_distance_on_trajectory(self, x1,y1,x2,y2):
+    def shortest_distance_on_trajectory(self, X, Y, x2, y2):
         """
-        finds de the shortest distance to (x1,y1) by moving along the (x2,y2) line segment (from the origin)
+        finds the closest point from the given points (X,Y) to the (x2,y2) line segment (from the origin). outputs the closest distance to that segment
         """
-
-        dot = x1*x2 + y1*y2
         norm = x2*x2 + y2*y2
         if norm == 0:
-            norm = 0.0001
+            return np.sqrt(np.min(X**2+Y**2))
 
-        param = -1
-        param = dot/norm
+        dotProducts = X*x2 + Y*y2
 
-        if param < 0:
-            xx = 0
-            yy = 0
-        elif param > 1:
-            xx = x2
-            yy = y2
-        else:
-            xx = param*x2
-            yy = param*y2
+        params = np.ones(X.size)*-1
+        params = np.clip(dotProducts/norm,0,1)
 
-        dx = x1 - xx
-        dy = y1 - yy
+        xx = params*x2
+        yy = params*y2
 
-        return math.sqrt(dx**2+dy**2)
+        dx = X - xx
+        dy = Y - yy
+
+        norms = dx**2 + dy**2
+        minDist = np.sqrt(norms.min())
+
+        return minDist
 

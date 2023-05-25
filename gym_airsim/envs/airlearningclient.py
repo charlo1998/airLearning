@@ -235,87 +235,61 @@ class AirLearningClient(airsim.MultirotorClient):
         scnd = time.perf_counter()
         #print(f"taking points took {np.round((scnd-first)*1000,2)} ms")
         
-        first = time.perf_counter()
-        points = np.array(lidarDatafront.point_cloud, dtype=np.dtype('f4'))
+        
+        front = self.process_lidar(lidarDatafront.point_cloud, settings.number_of_points)
+
+        output = front
+        #print(output)
+
+        return np.array(output)   
+
+    def process_lidar(self, lidarPointcloud, number_of_points):
+        """
+        1. processes a lidar point clouds into coordinates
+        2. samples until it has 1024 points
+        3. normalize the coordinates
+        """
+        points = np.array(lidarPointcloud, dtype=np.dtype('f4'))
         if not (points.shape[0] == 1):
             points = np.reshape(points, (int(points.shape[0]/3), 3))
         else:
             #no points in the lidarPointcloud
             print("lidar not seeing anything ?!")
-            return [[], []]
+            return np.zeros(number_of_points*2)
 
         #with open("pointcloud" + str(np.random.randint(1000)) + ".npy", "wb") as file:
         #    np.save(file,points)
 
+        #sampling to correct the size to 1024 points
+        if points.shape[0] > number_of_points:
+            idx = np.random.choice(points.shape[0],number_of_points)
+            points = points[idx]
+            #print(f"point cloud to big! sampling {number_of_points} random points")
+        elif points.shape[0] < number_of_points:
+            print("point cloud too small! resampling points to fill observation")
+            while points.shape[0] != number_of_points:
+                choice = points[np.random.randint(0,points.shape[0])]
+                noise = (np.random.rand(1,3)-0.5)*0.001
+                points = np.append(points,choice+noise,0)
 
         X = points[:,0]
         Y = points[:,1]
         
-        #finding the FOV of the lidar
         distances = []
         angles = []
-        for xi,yi in zip(X,Y):
-            angles.append(math.atan2(xi,yi)*180.0/math.pi)
-            distances.append(np.sqrt(xi**2+yi**2))
-        scnd = time.perf_counter()
-        #print(f"processing lidar took {np.round((scnd-first)*1000,2)} ms")
+        for (x,y) in zip(X,Y):
+            distances.append(np.sqrt(x**2+y**2))
+            angles.append(math.atan2(x,y))
 
+        #normalizing values and bounding them to [-1,1]
+        distances = np.array(distances)
+        distances = np.log10(distances+0.0001)/np.log10(100) #this way gives more range to the smaller distances (large distances are less important).
+        distances = np.clip(distances,-1,1)
+        angles = np.array(angles)/np.pi
 
-        return [distances, angles] 
+        output = np.concatenate((distances,angles))
 
-    def process_lidar(self, distances, angles, left_angle, right_angle):
-        """
-        1. processes a lidar point clouds into coordinates
-        2. split the range into arcs of angle depending on the number of distance sensor simulated
-        3. finds closest points in each of these arcs.
-        4. returns the distances as a list, going from left_angle to right_angle, and the angles of the distances appended at the end
-        """        
-        
-        first = time.perf_counter()
-        nb_of_sensors = settings.number_of_sensors
-        lidar_FOV =  math.ceil(right_angle - left_angle)
-
-        #spliting points into ranges of angles
-        theta = lidar_FOV/nb_of_sensors
-        for i in range(nb_of_sensors):
-            if i == 0:
-                thetas = [math.floor(left_angle)]
-            else:
-                thetas.append(thetas[i-1]+theta)
-
-        if len(angles) == 0: #lidar not seeing anything!
-            return np.concatenate((np.zeros(nb_of_sensors), np.array(thetas)/180.0))
-
-        #print(f"angle ranges: {thetas}")
-        #print(f"angle left: {angle_left}")
-        #print(f"angle right: {angle_right}")
-        #print(f"number of points: {len(angles)}")
-
-        #adding points
-        distances_by_sensor = [[] for i in range(nb_of_sensors)]
-
-        for i, angle in enumerate(angles):
-            if (angle > left_angle and angle < right_angle): #place only the points inside the input FOV
-                ith_sensor = bisect(thetas,angle) #the bisect fnc finds where the angle would fit in the ranges we created (thetas)
-                distances_by_sensor[ith_sensor-1].append(distances[i])
-
-        sensors = [0 for x in range(nb_of_sensors)]
-
-        for i in range(nb_of_sensors):
-            if len(distances_by_sensor[i]) == 0: #missing lidar values!
-                sensors[i] = 66 #with no information, set to 66, which will be ignored
-                #print(f"missing lidar values in bucket {i}!")
-            else:
-                sensors[i] = min(distances_by_sensor[i])
-            #normalizing values and bounding them to [-1,1]
-            sensors[i] = np.log(sensors[i]+0.0001)/np.log(100) #this way gives more range to the smaller distances (large distances are less important).
-            sensors[i] = min(1,max(-1,sensors[i]))
-
-        #print(f"distances: {distances}")
-        scnd = time.perf_counter()
-        #print(f"creating sensors took: {np.round((scnd-first)*1000,2)} ms")
-
-        return np.concatenate((np.array(sensors), np.array(thetas)/180.0),axis=0)
+        return output
 
     def AirSim_reset(self):
         self.client.reset()
