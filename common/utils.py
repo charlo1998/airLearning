@@ -106,45 +106,66 @@ def plot_trajectories(file):
     plt.legend()
 
 
-    #plot distance travelled vs birdview distance to goal and mission time
+    #plot distance traveled vs birdview distance to goal and mission time
     goal = data['goal'][0]
-    ideal_distances = [np.sqrt(goal[1]**2+goal[0]**2)-settings.success_distance_to_goal]
-    travelled_distances = [data['distance_traveled'][0]]
-    mission_times = [data['flight_time'][0]]
     collisions = 0
     fails = 0
+    if data['success'][0] == "False": #only register the successful runs (running out of time increases distance traveled way to much, collision makes it too small)
+        mission_times = [0]
+        traveled_distances = [0]
+        ideal_distances = [0]
+        if data['stepN'][0] == 600:
+            fails += 1
+        else:
+            collisions += 1
+    else:
+        ideal_distances = [np.sqrt(goal[1]**2+goal[0]**2)-settings.success_distance_to_goal]
+        traveled_distances = [data['distance_traveled'][0]]
+        mission_times = [data['flight_time'][0]]
+    
     for i in range(1,len(data['distance_traveled'])):
-        if data['success'][i] == "False": #only register the successful runs (running out of time increases distance travelled way to much, collision makes it too small)
+        if data['success'][i] == "False": #only register the successful runs (running out of time increases distance traveled way to much, collision makes it too small)
+            
             if data['stepN'][i] == 600:
                 fails += 1
+                mission_times.append(0)
+                traveled_distances.append(0)
+                ideal_distances.append(0)
             else:
                 collisions += 1
+                mission_times.append(-1)
+                traveled_distances.append(-1)
+                ideal_distances.append(-1)
             continue
 
         start = data['position_in_each_step'][i][0]
         end = data['goal'][i]
-        if (data['success'][i-1] == "False" and data['stepN'][i-1] != 600) or i%50 == 0: #the sim is reset to 0 after a crash or after every 50 episodes
-                travelled_distances.append(data['distance_traveled'][i])
+        if (data['success'][i-1] == "False" and data['stepN'][i-1] != 600) or i%50 == 0 or data['distance_traveled'][i-1] > data['distance_traveled'][i]: #the sim is reset to 0 after a crash or after every 50 episodes
+                traveled_distances.append(data['distance_traveled'][i])
                 ideal_distances.append(np.sqrt(end[1]**2+end[0]**2)-settings.success_distance_to_goal)
                 mission_times.append(data['flight_time'][i])
         else:
             delta = data['distance_traveled'][i] - data['distance_traveled'][i-1]
-            travelled_distances.append(delta)
+            traveled_distances.append(delta)
             ideal_distances.append(np.sqrt((end[1]-start[1])**2+(end[0]-start[0])**2)-settings.success_distance_to_goal)
             mission_times.append(data['flight_time'][i] - data['flight_time'][i-1])
 
     print(f"There was {collisions/len(data['goal'])*100.0}% collisions and {fails/len(data['goal'])*100.0}% fails to reach the goal")
+    with open(os.path.join(settings.proj_root_path, "data", msgs.algo, "metrics.txt"),
+            "w") as f:
+            f.write("traveled_distances:" + str(traveled_distances) + "\n")
+            f.write("ideal_distances:" + str(ideal_distances) + "\n")
+            f.write("mission_times:" + str(mission_times) + "\n")
 
     plt.figure()
-    #plt.plot(range(nbOfEpisodesToPlot), ideal_distances, range(nbOfEpisodesToPlot), travelled_distances)
-    ratio = [travelled_distance/ideal_distance for (travelled_distance, ideal_distance) in zip(travelled_distances, ideal_distances)]
+    #plt.plot(range(nbOfEpisodesToPlot), ideal_distances, range(nbOfEpisodesToPlot), traveled_distances)
+    ratio = [traveled_distance/ideal_distance if ideal_distance > 0 else 0 for (traveled_distance, ideal_distance) in zip(traveled_distances, ideal_distances)]
     n, bins, patches = plt.hist(ratio, bins = 'auto')
     plt.xlabel("traveled distance/birdview distance ratio")
     plt.ylabel("frequency")
-    print(f"Average ratio of traveled distance/bird view distance: {sum(ratio)/len(ratio)}")
-    print(f"Ratio of total traveled distance/bird view distance: {sum(travelled_distances)/sum(ideal_distances)}")
+    print(f"Average ratio of traveled distance/bird view distance: {sum(ratio)/(len(ratio)-fails-collisions)}")
 
-    print(f"Average mission time: {sum(mission_times)/len(mission_times)}")
+    print(f"Average mission time: {sum([time if time > 0 else 0 for time in mission_times])/(len(mission_times)-fails-collisions)}")
     plt.figure()
     n, bins, patches = plt.hist(mission_times, bins = 'auto')
     plt.xlabel("mission length (s)")
@@ -369,7 +390,7 @@ def plot_histogram(file="C:/Users/Charles/workspace/airlearning/airlearning-rl/d
     print("processing data")
     take_action_out = take_action_list.strip("[ ]\n") #removing brackets and spaces
     take_action_out = [float(value) for value in take_action_out.split(",")] #converting into list of floats
-    print(f"average: {sum(take_action_out)/len(take_action_out)}")
+    print(f"average inference time: {sum(take_action_out)/len(take_action_out)*1000} ms")
 
     n, bins, patches = plt.hist(take_action_out, bins = 'auto')
     plt.xlabel('Duration (s)')
@@ -633,12 +654,12 @@ class gofai():
         # ---------------- random and greedy baselines -----------------------------
         if(msgs.algo == "GOFAI"):
             #chooses k closest sensors
-            k_sensors = 1
-            chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
-            sensor_output = np.ones(settings.number_of_sensors)*100
-            for idx in chosen_idx:
-                sensor_output[idx] = sensors[idx]
-            sensors = sensor_output
+            #k_sensors = 2
+            #chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
+            #sensor_output = np.ones(settings.number_of_sensors)*100
+            #for idx in chosen_idx:
+            #    sensor_output[idx] = sensors[idx]
+            #sensors = sensor_output
             #randomly chooses a subset of sensors to process (imitating RL agent)
             n_sensors = 12
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
