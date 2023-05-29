@@ -42,7 +42,7 @@ class tangent_bug():
 
         obs = obs[0][0] #flattening the list
         obs[6:settings.number_of_sensors+6] = 100**obs[6:settings.number_of_sensors+6] #reconverting from normalized to real values
-        obs[settings.number_of_sensors+6:] = obs[settings.number_of_sensors+6:]*np.pi
+        #obs[settings.number_of_sensors+6:] = obs[settings.number_of_sensors+6:]*np.pi
         obs[1] = 100**obs[1]
         obs[0] = obs[0]*np.pi #rad
         sensors = obs[6:settings.number_of_sensors+6]
@@ -55,7 +55,8 @@ class tangent_bug():
         vel_angle = obs[3]
         vel_norm = obs[2]
 
-        angles =  obs[settings.number_of_sensors+6:]
+        #angles =  obs[settings.number_of_sensors+6:]
+        angles =  np.arange(-math.pi,math.pi,self.arc)
         objects =[]
         orientations = []
         #create objects list to evaluate obstacles positions, and replace missing values with old observations.

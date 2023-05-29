@@ -70,7 +70,7 @@ class AirSimEnv(gym.Env):
                 STATE_POS = 0
                 STATE_VEL = 0
 
-            STATE_DISTANCES = settings.number_of_sensors*2
+            STATE_DISTANCES = settings.number_of_sensors
             if(msgs.algo == "SAC"):
                 self.observation_space = spaces.Box(low=-1, high=1, shape=(( 1, STATE_POS + STATE_VEL + STATE_DEPTH_H * STATE_DEPTH_W)))
             else:
@@ -560,7 +560,7 @@ class AirSimEnv(gym.Env):
             #copy, de-normalize, and log observation
             observation = np.copy(self.prev_state[0][0])
             observation[6:settings.number_of_sensors+6] = np.round(100**observation[6:settings.number_of_sensors+6],2)
-            observation[settings.number_of_sensors+6:] = np.round(180*observation[settings.number_of_sensors+6:],2)
+            #observation[settings.number_of_sensors+6:] = np.round(180*observation[settings.number_of_sensors+6:],2)
             observation[1] = 100**observation[1]
             observation[0] = observation[0]*np.pi #rad
             observation[2] = observation[2]*(settings.base_speed*20.0)

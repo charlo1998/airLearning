@@ -314,8 +314,9 @@ class AirLearningClient(airsim.MultirotorClient):
         #print(f"distances: {distances}")
         scnd = time.perf_counter()
         #print(f"creating sensors took: {np.round((scnd-first)*1000,2)} ms")
+        #np.concatenate((np.array(sensors), np.array(thetas)/180.0),axis=0)
 
-        return np.concatenate((np.array(sensors), np.array(thetas)/180.0),axis=0)
+        return np.array(sensors)
 
     def AirSim_reset(self):
         self.client.reset()

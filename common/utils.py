@@ -114,7 +114,7 @@ def plot_trajectories(file):
         mission_times = [0]
         traveled_distances = [0]
         ideal_distances = [0]
-        if data['stepN'][0] == 600:
+        if data['stepN'][0] == settings.nb_max_episodes_steps:
             fails += 1
         else:
             collisions += 1
@@ -126,7 +126,7 @@ def plot_trajectories(file):
     for i in range(1,len(data['distance_traveled'])):
         if data['success'][i] == "False": #only register the successful runs (running out of time increases distance traveled way to much, collision makes it too small)
             
-            if data['stepN'][i] == 600:
+            if data['stepN'][i] == settings.nb_max_episodes_steps:
                 fails += 1
                 mission_times.append(0)
                 traveled_distances.append(0)
@@ -140,7 +140,7 @@ def plot_trajectories(file):
 
         start = data['position_in_each_step'][i][0]
         end = data['goal'][i]
-        if (data['success'][i-1] == "False" and data['stepN'][i-1] != 600) or i%50 == 0 or data['distance_traveled'][i-1] > data['distance_traveled'][i]: #the sim is reset to 0 after a crash or after every 50 episodes
+        if (data['success'][i-1] == "False" and data['stepN'][i-1] != settings.nb_max_episodes_steps) or i%50 == 0 or data['distance_traveled'][i-1] > data['distance_traveled'][i]: #the sim is reset to 0 after a crash or after every 50 episodes
                 traveled_distances.append(data['distance_traveled'][i])
                 ideal_distances.append(np.sqrt(end[1]**2+end[0]**2)-settings.success_distance_to_goal)
                 mission_times.append(data['flight_time'][i])
@@ -648,7 +648,9 @@ class gofai():
         y_offset = predicted_delay*vel_norm*math.sin(vel_angle)*1.25
 
         sensors = obs[6:settings.number_of_sensors+6] 
-        angles = obs[settings.number_of_sensors+6:]
+        #angles = obs[settings.number_of_sensors+6:]
+        arc = 2*math.pi/settings.number_of_sensors
+        angles =  np.arange(-math.pi,math.pi,arc)
         #print(f"sensors: {np.round(sensors,1)}")
 
         # ---------------- random and greedy baselines -----------------------------
