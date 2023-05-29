@@ -284,7 +284,8 @@ class AirLearningClient(airsim.MultirotorClient):
                 thetas.append(thetas[i-1]+theta)
 
         if len(angles) == 0: #lidar not seeing anything!
-            return np.concatenate((np.zeros(nb_of_sensors), np.array(thetas)/180.0))
+            #np.concatenate((np.zeros(nb_of_sensors), np.array(thetas)/180.0))
+            return np.zeros(nb_of_sensors)
 
         #print(f"angle ranges: {thetas}")
         #print(f"angle left: {angle_left}")
