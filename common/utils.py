@@ -645,8 +645,7 @@ class gofai():
 
         sensors = obs[6:settings.number_of_sensors+6] 
         #angles = obs[settings.number_of_sensors+6:]
-        arc = 2*math.pi/settings.number_of_sensors
-        angles =  np.arange(-math.pi,math.pi,arc)
+        angles =  np.arange(-math.pi,math.pi,self.arc)
         #print(f"sensors: {np.round(sensors,1)}")
 
         # ---------------- random and greedy baselines -----------------------------
@@ -659,7 +658,7 @@ class gofai():
             #    sensor_output[idx] = sensors[idx]
             #sensors = sensor_output
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 6
+            n_sensors = 12
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
             #print(chosens)
             for idx in chosens:
