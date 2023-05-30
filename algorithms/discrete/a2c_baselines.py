@@ -87,6 +87,7 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
             #answer = input()
             #env.airgym.client.simPause(False)
 
+    print(f"average DWA processing time: {sum(env.process_action_list)/len(env.process_action_list)*1000} ms")
     #env loop rate logging
     if settings.profile:
         with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),

@@ -13,6 +13,7 @@ import subprocess
 import ast
 import math
 import time
+from bisect import bisect
 
 from tangent_bug import tangent_bug
 
@@ -621,8 +622,6 @@ class gofai():
         48-63: big circle
         '''
         obs = obs[0][0] #flattening the list
-        #obs[6:] = 100**obs[6:] #reconverting from normalized to real values
-        #obs[1] = 100**obs[1]
 
         
         #read goal from observation (when not using tangent bug)
@@ -634,9 +633,6 @@ class gofai():
         y_goal = goal[1]
         global_goal_distance = np.sqrt(x_goal**2 + y_goal**2)
         #print(f"received goal (relative): {[x_goal,y_goal]}")
-        #x_goal = global_goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
-        #y_goal = global_goal_distance*math.cos(goal_angle)
-        #print(f"observed goal (relative): {[x_goal,y_goal]}")
 
         
         vel_angle = obs[3]
@@ -663,7 +659,7 @@ class gofai():
             #    sensor_output[idx] = sensors[idx]
             #sensors = sensor_output
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 12
+            n_sensors = 6
             chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
             #print(chosens)
             for idx in chosens:
@@ -691,12 +687,18 @@ class gofai():
         x_objects = np.array(x_objects)
         y_objects = np.array(y_objects)
             
-        #print(f"angle to goal: {goal_angle*180/math.pi}")
-        #print(f"distance to goal: {global_goal_distance}")
         
         #print(f"dwa objects: {np.round(objects,1)}")
         #print(orientations)
         #print(len(objects))
+        if len(objects) == 0: #if there is no obstacles, go straight to the goal at max speed
+            thetas =  np.linspace(-math.pi, math.pi, settings.action_discretization+1)
+            goal_angle = math.atan2(y_goal,x_goal)
+            direction = bisect(thetas, goal_angle)
+            if (thetas[direction]-goal_angle > goal_angle - thetas[direction-1]): #find which discretized value is closest
+                direction -= 1
+            action = (16 - direction%settings.action_discretization + round(0.75*settings.action_discretization))%settings.action_discretization  #transform the airsim action space (starts at 90 deg and goes cw)
+            return action + 48
         
         #sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want
         #angles = np.concatenate((angles,angles))
@@ -735,7 +737,7 @@ class gofai():
         self.previous_obs = sensors
         #print(f"min predicted distance in chosen dwa action: {mindistAction}")
         #print(f"heading term: {headingTerm} safety term: {safetyTerm}")
-        
+        #print(f"full loop action: {action}")
 
         ### -----------printing info on the chosen action-------------------------------------------------------------
         travel_speed = min(2, settings.base_speed*3**(action//settings.action_discretization)) #travelling speed can be 0.5, 1, 2, or 4 
