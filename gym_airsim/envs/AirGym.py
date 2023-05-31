@@ -268,7 +268,7 @@ class AirSimEnv(gym.Env):
         #print(f"proximity: {[min(3/distance,10) for distance in sensors]*action}")
         #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
 
-        cost = 0.95
+        cost = 1.1
  
         
         #safety = min(2.5, closest)*settings.number_of_sensors
@@ -277,7 +277,7 @@ class AirSimEnv(gym.Env):
         
         r = -cost*nb_sensors + heading*velocity + proximity
         #if nb_sensors == 0:
-        #    r += 0.5
+        #    r += 0.25
         
         #print(f"total reward: {r/settings.number_of_sensors}")
         return r/settings.number_of_sensors

@@ -11,8 +11,8 @@ from stable_baselines import A2C
 class CustomPolicy(FeedForwardPolicy):
     def __init__(self, *args, **kwargs):
         super(CustomPolicy, self).__init__(*args, **kwargs,
-                                           net_arch=[dict(pi=[64, 64],
-                                                          vf=[128, 128, 128, 128])],
+                                           net_arch=[dict(pi=[64, 64, 32, 32],
+                                                          vf=[256, 128, 64, 64, 128])],
                                            feature_extraction="mlp")
 
 
