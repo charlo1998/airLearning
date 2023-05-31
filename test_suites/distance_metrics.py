@@ -98,12 +98,12 @@ if __name__ == '__main__':
     plt.ylabel('distance')
     plt.title('distances traveled for the episodes in the successful intersection')
 
-    #plt.figure()
-    #plt.plot(range(episodes), agent_ideal_intersection, range(episodes), baseline_ideal_intersection)
-    #plt.legend(['agent','baseline'])
-    #plt.xlabel('episodes')
-    #plt.ylabel('distances')
-    #plt.title('ideal distances traveled for the episodes in the successful intersection')
+    plt.figure()
+    plt.plot(range(episodes), agent_ideal_intersection, range(episodes), classical_ideal_intersection, range(episodes), random_ideal_intersection, range(episodes), greedy_ideal_intersection)
+    plt.legend(['agent','classical','random','greedy'])
+    plt.xlabel('episodes')
+    plt.ylabel('distances')
+    plt.title('ideal distances traveled for the episodes in the successful intersection')
 
     plt.figure()
     plt.plot(range(episodes), agent_time_intersection, range(episodes), classical_time_intersection, range(episodes), random_time_intersection, range(episodes), greedy_time_intersection)

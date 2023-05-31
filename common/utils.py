@@ -651,18 +651,18 @@ class gofai():
         # ---------------- random and greedy baselines -----------------------------
         if(msgs.algo == "GOFAI"):
             #chooses k closest sensors
-            #k_sensors = 2
-            #chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
-            #sensor_output = np.ones(settings.number_of_sensors)*100
-            #for idx in chosen_idx:
-            #    sensor_output[idx] = sensors[idx]
-            #sensors = sensor_output
+            k_sensors = 2
+            chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
+            sensor_output = np.ones(settings.number_of_sensors)*100
+            for idx in chosen_idx:
+                sensor_output[idx] = sensors[idx]
+            sensors = sensor_output
             #randomly chooses a subset of sensors to process (imitating RL agent)
-            n_sensors = 12
-            chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
-            #print(chosens)
-            for idx in chosens:
-                sensors[idx] = 100
+            #n_sensors = 6
+            #chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
+            ##print(chosens)
+            #for idx in chosens:
+            #    sensors[idx] = 100
         #print(f"sensors dwa: {np.round(sensors,1)}")
         # -----------------------------------------------------------------
 
