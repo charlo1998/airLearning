@@ -98,12 +98,12 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "EnvType": ["Indoor"],
                   "ArenaSize": [[100, 100, 10]],
                   "PlayerStart": [[0, 0, 0]],
-                  "NumberOfDynamicObjects": list(range(75, 80)), #hard seed: 100 obstacles
+                  "NumberOfDynamicObjects": list(range(75, 76)), #hard seed: 100 obstacles
                   "Walls1": [[255, 255, 10]],
-                  "Seed": list(range(0,1)), #hard seed: seed 0. random: list(range(0,1000))
+                  "Seed": list(range(1,2)), #hard seed: seed 0. random: list(range(0,1000))
                   "VelocityRange": [[0.0, 0.0]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(30,33))}
+                  "NumberOfObjects": list(range(24,25))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -242,7 +242,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = True
-training_steps_cap = 600000
+training_steps_cap = 450000
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True
