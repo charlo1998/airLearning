@@ -73,15 +73,17 @@ if __name__ == '__main__':
     agent_ratios = [traveled/ideal for (traveled,ideal) in zip(agent_traveled_intersection, agent_ideal_intersection)]
     baseline_ratios = [traveled/ideal for (traveled,ideal) in zip(baseline_traveled_intersection, baseline_ideal_intersection)]
     plt.figure()
-    plt.plot(range(episodes), agent_ratios, range(episodes), baseline_ratios)
-    plt.legend(['agent','baseline'])
+    #plt.plot(range(episodes), agent_ratios, range(episodes), classical_ratios, range(episodes), random_ratios, range(episodes), greedy_ratios)
+    plt.hist([agent_ratios, classical_ratios, random_ratios, greedy_ratios])
+    plt.legend(['agent','classical','random','greedy'])
     plt.xlabel('distance travelled')
     plt.ylabel('ratio')
     plt.title('distances traveled / birdview distances for the episodes in the successful intersection')
 
     plt.figure()
-    plt.plot(range(episodes), agent_traveled_intersection, range(episodes), baseline_traveled_intersection)
-    plt.legend(['agent','baseline'])
+    #plt.plot(range(episodes), agent_traveled_intersection, range(episodes), classical_traveled_intersection, range(episodes), random_traveled_intersection, range(episodes), greedy_traveled_intersection)
+    plt.hist([agent_traveled_intersection, classical_traveled_intersection, random_traveled_intersection, greedy_traveled_intersection])
+    plt.legend(['agent','classical','random','greedy'])
     plt.xlabel('episodes')
     plt.ylabel('distance')
     plt.title('distances traveled for the episodes in the successful intersection')
@@ -94,8 +96,9 @@ if __name__ == '__main__':
     plt.title('ideal distances traveled for the episodes in the successful intersection')
 
     plt.figure()
-    plt.plot(range(episodes), agent_time_intersection, range(episodes), baseline_time_intersection)
-    plt.legend(['agent','baseline'])
+    #plt.plot(range(episodes), agent_time_intersection, range(episodes), classical_time_intersection, range(episodes), random_time_intersection, range(episodes), greedy_time_intersection)
+    plt.hist([agent_time_intersection, classical_time_intersection, random_time_intersection, greedy_time_intersection])
+    plt.legend(['agent','classical','random','greedy'])
     plt.xlabel('episodes')
     plt.ylabel('time (s)')
     plt.title('mission time for the episodes in the successful intersection')

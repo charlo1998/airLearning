@@ -49,6 +49,7 @@ class tangent_bug():
         obs[3] = obs[3]*np.pi
         obs[4:6] = obs[4:6]*50.0 
 
+        
         goal_angle = obs[0]
         goal_distance = obs[1]
         vel_angle = obs[3]
@@ -114,8 +115,8 @@ class tangent_bug():
             goal = [goal_distance*math.cos(direction), goal_distance*math.sin(direction)]
 
         #if the heuristic didn't decrease after last couple actions, we need to enter into boundary following
-        if self.foundPathCounter >= 8 and not self.following_boundary:
-            print("entering boundary following")
+        if self.foundPathCounter >= 10 and not self.following_boundary:
+            #print("entering boundary following")
             self.following_boundary = True
             self.following_boundary_counter=0
             self.tangent_counter = 0
@@ -167,7 +168,7 @@ class tangent_bug():
                 if self.following_boundary_counter > 4:
                     self.following_boundary = False
                     self.foundPathCounter = 0
-                    print("switched back to normal path")
+                    #print("switched back to normal path")
 
             else:
                 self.following_boundary_counter = 0

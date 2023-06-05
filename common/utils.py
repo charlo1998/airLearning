@@ -70,6 +70,21 @@ def santize_data(file):
 #        print(mean_dict)
 #    return mean_dict
 
+def normalize(obs):
+    """ takes an observation (list) and outputs the normalized form"""
+    #print(obs)
+    obs[6:settings.number_of_sensors+6] = np.log(obs[6:settings.number_of_sensors+6]+0.0001)/np.log(100) #this way gives more range to the smaller distances (large distances are less important).
+    #obs[settings.number_of_sensors+6:] = obs[settings.number_of_sensors+6:]*np.pi
+    obs[1] = np.log(obs[1]+0.0001)/np.log(100)
+    obs[0] = obs[0]/np.pi #rad
+    obs[2] = obs[2]/(settings.base_speed*20.0) #reconverting from normalized values
+    obs[3] = obs[3]/np.pi
+    obs[4:6] = obs[4:6]/50.0 
+
+    return obs
+
+
+
 def plot_trajectories(file):
     print("collecting trajectories")
     data = parse_data(file)
