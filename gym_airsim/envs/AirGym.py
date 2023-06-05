@@ -268,7 +268,7 @@ class AirSimEnv(gym.Env):
         #print(f"proximity: {[min(3/distance,10) for distance in sensors]*action}")
         #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
 
-        cost = 1.1
+        cost = 1.0
  
         
         #safety = min(2.5, closest)*settings.number_of_sensors
@@ -605,12 +605,14 @@ class AirSimEnv(gym.Env):
                 process_action_start = time.perf_counter()
                 obs = self.airgym.take_meta_action(action, self.prev_state)
                 #print(f"meta action: {np.round((time.perf_counter() - process_action_start)*1000)} ms")
-                
+                dwa_cpu_start = time.process_time()
                 moveAction = self.DWA.predict(obs, goal)
+                dwa_cpu_end = time.process_time()
                 self.moveAction_in_step.append(moveAction)
                 process_action_end = time.perf_counter()
                 #print(f"bug processing: {np.round((bug_end - bug_start)*1000)} ms")
                 #print(f"dwa processing: {np.round((process_action_end - process_action_start)*1000)} ms")
+                #print(f"dwa CPU processing: {(dwa_cpu_end - dwa_cpu_start)*1000000.0} microS")
                 
                 take_action_start = time.perf_counter()
                 if(settings.profile):

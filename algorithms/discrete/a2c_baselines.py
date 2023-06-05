@@ -4,11 +4,13 @@ import sys
 import gym
 import time
 import inspect
-
+import json
 import os
 import tensorflow as tf
 os.sys.path.insert(0, os.path.abspath('../../../settings_folder'))
 import settings
+import utils
+from tangent_bug import tangent_bug
 import msgs
 from gym_airsim.envs.airlearningclient import *
 import callbacks
@@ -72,22 +74,31 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
     msgs.weight_file_under_test = filepath
 
     model = A2C.load(filepath)
-    infer_latency_list = []
-    
+    DWA = utils.gofai()
+    bug = tangent_bug()
+
+
     for i in range(settings.testing_nb_episodes_per_model):
         obs = env.reset()
         done = False
         while not done:
             infer_start = time.perf_counter()
+            cpu_start = time.process_time()
             action, _states = model.predict(obs)
+            cpu_end = time.process_time()
             infer_end = time.perf_counter()
             infer_latency_list.append(infer_end-infer_start)
+            infer_cpu_list.append(cpu_end-cpu_start)
+            
+
             obs, rewards, done, info = env.step(action)
             #env.airgym.client.simPause(True)
             #answer = input()
             #env.airgym.client.simPause(False)
-
-    print(f"average DWA processing time: {sum(env.process_action_list)/len(env.process_action_list)*1000} ms")
+            
+    print(f"total CPU processing time: {(time.process_time()-start)} s")
+    print(f"average DWA clock processing time: {sum(env.process_action_list)/len(env.process_action_list)*1000} ms")
+    print(f"average inference CPU processing time: {sum(infer_cpu_list)/len(infer_cpu_list)*1000} ms")
     #env loop rate logging
     if settings.profile:
         with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),
