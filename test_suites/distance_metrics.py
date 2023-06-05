@@ -84,21 +84,87 @@ if __name__ == '__main__':
     classical_ratios = [traveled/ideal for (traveled,ideal) in zip(classical_traveled_intersection, classical_ideal_intersection)]
     random_ratios = [traveled/ideal for (traveled,ideal) in zip(random_traveled_intersection, random_ideal_intersection)]
     greedy_ratios = [traveled/ideal for (traveled,ideal) in zip(greedy_traveled_intersection, greedy_ideal_intersection)]
-    plt.figure()
-    #plt.plot(range(episodes), agent_ratios, range(episodes), classical_ratios, range(episodes), random_ratios, range(episodes), greedy_ratios)
-    plt.hist([agent_ratios, classical_ratios, random_ratios, greedy_ratios])
-    plt.legend(['agent','classical','random','greedy'])
-    plt.xlabel('distance travelled')
-    plt.ylabel('ratio')
-    plt.title('distances traveled / birdview distances for the episodes in the successful intersection')
+    
 
-    plt.figure()
-    #plt.plot(range(episodes), agent_traveled_intersection, range(episodes), classical_traveled_intersection, range(episodes), random_traveled_intersection, range(episodes), greedy_traveled_intersection)
-    plt.hist([agent_traveled_intersection, classical_traveled_intersection, random_traveled_intersection, greedy_traveled_intersection])
-    plt.legend(['agent','classical','random','greedy'])
-    plt.xlabel('episodes')
-    plt.ylabel('distance')
-    plt.title('distances traveled for the episodes in the successful intersection')
+
+    # Set up the figure with subplots
+    fig, axs = plt.subplots(1, 4, figsize=(12, 6), sharey=True)
+
+    # Plot distribution 1 as a box plot
+    axs[0].boxplot(agent_traveled_intersection, vert=True, widths=0.5)
+    axs[0].set_ylabel('distance traveld (m)')
+    axs[0].set_xlabel('agent')
+    axs[0].set(xticklabels=[])
+
+    # Plot distribution 2 as a box plot
+    axs[1].boxplot(classical_traveled_intersection, vert=True, widths=0.5)
+    axs[1].set_xlabel('classical')
+    axs[1].set(xticklabels=[])
+
+    # Plot distribution 3 as a box plot
+    axs[2].boxplot(random_traveled_intersection, vert=True, widths=0.5)
+    axs[2].set_xlabel('random')
+    axs[2].set(xticklabels=[])
+
+    # Plot distribution 4 as a box plot
+    axs[3].boxplot(greedy_traveled_intersection, vert=True, widths=0.5)
+    axs[3].set_xlabel('greedy')
+    axs[3].set(xticklabels=[])
+
+    # Adjust spacing between subplots
+
+
+    # Set up the figure with subplots
+    fig, axs = plt.subplots(1, 4, figsize=(12, 6), sharey=True)
+
+    # Plot distribution 1 as a box plot
+    axs[0].boxplot(agent_time_intersection, vert=True, widths=0.5)
+    axs[0].set_ylabel('mission time (s)')
+    axs[0].set_xlabel('agent')
+    axs[0].set(xticklabels=[])
+
+    # Plot distribution 2 as a box plot
+    axs[1].boxplot(classical_time_intersection, vert=True, widths=0.5)
+    axs[1].set_xlabel('classical')
+    axs[1].set(xticklabels=[])
+
+    # Plot distribution 3 as a box plot
+    axs[2].boxplot(random_time_intersection, vert=True, widths=0.5)
+    axs[2].set_xlabel('random')
+    axs[2].set(xticklabels=[])
+
+    # Plot distribution 4 as a box plot
+    axs[3].boxplot(greedy_time_intersection, vert=True, widths=0.5)
+    axs[3].set_xlabel('greedy')
+    axs[3].set(xticklabels=[])
+
+    # Adjust spacing between subplots
+
+    # Set up the figure with subplots
+    fig, axs = plt.subplots(1, 4, figsize=(12, 6), sharey=True)
+
+    # Plot distribution 1 as a box plot
+    axs[0].boxplot(agent_ratios, vert=True, widths=0.5)
+    axs[0].set_ylabel('ratio of travelled distances/ideal distances (-)')
+    axs[0].set_xlabel('agent')
+    axs[0].set(xticklabels=[])
+
+    # Plot distribution 2 as a box plot
+    axs[1].boxplot(classical_ratios, vert=True, widths=0.5)
+    axs[1].set_xlabel('classical')
+    axs[1].set(xticklabels=[])
+
+    # Plot distribution 3 as a box plot
+    axs[2].boxplot(random_ratios, vert=True, widths=0.5)
+    axs[2].set_xlabel('random')
+    axs[2].set(xticklabels=[])
+
+    # Plot distribution 4 as a box plot
+    axs[3].boxplot(greedy_ratios, vert=True, widths=0.5)
+    axs[3].set_xlabel('greedy')
+    axs[3].set(xticklabels=[])
+
+    # Adjust spacing between subplots
 
     plt.figure()
     plt.plot(range(episodes), agent_ideal_intersection, range(episodes), classical_ideal_intersection, range(episodes), random_ideal_intersection, range(episodes), greedy_ideal_intersection)
