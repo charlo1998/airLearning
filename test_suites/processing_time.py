@@ -1,4 +1,5 @@
 import os
+import psutil
 
 os.sys.path.insert(0, os.path.abspath('../settings_folder'))
 
@@ -21,7 +22,9 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import A2C
 from customPolicy import CustomLSTMPolicy, CustomPolicy
 
-
+#set high priority for process
+p = psutil.Process(os.getpid())
+p.nice(psutil.REALTIME_PRIORITY_CLASS)
 
 
 modelpath = os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/A2C-B/model.pkl"
