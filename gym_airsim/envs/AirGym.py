@@ -551,21 +551,22 @@ class AirSimEnv(gym.Env):
             
             if (msgs.algo == 'A2C-B'):
                 self.airgym.client.simPause(False)
+                #copy, de-normalize, and log observation
+                observation = np.copy(self.prev_state[0][0])
+                observation[6:settings.number_of_points+6] = np.round(100**observation[6:settings.number_of_points+6],2)
+                observation[settings.number_of_points+6:] = np.round(180*observation[settings.number_of_points+6:],2)
+                observation[1] = 100**observation[1]
+                observation[0] = observation[0]*np.pi #rad
+                observation[2] = observation[2]*(settings.base_speed*20.0)
+                observation[3] = observation[3]*np.pi
+                observation[4:6] = observation[4:6]*50.0 
 
             time.sleep(settings.delay)
             now = self.airgym.drone_pos()
             self.velocity = self.airgym.drone_velocity()
 
-            #copy, de-normalize, and log observation
-            observation = np.copy(self.prev_state[0][0])
-            observation[6:settings.number_of_points+6] = np.round(100**observation[6:settings.number_of_points+6],2)
-            observation[settings.number_of_points+6:] = np.round(180*observation[settings.number_of_points+6:],2)
-            observation[1] = 100**observation[1]
-            observation[0] = observation[0]*np.pi #rad
-            observation[2] = observation[2]*(settings.base_speed*20.0)
-            observation[3] = observation[3]*np.pi
-            observation[4:6] = observation[4:6]*50.0 
-            self.observations_in_step.append(str(list(observation)))
+            
+            self.observations_in_step.append(str(list(self.prev_state[0][0])))
             #print(f"speed after delay: {np.round(np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2),2)}") 
             #print(f"pose after delay: {np.round(now,2)}")
             #print("--------------------------------------------------------")
