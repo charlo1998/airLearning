@@ -192,6 +192,7 @@ def plot_trajectories(file):
 
 
 def average(data):
+    """ returns the data averaged into bucket for more clarity. it also averages for all the runs"""
     #initializing list
     new_data = [[],[],[]]
     last_data_point = 0
@@ -256,7 +257,7 @@ def plot_data(file, data_to_inquire, mode="separate"):
         if (el[0] == "total_step_count_for_experiment"):
             new_data = average(data)
             plt.plot(new_data[0], new_data[1])
-            plt.fill_between(new_data[0], new_data[1] + np.array(new_data[2]), new_data[1] - np.array(new_data[2]), alpha=0.1)
+            plt.fill_between(new_data[0], new_data[1] + np.array(new_data[2]), new_data[1] - np.array(new_data[2]), alpha=0.5)
             plt.title('averaged rewards as a function of the total timesteps')
         else:
             for i in range(settings.runs_to_do):
@@ -385,7 +386,9 @@ def plot_sensor_usage(data):
     for k in range(settings.runs_to_do):
         episode_actions = data[k]["actions_in_each_step"]
         #print(len(episode_actions))
+    window_size = max(1,round((len(episode_actions)/settings.testing_nb_episodes_per_model)))
     sensors_per_action = []
+    stds = []
     for actions in episode_actions:
         temp = []
         #print(actions)
@@ -393,8 +396,12 @@ def plot_sensor_usage(data):
             #print(action)
             temp.append(np.sum(action))
         sensors_per_action.append(np.sum(temp)/len(temp))
+    smoothed = np.convolve(sensors_per_action, np.ones(window_size)/window_size, mode='valid')
+    std = np.std(np.array([sensors_per_action[i:i+window_size] for i in range(len(sensors_per_action)-window_size+1)]), axis=1)
     print(f"total average sensors_per_action: {sum(sensors_per_action)/len(sensors_per_action)}")
-    plt.plot(range(len(sensors_per_action)),sensors_per_action)
+    print(f"sensor usage window size: {window_size}")
+    plt.plot(range(len(smoothed)), smoothed)
+    plt.fill_between(range(len(smoothed)), smoothed-std, smoothed+std, alpha=0.5)
     plt.xlabel('Number of episodes')
     plt.ylabel('number of sensors')
     plt.title('average number of sensors used in function of the episode during training')
