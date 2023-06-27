@@ -559,24 +559,28 @@ class AirLearningClient(airsim.MultirotorClient):
         #print(f"full state: {np.round(state,2)}")
         obs = state.copy()
         action = action.flatten()
-        sensors = obs[0][0][6:settings.number_of_sensors+6]
+        sensors = obs[0][0][6:settings.number_of_points+6]
+        angles = obs[0][0][settings.number_of_points+6:]*180/np.pi
 
         #print(f"action: {action}")
         #print(f"wanted sensors: {np.sum(action)}")
-        #find the k highest sensors, then save them for the dwa algorithm
-        chosen_idx = np.argpartition(action, -settings.k_sensors)[-settings.k_sensors:]
-        sensor_output = np.ones(settings.number_of_sensors)*100
-        for idx in chosen_idx:
+        
+        sector_output = np.ones(settings.number_of_sensors)*100
+        for idx in range(len(action)):
             sensor_score = action[idx]
+            min_angle = (idx*360/settings.number_of_sensors - 180)
+            max_angle = min_angle + 360/settings.number_of_sensors
             if (sensor_score >= 0.5):
-                sensor_output[idx] = sensors[idx]
-        #for i, sensor in enumerate(sensors):
-        #    if sensor < 2.5:
-        #        sensor_output[i] = sensors[i]
-        #closest = np.argmin(sensors)
-        #sensor_output[closest] = 100
+                indices = np.where((angles >= min_angle) & (angles <= max_angle))[0]
+                # Extract the corresponding values from the 2D array
+                values = sensors[indices]
+                # Find the minimum value within the range
+                if len(values != 0):
+                    min_value = np.min(values)
+                    sector_output[idx] = min_value
 
-        obs[0][0][6:settings.number_of_sensors+6] = sensor_output
+        #print(f"sector output: {sector_output}")
+        obs[0][0][6:settings.number_of_sensors+6] = sector_output
 
         #print(f" state: {state}")
         #print(f"outputed obs: {obs}")

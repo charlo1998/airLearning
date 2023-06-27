@@ -250,7 +250,7 @@ class AirSimEnv(gym.Env):
     def computeReward(self, action):
         #base sensor reward is -0.55. we then add two terms: a proximity term (distance of the object) and a heading term (if the object is in the direction of current velocity)
         # a third term is added to counter the incentive to get close to obstacles: safety term (points based on how far we are from any obstacle
-        arc = 2*math.pi/settings.number_of_points
+        arc = 2*math.pi/settings.number_of_sensors
         angles =  np.arange(-math.pi,math.pi,arc)
         vel_angle = self.prev_state[0][0][3]
         velocity = self.prev_state[0][0][2]

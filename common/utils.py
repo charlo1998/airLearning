@@ -624,11 +624,11 @@ class gofai():
     '''
 
     def __init__(self):
-        self.arc = 2*math.pi/settings.number_of_points #rad
+        self.arc = 2*math.pi/settings.number_of_sensors #rad
         self.heading_coeff = 1
         self.safety_coeff = 4
         self.safety_dist = 1.5
-        self.previous_obs = [3]*(settings.number_of_points+6)
+        self.previous_obs = [3]*(settings.number_of_sensors+6)
         self.bug = tangent_bug()
 
 
@@ -665,9 +665,10 @@ class gofai():
         x_offset = predicted_delay*vel_norm*math.cos(vel_angle)*1.25
         y_offset = predicted_delay*vel_norm*math.sin(vel_angle)*1.25
 
-        sensors = obs[6:settings.number_of_points+6] 
-        angles = obs[settings.number_of_points+6:]
+        sensors = obs[6:settings.number_of_sensors+6] 
+        angles = np.arange(-np.pi, np.pi, self.arc)
         #print(f"sensors: {np.round(sensors,1)}")
+        #print(f"angles: {angles}")
 
         # ---------------- random and greedy baselines -----------------------------
         if(msgs.algo == "GOFAI"):
