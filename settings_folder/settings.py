@@ -227,7 +227,7 @@ backup_folder_name_style = "bu_0"  # the backup obj will create a file with this
 # ---------------------------
 # general params
 # ---------------------------
-list_algo = ["DQN", "DDPG", "A2C-B", "GOFAI"]  # a new algo needs to be added to this list for backup to back up its results
+list_algo = ["DQN", "DQN-B", "PPO-B", "DDPG", "A2C-B", "GOFAI"]  # a new algo needs to be added to this list for backup to back up its results
 nb_max_episodes_steps = 600  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
@@ -241,7 +241,7 @@ runs_to_do = 1
 i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
-use_checkpoint = True
+use_checkpoint = False
 training_steps_cap = 400000
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True

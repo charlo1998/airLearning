@@ -191,7 +191,7 @@ def plot_trajectories(file):
 
 
 
-def average(data):
+def average(data, key):
     """ returns the data averaged into bucket for more clarity. it also averages for all the runs"""
     #initializing list
     new_data = [[],[],[]]
@@ -200,9 +200,9 @@ def average(data):
     nb_of_data_points = 50
     nb_steps = data[0]["total_step_count_for_experiment"][-1]
     bucket_size = int(nb_steps/nb_of_data_points)
-    if bucket_size < 1000:
+    if bucket_size < settings.nb_max_episodes_steps:
         print("bucket size too small! verifiy settings.training_steps_cap")
-        bucket_size = 1000
+        bucket_size = settings.nb_max_episodes_steps
     i_step = 0
     while i_step < nb_steps:
         xbucket_avg = []
@@ -211,7 +211,7 @@ def average(data):
             #finding all values in current bucket
             xbucket = [x for x in data[k]["total_step_count_for_experiment"] if (i_step <= x <= i_step + bucket_size)]
             idx = [data[k]["total_step_count_for_experiment"].index(x) for x in xbucket]
-            ybucket = [data[k]["total_reward"][i] for i in idx]
+            ybucket = [data[k][key][i] for i in idx]
             #avg the bucket into 1 value
             xbucket = round(sum(xbucket)/len(xbucket)) if (len(xbucket) > 0) else i_step
             ybucket = round(sum(ybucket)/len(ybucket)) if (len(ybucket) > 0) else last_data_point
@@ -254,8 +254,8 @@ def plot_data(file, data_to_inquire, mode="separate"):
             plot_action_vs_obs(data)
     for el in data_to_inquire:
         plt.figure()
-        if (el[0] == "total_step_count_for_experiment"):
-            new_data = average(data)
+        if (el[1] == "total_reward"):
+            new_data = average(data, el[1])
             plt.plot(new_data[0], new_data[1])
             plt.fill_between(new_data[0], new_data[1] + np.array(new_data[2]), new_data[1] - np.array(new_data[2]), alpha=0.5)
             plt.title('averaged rewards as a function of the total timesteps')
