@@ -11,6 +11,7 @@ import dqn_baselines
 import ppo_airsim
 from algorithms.discrete import a2c_baselines
 from algorithms.discrete import gofai_baselines
+from algorithms.discrete import ppo_baselines
 #import sac_airsim
 from game_handler_class import *
 
@@ -24,13 +25,16 @@ def runTask(task):
     game_handler = GameHandler()
 
     if ("algo" in task.keys()):
-        if (task["algo"] in ["DDPG", "DQN", "PPO", "A2C-B", "DQN-B", "GOFAI"]):
+        if (task["algo"] in ["DDPG", "DQN", "PPO", "PPO-B", "A2C-B", "DQN-B", "GOFAI"]):
             if (task["algo"] == "DDPG"):
                 msgs.algo = "DDPG"
                 train_class = ddpg_airsim #ddpg not working? issue when creating the actor network
             elif (task["algo"] == "PPO"):
                 msgs.algo = "PPO" #reeeeeeally slow?
                 train_class = ppo_airsim
+            elif (task["algo"] == "PPO-B"):
+                msgs.algo = "PPO-B"
+                train_class = ppo_baselines
             elif (task["algo"] == "DQN"):
                 train_class = dqn_airsim
                 msgs.algo = "DQN"
@@ -58,7 +62,7 @@ def runTask(task):
         print("starting training")
         if task["algo"] == "DQN":
             train_class.train(train_obj, env, train_checkpoint = settings.use_checkpoint)
-        elif task["algo"] == "DQN-B" or task["algo"] == "A2C-B":
+        elif task["algo"] == "DQN-B" or task["algo"] == "A2C-B" or task["algo"] == "PPO-B":
             train_class.train(train_obj, env, checkpoint = task["checkpoint"]) #only will use the checkpoint if settings.checkpoint = True
 
 
@@ -101,12 +105,12 @@ def runTask(task):
         plot_trajectories(data_file)
 
 def main():
-    taskList = []
+    taskList = []   
 
 
 
     algo = "A2C-B"
-    task_type = "test"
+    task_type = "train"
     msgs.mode = task_type
     model_weights_list_to_test = [os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"]
     model_to_checkpoint = os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"
@@ -116,22 +120,22 @@ def main():
              "weights": model_weights_list_to_test, "checkpoint": model_to_checkpoint}
     task3 = {"task_type": "kill_game"}
     task4 = {"algo": algo, "task_type": "generate_csv", "data_file": task_type + "_episodal_log.txt"}
-    task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_logverbose.txt", "data_to_plot": [["episodeN", "success_ratio"], ["total_step_count_for_experiment", "total_reward"], ["episodeN", "stepN"]], "plot_data_mode": "separate"}
+    task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_logverbose.txt", "data_to_plot": [["total_step_count_for_experiment", "success_ratio"], ["episodeN", "success_ratio"], ["total_step_count_for_experiment", "total_reward"], ["episodeN", "stepN"]], "plot_data_mode": "separate"}
     task6 = {"algo": algo, "task_type": "plot_trajectories", "data_file": task_type + "_episodal_logverbose0.txt"}
 
 
 
     
-    taskList.append(task1) #start gane
-    if task_type == "train":
-        for i in range(settings.runs_to_do):
-            taskList.append(task2) #train
-    else:
-        settings.deterministic = True
-        taskList.append(task2) # don't do multiple runs for test
-        taskList.append(task6) #plot trajectories
+    #taskList.append(task1) #start gane
+    #if task_type == "train":
+    #    for i in range(settings.runs_to_do):
+    #        taskList.append(task2) #train
+    #else:
+    #    settings.deterministic = True
+    #    taskList.append(task2) # don't do multiple runs for test
+    #    taskList.append(task6) #plot trajectories
 
-    taskList.append(task3) #close game
+    #taskList.append(task3) #close game
     
     taskList.append(task5) #plot
     #taskList.append(task4) #generate_csv

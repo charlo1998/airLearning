@@ -17,6 +17,7 @@ from stable_baselines.deepq.policies import MultiInputPolicy
 
 
 from keras.backend.tensorflow_backend import set_session
+from customPolicy import CustomLSTMPolicy, CustomPolicy
 
 def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     config = tf.ConfigProto()
@@ -50,6 +51,7 @@ def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearni
             f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
             f.write("take_action_list:" + str(env.take_action_list) + "\n")
             f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
+            f.write("process_action_list:" + str(env.process_action_list) + "\n")
 
         action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(settings.i_run) + ".txt")
         with open(action_duration_file, "w") as f:
@@ -67,8 +69,23 @@ def test(env, agent, filepath):
         obs = env.reset()
         done = False
         while not done:
+            infer_start = time.perf_counter()
+            cpu_start = time.process_time()
             action, _states = model.predict(obs)
+            cpu_end = time.process_time()
+            infer_end = time.perf_counter()
+            infer_latency_list.append(infer_end-infer_start)
+            infer_cpu_list.append(cpu_end-cpu_start)
+            
+
             obs, rewards, done, info = env.step(action)
+            #env.airgym.client.simPause(True)
+            #answer = input()
+            #env.airgym.client.simPause(False)
+            
+    print(f"total CPU processing time: {(time.process_time()-start)} s")
+    print(f"average DWA clock processing time: {sum(env.process_action_list)/len(env.process_action_list)*1000} ms")
+    print(f"average inference CPU processing time: {sum(infer_cpu_list)/len(infer_cpu_list)*1000} ms")
 
     #env loop rate logging
     if settings.profile:
@@ -77,10 +94,11 @@ def test(env, agent, filepath):
             f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
             f.write("take_action_list:" + str(env.take_action_list) + "\n")
             f.write("clct_state_list:" + str(env.clct_state_list) + "\n")
+            f.write("process_action_list:" + str(env.process_action_list) + "\n")
 
-        action_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "action_durations" + str(settings.i_run) + ".txt")
-        with open(action_duration_file, "w") as f:
-            f.write(str(env.take_action_list))
+        inference_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "inference_durations" + str(settings.i_run) + ".txt")
+        with open(inference_duration_file, "w") as f:
+            f.write(str(infer_latency_list[1:]))
 
 if __name__ == "__main__":
     env, agent = setup()

@@ -38,7 +38,8 @@ def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearni
 def test(env):
     msgs.mode = 'test'
     process_action_list = []
-    agent = gofai()
+    cpu_times_list = []
+    DWA = gofai()
     bug = tangent_bug()
     
 
@@ -53,7 +54,7 @@ def test(env):
             goal = bug.predict(obs)
             bug_end = time.perf_counter()
             #print("--------------------------------------dwa---------------------------------------------")
-            action = agent.predict(obs,goal)
+            action = DWA.predict(obs,goal)
             end = time.perf_counter()
             end_CPU = time.process_time()
 

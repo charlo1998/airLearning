@@ -235,6 +235,8 @@ class AirSimEnv(gym.Env):
             return self.concat_state
         elif(msgs.algo == "A2C-B"):
             return self.concat_state
+        elif(msgs.algo == "PPO-B"):
+            return self.concat_state
         elif(msgs.algo == "GOFAI"):
             return self.concat_state
         else:
@@ -276,10 +278,10 @@ class AirSimEnv(gym.Env):
         proximity = np.sum([min(3/distance,10) for distance in sensors]*action)
         
         r = -cost*nb_sensors + heading*velocity + proximity
-        
+        #if nb_sensors == 0:
+        #    r += 0.25
         
         #print(f"total reward: {r/settings.number_of_sensors}")
-
         return r/settings.number_of_sensors
 
     def ddpg_add_noise_action(self, actions):
@@ -450,7 +452,8 @@ class AirSimEnv(gym.Env):
         msgs.episodal_log_dic_verbose["DWA_action_in_each_step"] = self.moveAction_in_step
         if (msgs.mode == "test"):
             msgs.episodal_log_dic_verbose["actions_in_each_step"] = self.actions_in_step
-            msgs.episodal_log_dic_verbose["observations_in_each_step"] = self.observations_in_step
+            if msgs.algo != "GOFAI":
+                msgs.episodal_log_dic_verbose["observations_in_each_step"] = self.observations_in_step
             msgs.episodal_log_dic_verbose["distance_in_each_step"] = self.distance_in_step
             msgs.episodal_log_dic_verbose["position_in_each_step"] = self.position_in_step
         elif (msgs.mode == "train"):
@@ -523,7 +526,7 @@ class AirSimEnv(gym.Env):
             self.ppo_call_back_emulator()
         elif(msgs.algo == "SAC"):
             self.sac_call_back_emulator()
-        elif(msgs.algo == "DQN-B" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI"):
+        elif(msgs.algo == "DQN-B" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI" or msgs.algo == "PPO-B"):
             self.dqn_baselines_call_back_emulator()
 
         self.restart_window_if_necessary()
@@ -549,7 +552,7 @@ class AirSimEnv(gym.Env):
 
         try:
             
-            if (msgs.algo == 'A2C-B'):
+            if (msgs.algo != 'GOFAI'):
                 self.airgym.client.simPause(False)
                 #copy, de-normalize, and log observation
                 observation = np.copy(self.prev_state[0][0])
@@ -628,7 +631,7 @@ class AirSimEnv(gym.Env):
                 elif(msgs.algo == "SAC"):
                     self.actions_in_step.append([action[0], action[1]])
                     self.collided = self.airgym.take_continious_action(action)
-                else: #A2C-b
+                else: #all other stable baselines algos
                     if(settings.timedActions):
                         self.collided = self.airgym.take_timed_action(moveAction)
                     elif(settings.positionActions):
@@ -646,7 +649,7 @@ class AirSimEnv(gym.Env):
             
             
             #get new observation
-            if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI"):
+            if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI" or msgs.algo == "PPO-B"):
                 sensors = self.airgym.get_laser_state()
                 self.concat_state = self.airgym.getConcatState(self.track, self.goal, sensors)
             elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
@@ -673,7 +676,7 @@ class AirSimEnv(gym.Env):
             #print(f"pose right after action: {np.round(now,2)}")
             #print("-------------------------------------------------------------------------------------------------------")
             #print(f"goal pose: {self.goal}")
-            if (msgs.algo == 'A2C-B'):
+            if (msgs.algo != 'GOFAI'):
                 self.airgym.client.simPause(True)
             
             if distance < settings.success_distance_to_goal: #we found the goal: 100ptso

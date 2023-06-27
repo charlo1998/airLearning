@@ -13,6 +13,7 @@ import subprocess
 import ast
 import math
 import time
+from bisect import bisect
 
 from tangent_bug import tangent_bug
 
@@ -129,7 +130,7 @@ def plot_trajectories(file):
         mission_times = [0]
         traveled_distances = [0]
         ideal_distances = [0]
-        if data['stepN'][0] == 600:
+        if data['stepN'][0] == settings.nb_max_episodes_steps:
             fails += 1
         else:
             collisions += 1
@@ -141,7 +142,7 @@ def plot_trajectories(file):
     for i in range(1,len(data['distance_traveled'])):
         if data['success'][i] == "False": #only register the successful runs (running out of time increases distance traveled way to much, collision makes it too small)
             
-            if data['stepN'][i] == 600:
+            if data['stepN'][i] == settings.nb_max_episodes_steps:
                 fails += 1
                 mission_times.append(0)
                 traveled_distances.append(0)
@@ -155,7 +156,7 @@ def plot_trajectories(file):
 
         start = data['position_in_each_step'][i][0]
         end = data['goal'][i]
-        if (data['success'][i-1] == "False" and data['stepN'][i-1] != 600) or i%50 == 0 or data['distance_traveled'][i-1] > data['distance_traveled'][i]: #the sim is reset to 0 after a crash or after every 50 episodes
+        if (data['success'][i-1] == "False" and data['stepN'][i-1] != settings.nb_max_episodes_steps) or i%50 == 0 or data['distance_traveled'][i-1] > data['distance_traveled'][i]: #the sim is reset to 0 after a crash or after every 50 episodes
                 traveled_distances.append(data['distance_traveled'][i])
                 ideal_distances.append(np.sqrt(end[1]**2+end[0]**2)-settings.success_distance_to_goal)
                 mission_times.append(data['flight_time'][i])
@@ -190,7 +191,8 @@ def plot_trajectories(file):
 
 
 
-def average(data):
+def average(data, key):
+    """ returns the data averaged into bucket for more clarity. it also averages for all the runs"""
     #initializing list
     new_data = [[],[],[]]
     last_data_point = 0
@@ -198,9 +200,9 @@ def average(data):
     nb_of_data_points = 50
     nb_steps = data[0]["total_step_count_for_experiment"][-1]
     bucket_size = int(nb_steps/nb_of_data_points)
-    if bucket_size < 1000:
+    if bucket_size < settings.nb_max_episodes_steps:
         print("bucket size too small! verifiy settings.training_steps_cap")
-        bucket_size = 1000
+        bucket_size = settings.nb_max_episodes_steps
     i_step = 0
     while i_step < nb_steps:
         xbucket_avg = []
@@ -209,7 +211,7 @@ def average(data):
             #finding all values in current bucket
             xbucket = [x for x in data[k]["total_step_count_for_experiment"] if (i_step <= x <= i_step + bucket_size)]
             idx = [data[k]["total_step_count_for_experiment"].index(x) for x in xbucket]
-            ybucket = [data[k]["total_reward"][i] for i in idx]
+            ybucket = [data[k][key][i] for i in idx]
             #avg the bucket into 1 value
             xbucket = round(sum(xbucket)/len(xbucket)) if (len(xbucket) > 0) else i_step
             ybucket = round(sum(ybucket)/len(ybucket)) if (len(ybucket) > 0) else last_data_point
@@ -252,10 +254,10 @@ def plot_data(file, data_to_inquire, mode="separate"):
             plot_action_vs_obs(data)
     for el in data_to_inquire:
         plt.figure()
-        if (el[0] == "total_step_count_for_experiment"):
-            new_data = average(data)
+        if (el[1] == "total_reward"):
+            new_data = average(data, el[1])
             plt.plot(new_data[0], new_data[1])
-            plt.fill_between(new_data[0], new_data[1] + np.array(new_data[2]), new_data[1] - np.array(new_data[2]), alpha=0.1)
+            plt.fill_between(new_data[0], new_data[1] + np.array(new_data[2]), new_data[1] - np.array(new_data[2]), alpha=0.5)
             plt.title('averaged rewards as a function of the total timesteps')
         else:
             for i in range(settings.runs_to_do):
@@ -384,7 +386,9 @@ def plot_sensor_usage(data):
     for k in range(settings.runs_to_do):
         episode_actions = data[k]["actions_in_each_step"]
         #print(len(episode_actions))
+    window_size = max(1,round((len(episode_actions)/settings.testing_nb_episodes_per_model)))
     sensors_per_action = []
+    stds = []
     for actions in episode_actions:
         temp = []
         #print(actions)
@@ -392,8 +396,12 @@ def plot_sensor_usage(data):
             #print(action)
             temp.append(np.sum(action))
         sensors_per_action.append(np.sum(temp)/len(temp))
+    smoothed = np.convolve(sensors_per_action, np.ones(window_size)/window_size, mode='valid')
+    std = np.std(np.array([sensors_per_action[i:i+window_size] for i in range(len(sensors_per_action)-window_size+1)]), axis=1)
     print(f"total average sensors_per_action: {sum(sensors_per_action)/len(sensors_per_action)}")
-    plt.plot(range(len(sensors_per_action)),sensors_per_action)
+    print(f"sensor usage window size: {window_size}")
+    plt.plot(range(len(smoothed)), smoothed)
+    plt.fill_between(range(len(smoothed)), smoothed-std, smoothed+std, alpha=0.5)
     plt.xlabel('Number of episodes')
     plt.ylabel('number of sensors')
     plt.title('average number of sensors used in function of the episode during training')
@@ -647,9 +655,6 @@ class gofai():
         y_goal = goal[1]
         global_goal_distance = np.sqrt(x_goal**2 + y_goal**2)
         #print(f"received goal (relative): {[x_goal,y_goal]}")
-        #x_goal = global_goal_distance*math.sin(goal_angle) #reference frame for angle to goal is inverted
-        #y_goal = global_goal_distance*math.cos(goal_angle)
-        #print(f"observed goal (relative): {[x_goal,y_goal]}")
 
         
         vel_angle = obs[3]
@@ -702,12 +707,18 @@ class gofai():
         x_objects = np.array(x_objects)
         y_objects = np.array(y_objects)
             
-        #print(f"angle to goal: {goal_angle*180/math.pi}")
-        #print(f"distance to goal: {global_goal_distance}")
         
         #print(f"dwa objects: {np.round(objects,1)}")
         #print(orientations)
         #print(len(objects))
+        if len(objects) == 0: #if there is no obstacles, go straight to the goal at max speed
+            thetas =  np.linspace(-math.pi, math.pi, settings.action_discretization+1)
+            goal_angle = math.atan2(y_goal,x_goal)
+            direction = bisect(thetas, goal_angle)
+            if (thetas[direction]-goal_angle > goal_angle - thetas[direction-1]): #find which discretized value is closest
+                direction -= 1
+            action = (16 - direction%settings.action_discretization + round(0.75*settings.action_discretization))%settings.action_discretization  #transform the airsim action space (starts at 90 deg and goes cw)
+            return action + 48
         
         #sensors = np.concatenate((sensors,sensors)) #this way we can more easily slice the angles we want
         #angles = np.concatenate((angles,angles))
@@ -746,7 +757,7 @@ class gofai():
         self.previous_obs = sensors
         #print(f"min predicted distance in chosen dwa action: {mindistAction}")
         #print(f"heading term: {headingTerm} safety term: {safetyTerm}")
-        
+        #print(f"full loop action: {action}")
 
         ### -----------printing info on the chosen action-------------------------------------------------------------
         travel_speed = min(2, settings.base_speed*3**(action//settings.action_discretization)) #travelling speed can be 0.5, 1, 2, or 4 
