@@ -271,16 +271,20 @@ class AirSimEnv(gym.Env):
         #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
 
         cost = 0.45
- 
-        
+
         #safety = min(2.5, closest)*settings.number_of_sensors
         heading = np.sum(np.cos(angles)*action)*0.5
         proximity = np.sum([min(3/distance,10) for distance in sensors]*action)
         
         #r = -cost*nb_sensors + heading*velocity + proximity
-        r = -cost*nb_sensors +  heading*velocity
         #if nb_sensors == 0:
         #    r += 0.25
+        # --------------- reward func 1 -----------------------
+        if len(self.success_history) > 1:
+            SR_w = sum(self.success_history)/len(self.success_history)
+        else:
+            SR_w = 0.5
+        r = (settings.number_of_sensors - nb_sensors) * (SR_w - 0.95)
         
         #print(f"total reward: {r/settings.number_of_sensors}")
         return r/settings.number_of_sensors
