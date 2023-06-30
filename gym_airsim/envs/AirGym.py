@@ -270,14 +270,15 @@ class AirSimEnv(gym.Env):
         #print(f"proximity: {[min(3/distance,10) for distance in sensors]*action}")
         #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
 
-        cost = 0.95
+        cost = 0.45
  
         
         #safety = min(2.5, closest)*settings.number_of_sensors
         heading = np.sum(np.cos(angles)*action)*0.5
         proximity = np.sum([min(3/distance,10) for distance in sensors]*action)
         
-        r = -cost*nb_sensors + heading*velocity + proximity
+        #r = -cost*nb_sensors + heading*velocity + proximity
+        r = -cost*nb_sensors +  heading*velocity
         #if nb_sensors == 0:
         #    r += 0.25
         
@@ -427,7 +428,7 @@ class AirSimEnv(gym.Env):
         msgs.episodal_log_dic.clear()
         msgs.episodal_log_dic_verbose.clear()
         msgs.episodal_log_dic["cur_zone_number"] = msgs.cur_zone_number
-        msgs.episodal_log_dic["success_ratio"] = round(float(sum(self.success_history)/len(self.success_history)),3)
+        msgs.episodal_log_dic["success_ratio"] = round(float(sum(self.success_history)/settings.update_zone_window),3)
         msgs.episodal_log_dic["success_history"] = sum(self.success_history)
         msgs.episodal_log_dic["success"] = msgs.success
         msgs.episodal_log_dic["stepN"] = self.stepN

@@ -196,8 +196,9 @@ def average(data, key):
     #initializing list
     new_data = [[],[],[]]
     last_data_point = 0
+    print(f"averaging data for {key}")
 
-    nb_of_data_points = 50
+    nb_of_data_points = 100
     nb_steps = data[0]["total_step_count_for_experiment"][-1]
     bucket_size = int(nb_steps/nb_of_data_points)
     if bucket_size < settings.nb_max_episodes_steps:
@@ -212,15 +213,17 @@ def average(data, key):
             xbucket = [x for x in data[k]["total_step_count_for_experiment"] if (i_step <= x <= i_step + bucket_size)]
             idx = [data[k]["total_step_count_for_experiment"].index(x) for x in xbucket]
             ybucket = [data[k][key][i] for i in idx]
+            if len(ybucket) == 0:
+                print("empty bucket while averaging over multiple runs!")
             #avg the bucket into 1 value
             xbucket = round(sum(xbucket)/len(xbucket)) if (len(xbucket) > 0) else i_step
-            ybucket = round(sum(ybucket)/len(ybucket)) if (len(ybucket) > 0) else last_data_point
+            ybucket = sum(ybucket)/len(ybucket) if (len(ybucket) > 0) else last_data_point
             #add the averagd value of all the runs into a list
             xbucket_avg.append(xbucket)
             ybucket_avg.append(ybucket)
         #add the avg of all the runs in a list
         new_data[0].append(round(sum(xbucket_avg)/len(xbucket_avg)))
-        last_data_point = round(sum(ybucket_avg)/len(ybucket_avg))
+        last_data_point = sum(ybucket_avg)/len(ybucket_avg)
         new_data[1].append(last_data_point)
         new_data[2].append(np.std(ybucket_avg, axis=0))
 
@@ -251,19 +254,18 @@ def plot_data(file, data_to_inquire, mode="separate"):
     if settings.verbose:
         if msgs.algo != "GOFAI":
             plot_sensor_usage(data)
-            plot_action_vs_obs(data)
+            if settings.visualize_actions:
+                plot_action_vs_obs(data)
     for el in data_to_inquire:
         plt.figure()
-        if (el[1] == "total_reward"):
+        if settings.average_runs and el[0] == "total_step_count_for_experiment":
             new_data = average(data, el[1])
-            plt.plot(new_data[0], new_data[1])
-            plt.fill_between(new_data[0], new_data[1] + np.array(new_data[2]), new_data[1] - np.array(new_data[2]), alpha=0.5)
-            plt.title('averaged rewards as a function of the total timesteps')
+            plt.plot(np.array(new_data[0])*3, new_data[1])
+            plt.fill_between(np.array(new_data[0])*3, new_data[1] + np.array(new_data[2]), new_data[1] - np.array(new_data[2]), alpha=0.5)
         else:
             for i in range(settings.runs_to_do):
-                #print(data[i][el[1]])
                 plt.plot(data[i][el[0]], data[i][el[1]])
-                assert (el[0] in data[i].keys())
+        assert (el[0] in data[i].keys())
         plt.xlabel(el[0])
         plt.ylabel(el[1])  
         plt.legend()

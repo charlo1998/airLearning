@@ -186,7 +186,7 @@ this means the "percieved" latency doesn't increase linearly with the clockspeed
 timedActions = False
 positionActions = True
 action_discretization = 16 #this needs to be a square number and greater than one if timedActions is set to true! 
-number_of_sensors = 120
+number_of_sensors = 12
 k_sensors = number_of_sensors  #the maximum amount of sensors the agent can choose at any time
 assert(action_discretization > 1)
 assert(action_discretization%4 == 0) #make sure it is divisible by 4 so that polar transformations work
@@ -237,12 +237,12 @@ slow_down_activation_distance = 2.5 * success_distance_to_goal  # detrmines at w
 # ---------------------------
 # training params
 # ---------------------------
-runs_to_do = 1
-i_run =  1#this needs to be the same value as runs_to_do
+runs_to_do = 3
+i_run =  3#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 1000
+training_steps_cap = 166667
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True
@@ -264,7 +264,11 @@ goals_idx = 0
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)
 assert(testing_nb_episodes_per_zone <= testing_nb_episodes_per_model), "get the equality right ,darn it"
 
-
+# ---------------------------
+# plotting params
+# ---------------------------
+average_runs = True
+visualize_actions = False
 # ---------------------------
 # reseting params
 # ---------------------------
