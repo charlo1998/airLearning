@@ -198,7 +198,7 @@ def average(data, key):
     last_data_point = 0
     print(f"averaging data for {key}")
 
-    nb_of_data_points = 100
+    nb_of_data_points = 250
     nb_steps = data[0]["total_step_count_for_experiment"][-1]
     bucket_size = int(nb_steps/nb_of_data_points)
     if bucket_size < settings.nb_max_episodes_steps:
@@ -260,6 +260,8 @@ def plot_data(file, data_to_inquire, mode="separate"):
         plt.figure()
         if settings.average_runs and el[0] == "total_step_count_for_experiment":
             new_data = average(data, el[1])
+            if el[1] == "success_ratio":
+                 np.savetxt(os.path.join(settings.proj_root_path, "data", "A2C-B","SuccessRatio0.txt"), new_data)
             plt.plot(np.array(new_data[0])*3, new_data[1])
             plt.fill_between(np.array(new_data[0])*3, new_data[1] + np.array(new_data[2]), new_data[1] - np.array(new_data[2]), alpha=0.5)
         else:
@@ -385,28 +387,41 @@ def plot_action_vs_obs(data):
 
 
 def plot_sensor_usage(data):
+    sensors_per_action = [[6] for i in range(settings.runs_to_do)]
+    min_length = 9999999
     for k in range(settings.runs_to_do):
         episode_actions = data[k]["actions_in_each_step"]
         #print(len(episode_actions))
-    window_size = max(1,round((len(episode_actions)/settings.testing_nb_episodes_per_model)))
-    sensors_per_action = []
-    stds = []
-    for actions in episode_actions:
-        temp = []
-        #print(actions)
-        for action in actions:
-            #print(action)
-            temp.append(np.sum(action))
-        sensors_per_action.append(np.sum(temp)/len(temp))
-    smoothed = np.convolve(sensors_per_action, np.ones(window_size)/window_size, mode='valid')
-    std = np.std(np.array([sensors_per_action[i:i+window_size] for i in range(len(sensors_per_action)-window_size+1)]), axis=1)
-    print(f"total average sensors_per_action: {sum(sensors_per_action)/len(sensors_per_action)}")
+        window_size = max(1,round((len(episode_actions)*200/settings.testing_nb_episodes_per_model)))
+        
+        stds = []
+        for actions in episode_actions:
+            temp = []
+            #print(actions)
+            for action in actions:
+                #print(action)
+                sensors_per_action[k].append(np.sum(action))
+        if len(sensors_per_action[k]) < min_length:
+            min_length = len(sensors_per_action[k])
+    
+    for k in range(settings.runs_to_do): #slicing to the smallest dataset
+        sensors_per_action[k] = sensors_per_action[k][0:min_length]
+
+    avg_sensors_per_action = np.array(np.sum(sensors_per_action, axis=0))/settings.runs_to_do
+    std = np.std(sensors_per_action, axis=0)
+    smoothed = np.convolve(avg_sensors_per_action, np.ones(window_size)/window_size, mode='valid')
+    smoothed_std = np.convolve(std, np.ones(window_size)/window_size, mode='valid')*0.5
+    #std = np.std(np.array([avg_sensors_per_action[i:i+window_size] for i in range(len(avg_sensors_per_action)-window_size+1)]), axis=1)
+    print(f"total average sensors_per_action: {sum(avg_sensors_per_action)/len(avg_sensors_per_action)}")
     print(f"sensor usage window size: {window_size}")
-    plt.plot(range(len(smoothed)), smoothed)
-    plt.fill_between(range(len(smoothed)), smoothed-std, smoothed+std, alpha=0.5)
+    plt.plot(np.array(range(len(smoothed)))*3, smoothed)
+    plt.fill_between(np.array(range(len(smoothed)))*3, smoothed-smoothed_std, smoothed+smoothed_std, alpha=0.5)
     plt.xlabel('Number of episodes')
     plt.ylabel('number of sensors')
-    plt.title('average number of sensors used in function of the episode during training')
+    plt.title('average number of sensors used in the timesteps during training')
+
+    data = np.vstack((avg_sensors_per_action, std))
+    np.savetxt(os.path.join(settings.proj_root_path, "data", "A2C-B","sensors0.txt"), data)
 
 def plot_histogram(file="C:/Users/Charles/workspace/airlearning/airlearning-rl/data/env/env_log.txt"):
     with open(file, 'r') as f:
