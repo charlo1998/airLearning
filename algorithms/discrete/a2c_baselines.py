@@ -50,8 +50,9 @@ def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearni
         agent = A2C.load(checkpoint)
         agent.env = DummyVecEnv([lambda: env])
     # Train the agent
+    training_start = time.time()
     agent.learn(total_timesteps=settings.training_steps_cap)
-
+    print(f"finished training! total training time: {time.time()-training_start}")
     #env loop rate logging
     if settings.profile:
         with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),

@@ -242,7 +242,7 @@ i_run =  3#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 166667
+training_steps_cap = 200000
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True
