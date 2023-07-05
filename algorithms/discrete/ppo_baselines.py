@@ -1,5 +1,3 @@
-
-
 import sys
 import gym
 import time
@@ -19,7 +17,7 @@ from stable_baselines.common.policies import MlpPolicy
 from stable_baselines.common.policies import MlpLstmPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
 #from stable_baselines.common import make_vec_env #this yields an error
-from stable_baselines import A2C
+from stable_baselines import PPO2
 from keras.backend.tensorflow_backend import set_session
 from customPolicy import CustomLSTMPolicy, CustomPolicy
 
@@ -37,22 +35,21 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     vec_env = DummyVecEnv([lambda: env])  # The algorithms require a vectorized environment to run
     # Parallel environments
     #env = make_vec_env('CartPole-v1', n_envs=4)
-    agent = A2C(CustomPolicy, vec_env, verbose=1, learning_rate=1e-2, gamma=0.99)
+    agent = PPO2(CustomPolicy , vec_env, verbose=1, learning_rate=1e-3)
     print(agent.summary)
 
     env.set_model(agent)
 
     return env, agent
 
-def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/A2C-B/model"):
+def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/PPO-B/model"):
     if settings.use_checkpoint:
         print(f"loading checkpoint {checkpoint}")
-        agent = A2C.load(checkpoint)
+        agent = PPO2.load(checkpoint)
         agent.env = DummyVecEnv([lambda: env])
     # Train the agent
-    training_start = time.time()
     agent.learn(total_timesteps=settings.training_steps_cap)
-    print(f"finished training! total training time: {time.time()-training_start}")
+
     #env loop rate logging
     if settings.profile:
         with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),
@@ -68,19 +65,17 @@ def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearni
 
         
 
-    agent.save(os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/A2C-B/model") #todo: automate the path
+    agent.save(os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/PPO-B/model") #todo: automate the path
 
-def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/A2C-B/model"):
+def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/PPO-B/model"):
     msgs.mode = 'test'
     msgs.weight_file_under_test = filepath
 
-    model = A2C.load(filepath)
+    model = PPO2.load(filepath)
     DWA = utils.gofai()
     bug = tangent_bug()
 
-    infer_latency_list= []
-    infer_cpu_list=[]
-    start = time.perf_counter()
+
     for i in range(settings.testing_nb_episodes_per_model):
         obs = env.reset()
         done = False
@@ -114,6 +109,7 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
         inference_duration_file = os.path.join(settings.proj_root_path, "data", msgs.algo, "inference_durations" + str(settings.i_run) + ".txt")
         with open(inference_duration_file, "w") as f:
             f.write(str(infer_latency_list[1:]))
+
 
 
 

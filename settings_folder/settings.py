@@ -1,6 +1,7 @@
 import os
 import math
 import machine_dependent_settings as mds
+import random
 
 
 # ---------------------------
@@ -55,7 +56,7 @@ checkpoint_interval = 10000
 zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 1}  # pay attention
 
 # update_zone_success_threshold = 50
-acceptable_success_rate_to_update_zone = 0.75  # after what ratio of success up the zone # pay attention
+acceptable_success_rate_to_update_zone = 0.96  # after what ratio of success up the zone # pay attention
 update_zone_window = 100  # the window within which the  update_zone_accpetable_success_rate
 # needs to be achieved. Note that at the begining of every new window we zero out the achieved ratio
 
@@ -97,12 +98,12 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "EnvType": ["Indoor"],
                   "ArenaSize": [[100, 100, 10]],
                   "PlayerStart": [[0, 0, 0]],
-                  "NumberOfDynamicObjects": list(range(100, 120)), #hard seed: 100 obstacles
+                  "NumberOfDynamicObjects": list(range(75, 76)), #hard seed: 100 obstacles
                   "Walls1": [[255, 255, 10]],
-                  "Seed": list(range(0,1000)), #hard seed: seed 0
+                  "Seed": list(range(1,2)), #hard seed: seed 0. random: list(range(0,1000))
                   "VelocityRange": [[0.0, 0.0]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(0,1))}
+                  "NumberOfObjects": list(range(24,25))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -185,14 +186,17 @@ this means the "percieved" latency doesn't increase linearly with the clockspeed
 timedActions = False
 positionActions = True
 action_discretization = 16 #this needs to be a square number and greater than one if timedActions is set to true! 
-number_of_sensors = 100
+number_of_sensors = 12
+k_sensors = number_of_sensors  #the maximum amount of sensors the agent can choose at any time
 assert(action_discretization > 1)
+assert(action_discretization%4 == 0) #make sure it is divisible by 4 so that polar transformations work
 if timedActions:
     assert(int(math.sqrt(action_discretization) + 0.5) ** 2 == action_discretization)
 
-base_speed = 0.25
-mv_fw_dur = 0.5
-rot_dur = 0.5
+base_speed = 0.1
+mv_fw_dur = 0.15
+rot_dur = 0.15
+delay = 0.0001 #artificial latency
 # yaw_rate = (180/180)*math.pi #in degree
 mv_fw_spd_1 = 1
 mv_fw_spd_2 = 2
@@ -223,11 +227,11 @@ backup_folder_name_style = "bu_0"  # the backup obj will create a file with this
 # ---------------------------
 # general params
 # ---------------------------
-list_algo = ["DQN", "DDPG", "A2C-B", "GOFAI"]  # a new algo needs to be added to this list for backup to back up its results
-nb_max_episodes_steps = 500  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
+list_algo = ["DQN", "DQN-B", "PPO-B", "DDPG", "A2C-B", "GOFAI"]  # a new algo needs to be added to this list for backup to back up its results
+nb_max_episodes_steps = 600  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
-success_distance_to_goal = 1.5
+success_distance_to_goal = 2
 slow_down_activation_distance = 2.5 * success_distance_to_goal  # detrmines at which distant we will punish the higher velocities
 
 # ---------------------------
@@ -238,7 +242,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 250
+training_steps_cap = 166667
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True
@@ -246,13 +250,25 @@ verbose = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = max_zone*100  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = max_zone*50  # note that if number of zones are x, #pay attention
+random.seed(hard_range_dic["Seed"][0])
+deterministic = False
+goals_list = []
+for i in range(testing_nb_episodes_per_model+1):
+    x_goal = random.choice(range(-49,49))
+    y_goal = random.choice(range(-49,49))
+    goals_list.append([x_goal, y_goal, 0])
+goals_idx = 0
 # then model get tested testing_nb_episodes_per_model/x
 # times per zone
 testing_nb_episodes_per_zone = int(testing_nb_episodes_per_model / max_zone)
 assert(testing_nb_episodes_per_zone <= testing_nb_episodes_per_model), "get the equality right ,darn it"
 
-
+# ---------------------------
+# plotting params
+# ---------------------------
+average_runs = True
+visualize_actions = False
 # ---------------------------
 # reseting params
 # ---------------------------

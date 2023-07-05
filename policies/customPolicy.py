@@ -7,21 +7,22 @@ from stable_baselines.common.policies import LstmPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import A2C
 
-# Custom MLP policy of three layers of size 128 each
+# Custom MLP policy of two layers of size 128 each
 class CustomPolicy(FeedForwardPolicy):
     def __init__(self, *args, **kwargs):
         super(CustomPolicy, self).__init__(*args, **kwargs,
-                                           net_arch=[dict(pi=[128, 128, 128],
-                                                          vf=[128, 128, 128])],
+                                           net_arch=[dict(pi=[64],
+                                                          vf=[64, 64, 64])],
                                            feature_extraction="mlp")
 
 
 class CustomLSTMPolicy(LstmPolicy):
-    def __init__(self, sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm=256, reuse=False, **_kwargs):
+    def __init__(self, sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm=32, reuse=False, **_kwargs):
         super().__init__(sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm, reuse,
-                         net_arch=[256, 'lstm', dict(vf=[128, 128, 128], pi=[128, 128, 128])],
+                         net_arch=[64, 'lstm', dict(vf=[32, 32], pi=[32])],
                          layer_norm=True, feature_extraction="mlp", **_kwargs)
 
+#dict(vf=[128, 64, 'lstm', 128, 128, 128], pi=[64, 128, 64])
 ## Create and wrap the environment
 #env = gym.make('LunarLander-v2')
 #env = DummyVecEnv([lambda: env])

@@ -23,7 +23,7 @@ class AirLearningClient(airsim.MultirotorClient):
         self.client.confirmConnection()
         self.client.enableApiControl(True)
         self.client.armDisarm(True)
-
+        
         self.home_pos = self.client.getPosition()
         self.home_ori = self.client.getOrientation()
         self.z = -4
@@ -40,30 +40,43 @@ class AirLearningClient(airsim.MultirotorClient):
         track = ((math.degrees(track) - 180) % 360) - 180
         return track
 
-    def getConcatState(self, track, goal): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
-        distances = self.get_laser_state()
+    def getConcatState(self, track, goal, sensors): #for future perf tests, track was recmputed here with get get_drone_pos instead of being passed like now
 
         #ToDo: Add RGB, velocity etc
         if(settings.goal_position): #This is for ablation purposes
-            pos = self.get_distance(goal)
+            dest = self.get_distance(goal)
+            euclidean = dest[1]
+            angle = dest[0]
+            #normalizing values and bounding them to [-1,1]
+            euclidean = np.log10(euclidean+0.0001)/np.log10(100) #this way gives more range to the smaller distances (large distances are less important).
+            euclidean = min(1,max(-1,euclidean))
+            angle = angle/180 #since it is already between [-180,180] and we want a linear transformation.
+            dest[1] = euclidean
+            dest[0] = angle
 
         if(settings.velocity): #This is for ablation purposes
             vel = self.drone_velocity()
-            #keep only x and y, and  TODO: normalize them
-            vel = vel[0:2]
+            pos = self.drone_pos()
+            #keep only norm and angle for velocity, and  normalize them.
+            vel_norm = min(np.sqrt(vel[0]**2+vel[1]**2)/(settings.base_speed*20),1) #max speed is 20*base speed (2m/s)
+            vel_angle = math.atan2(vel[0],vel[1])/math.pi
+            vel = [vel_norm, vel_angle]
+            pos = pos[0:2]/50.0 #arena is 100x100m
 
         if(settings.goal_position and settings.velocity):
-            concat_state = np.concatenate((pos, vel, distances), axis = None)
+            concat_state = np.concatenate((dest, vel, pos, sensors), axis = None)
         elif(settings.goal_position):
-            concat_state = np.concatenate((pos, distances), axis = None)
+            concat_state = np.concatenate((pos, sensors), axis = None)
         elif(settings.velocity):
-            concat_state = np.concatenate((vel, distances), axis = None)
+            concat_state = np.concatenate((vel, pos, sensors), axis = None)
         else:
-            concat_state = distances
+            concat_state = sensors
 
         concat_state_shape = concat_state.shape
         concat_state = concat_state.reshape(1, concat_state_shape[0])
         concat_state = np.expand_dims(concat_state, axis=0)
+
+        #print(concat_state)
 
         return concat_state
 
@@ -185,10 +198,6 @@ class AirLearningClient(airsim.MultirotorClient):
         euclidean = np.sqrt(np.power(xdistance,2) + np.power(ydistance,2))
         angle = self.goal_direction(goal, [now.x_val, now.y_val])
 
-        #normalizing values and bounding them to [-1,1]
-        euclidean = np.log10(euclidean+0.0001)/np.log10(100) #this way gives more range to the smaller distances (large distances are less important).
-        euclidean = min(1,max(-1,euclidean))
-        angle = angle/180 #since it is already between [-180,180] and we want a linear transformation.
 
         return np.array([angle, euclidean])
 
@@ -205,96 +214,110 @@ class AirLearningClient(airsim.MultirotorClient):
         "Lidarfront": {
        		"SensorType": 6, #the type corresponding to the LiDaR sensor
         	"Enabled" : true,
-        	"NumberOfChannels": 3, #the number of lasers (we need a laser for each horizontal swipe to have vertical FOV)
-        	"RotationsPerSecond": 20, #frequency of sensing
-    		"PointsPerSecond": 100000, #the number of points taken in an horizontal swipe of the lidar (1 rotation).
+        	"NumberOfChannels": 1, #the number of lasers (we need a laser for each horizontal swipe to have vertical FOV)
+        	"RotationsPerSecond": 7, #frequency of sensing
+    		"PointsPerSecond": 3000, #the number of points taken in an horizontal swipe of the lidar (1 rotation).
                 #PointsPerSecond is not affected by the FOV, so anything outside the FOV seems to be wasted.
     		"X": 0, "Y": 0, "Z": -1, #position relative to the vehicule
        		"Roll": 0, "Pitch": 0, "Yaw" : 0,   orientation relative to the vehicule
-    		"VerticalFOVUpper": 10,
-    		"VerticalFOVLower": -30,
-       		"HorizontalFOVStart": -5,
-       		"HorizontalFOVEnd": 5,
+    		"VerticalFOVUpper": -10,
+    		"VerticalFOVLower": -10,
+       		"HorizontalFOVStart": -180,
+       		"HorizontalFOVEnd": 180,
        		"DrawDebugPoints": true, #set to true to see in unreal what is being observed
        		"DataFrame": "SensorLocalFrame"
     		}
         """
 
         ## -- laser ranger -- ##
+        first = time.perf_counter()
         lidarDatafront = self.client.getLidarData(lidar_name="Lidarfront",vehicle_name="Drone1")
+        scnd = time.perf_counter()
+        #print(f"taking points took {np.round((scnd-first)*1000,2)} ms")
         
-        
-        front = self.process_lidar(lidarDatafront.point_cloud, settings.number_of_sensors)
-
-        output = front
-        #print(output)
-
-        return np.array(output)   
-
-    def process_lidar(self, lidarPointcloud, nb_of_sensors):
-        """
-        1. processes a lidar point clouds into coordinates
-        2. split the range into arcs of angle depending on the number of distance sensor simulated
-        3. finds closest points in each of these arcs.
-        """
-        points = np.array(lidarPointcloud, dtype=np.dtype('f4'))
+        first = time.perf_counter()
+        points = np.array(lidarDatafront.point_cloud, dtype=np.dtype('f4'))
         if not (points.shape[0] == 1):
             points = np.reshape(points, (int(points.shape[0]/3), 3))
         else:
             #no points in the lidarPointcloud
             print("lidar not seeing anything ?!")
-            return [0 for i in range(nb_of_sensors)]
+            return [[], []]
+
+        #with open("pointcloud" + str(np.random.randint(1000)) + ".npy", "wb") as file:
+        #    np.save(file,points)
+
 
         X = points[:,0]
         Y = points[:,1]
-        Z = points[:,2]
         
         #finding the FOV of the lidar
+        distances = []
         angles = []
-        for x,y in zip(X,Y):
-            angles.append(math.atan2(x,y)*180.0/math.pi)
-        angle_left = min(angles)
-        angle_right = max(angles)
-        lidar_FOV =  math.ceil(angle_right - angle_left)
+        for xi,yi in zip(X,Y):
+            angles.append(math.atan2(xi,yi)*180.0/math.pi)
+            distances.append(np.sqrt(xi**2+yi**2))
+        scnd = time.perf_counter()
+        #print(f"processing lidar took {np.round((scnd-first)*1000,2)} ms")
+
+
+        return [distances, angles] 
+
+    def process_lidar(self, distances, angles, left_angle, right_angle):
+        """
+        1. processes a lidar point clouds into coordinates
+        2. split the range into arcs of angle depending on the number of distance sensor simulated
+        3. finds closest points in each of these arcs.
+        4. returns the distances as a list, going from left_angle to right_angle, and the angles of the distances appended at the end
+        """        
+        
+        first = time.perf_counter()
+        nb_of_sensors = settings.number_of_sensors
+        lidar_FOV =  math.ceil(right_angle - left_angle)
 
         #spliting points into ranges of angles
         theta = lidar_FOV/nb_of_sensors
         for i in range(nb_of_sensors):
             if i == 0:
-                thetas = [math.floor(angle_left)]
+                thetas = [math.floor(left_angle)]
             else:
                 thetas.append(thetas[i-1]+theta)
+
+        if len(angles) == 0: #lidar not seeing anything!
+            #np.concatenate((np.zeros(nb_of_sensors), np.array(thetas)/180.0))
+            return np.zeros(nb_of_sensors)
 
         #print(f"angle ranges: {thetas}")
         #print(f"angle left: {angle_left}")
         #print(f"angle right: {angle_right}")
+        #print(f"number of points: {len(angles)}")
 
         #adding points
-        x_coords_by_sensor = [[] for i in range(nb_of_sensors)]
-        y_coords_by_sensor = [[] for i in range(nb_of_sensors)]
+        distances_by_sensor = [[] for i in range(nb_of_sensors)]
 
         for i, angle in enumerate(angles):
-            ith_sensor = bisect(thetas,angle) #the bisect fnc finds where the angle would fit in the ranges we created (thetas)
-            x_coords_by_sensor[ith_sensor-1].append(X[i])
-            y_coords_by_sensor[ith_sensor-1].append(Y[i])
+            if (angle > left_angle and angle < right_angle): #place only the points inside the input FOV
+                ith_sensor = bisect(thetas,angle) #the bisect fnc finds where the angle would fit in the ranges we created (thetas)
+                distances_by_sensor[ith_sensor-1].append(distances[i])
 
-        distances = [0 for x in range(nb_of_sensors)]
+        sensors = [0 for x in range(nb_of_sensors)]
 
         for i in range(nb_of_sensors):
-            x = np.array(x_coords_by_sensor[i])
-            y = np.array(y_coords_by_sensor[i])
-            if len(x) == 0 or len(y) == 0: #missing lidar values!
-                distances[i] = 66 #with no information, set to 66, which will be ignored
+            if len(distances_by_sensor[i]) == 0: #missing lidar values!
+                sensors[i] = 66 #with no information, set to 66, which will be ignored
                 #print(f"missing lidar values in bucket {i}!")
             else:
-                distances[i] = min(np.sqrt(x**2+y**2))
+                sensors[i] = min(distances_by_sensor[i])
             #normalizing values and bounding them to [-1,1]
-            distances[i] = np.log(distances[i]+0.0001)/np.log(100) #this way gives more range to the smaller distances (large distances are less important).
-            distances[i] = min(1,max(-1,distances[i]))
+            sensors[i] = np.log(sensors[i]+0.0001)/np.log(100) #this way gives more range to the smaller distances (large distances are less important).
+            sensors[i] = min(1,max(-1,sensors[i]))
 
         #print(f"distances: {distances}")
+        scnd = time.perf_counter()
+        #print(f"creating sensors took: {np.round((scnd-first)*1000,2)} ms")
+        #np.concatenate((np.array(sensors), np.array(thetas)/180.0),axis=0)
 
-        return distances
+        return np.array(sensors)
 
     def AirSim_reset(self):
         self.client.reset()
@@ -390,11 +413,19 @@ class AirLearningClient(airsim.MultirotorClient):
         vel = self.client.getVelocity()
         vx = math.cos(yaw) * speed_x - math.sin(yaw) * speed_y
         vy = math.sin(yaw) * speed_x + math.cos(yaw) * speed_y
-        self.client.moveByVelocityZAsync(vx = vx,
-                             vy = vy, #do this to try and smooth the movement
-                             z = self.z,
-                             duration = duration).join()
-        start = time.time()
+        yaw = math.degrees(yaw)
+        #print(f"yaw: {yaw}")
+        if (np.abs(yaw) < 10):
+            self.client.moveByVelocityZAsync(vx = vx,
+                                 vy = vy, #do this to try and smooth the movement
+                                 z = self.z,
+                                 duration = duration).join()
+            start = time.time()
+        else:
+            print("correcting yaw!")
+            
+            start, duration = self.yaw_right(-yaw*2,0.25)
+
         return start, duration
 
     def move_position(self, x,y, velocity = 3, timeout_sec=1):
@@ -470,7 +501,7 @@ class AirLearningClient(airsim.MultirotorClient):
             start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
         elif action < settings.action_discretization * 2:
             #medium short dist
-            speed = settings.base_speed*2
+            speed = settings.base_speed*3
             action = action % settings.action_discretization
             angle = 2*math.pi/settings.action_discretization*action
             vx =  speed*math.cos(angle)
@@ -479,7 +510,7 @@ class AirLearningClient(airsim.MultirotorClient):
             start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
         elif action < settings.action_discretization * 3:
             #medium long
-            speed = settings.base_speed*4
+            speed = settings.base_speed*9
             action = action % settings.action_discretization
             angle = 2*math.pi/settings.action_discretization*action
             vx =  speed*math.cos(angle)
@@ -488,7 +519,7 @@ class AirLearningClient(airsim.MultirotorClient):
             start, duration = self.move_forward_Speed(speed_x=vx, speed_y=vy, duration=duration)
         elif action < settings.action_discretization * 4:
             #long dist
-            speed = settings.base_speed*8
+            speed = settings.base_speed*20
             action = action % settings.action_discretization
             angle = 2*math.pi/settings.action_discretization*action
             vx =  speed*math.cos(angle)
@@ -553,19 +584,30 @@ class AirLearningClient(airsim.MultirotorClient):
         """
         takes the full state and action as input, and returns a partial observation based on the chosen action
         """
-        #print(np.round(state,2))
-        obs = state[0][0] #flattening the list
-        sensors = obs[4:]
-
+        #print(f"full state: {np.round(state,2)}")
+        obs = state.copy()
         action = action.flatten()
+        sensors = obs[0][0][6:settings.number_of_sensors+6]
 
+        #print(f"action: {action}")
+        #print(f"wanted sensors: {np.sum(action)}")
+        #find the k highest sensors, then save them for the dwa algorithm
+        chosen_idx = np.argpartition(action, -settings.k_sensors)[-settings.k_sensors:]
+        sensor_output = np.ones(settings.number_of_sensors)*100
+        for idx in chosen_idx:
+            sensor_score = action[idx]
+            if (sensor_score >= 0.5):
+                sensor_output[idx] = sensors[idx]
+        #for i, sensor in enumerate(sensors):
+        #    if sensor < 2.5:
+        #        sensor_output[i] = sensors[i]
+        #closest = np.argmin(sensors)
+        #sensor_output[closest] = 100
 
-        for i, usage in enumerate(action):
-            if (usage == 0):
-                sensors[i] = 1.0 #set the distance to 100**1 which means it will not be used by DWA (anything over 99m isn't used.)
+        obs[0][0][6:settings.number_of_sensors+6] = sensor_output
 
-        state[0][0][4:] = sensors
-        #print(np.round(state,2))
+        #print(f" state: {state}")
+        #print(f"outputed obs: {obs}")
 
-        return state
+        return obs
 

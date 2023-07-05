@@ -58,10 +58,10 @@ class AirSimEnv(gym.Env):
         # left depth, center depth, right depth, yaw
         if(settings.concatenate_inputs):
             if(settings.goal_position and settings.velocity): #for ablation studies
-                STATE_POS = 2
+                STATE_POS = 4
                 STATE_VEL = 2
             elif(settings.goal_position):
-                STATE_POS = 2
+                STATE_POS = 4
                 STATE_VEL = 0
             elif(settings.velocity):
                 STATE_POS = 0
@@ -99,6 +99,7 @@ class AirSimEnv(gym.Env):
         #self.cur_zone_number = 0
         self.cur_zone_number_buff = 0
         self.success_history = []
+        self.collision_history = []
         self.success_ratio_within_window = 0
         self.episodeNInZone = 0 #counts the numbers of the episodes per Zone
                                 #,hence gets reset upon moving on to new zone
@@ -109,6 +110,9 @@ class AirSimEnv(gym.Env):
         self.game_config_handler = GameConfigHandler()
         if(settings.concatenate_inputs):
             self.concat_state = np.zeros((1, 1, STATE_POS + STATE_VEL + STATE_DISTANCES), dtype=np.uint8)
+        
+        self.lidar_distances = []
+        self.lidar_angles = []
         self.depth = np.zeros((154, 256), dtype=np.uint8)
         self.rgb = np.zeros((154, 256, 3), dtype=np.uint8)
         self.grey = np.zeros((144, 256), dtype=np.uint8)
@@ -126,6 +130,8 @@ class AirSimEnv(gym.Env):
 
         self.actions_in_step = []
         self.position_in_step = []
+        self.observations_in_step = []
+        self.moveAction_in_step = []
         self.distance_in_step = []
         self.reward_in_step=[]
         self.total_reward = 0
@@ -159,9 +165,10 @@ class AirSimEnv(gym.Env):
                     self.action_space = spaces.Discrete(20)
             else:
                 #this is for RL on choosing observations
-                self.action_space = spaces.MultiDiscrete([2]*settings.number_of_sensors) # one for each sensor 
+                self.action_space = spaces.MultiBinary(settings.number_of_sensors) # one for each sensor 
                 self.DWA = gofai()
                 self.bug = tangent_bug()
+                self.moveAction_in_step = []
 
 
         self.goal = utils.airsimize_coordinates(self.game_config_handler.get_cur_item("End"))
@@ -228,6 +235,8 @@ class AirSimEnv(gym.Env):
             return self.concat_state
         elif(msgs.algo == "A2C-B"):
             return self.concat_state
+        elif(msgs.algo == "PPO-B"):
+            return self.concat_state
         elif(msgs.algo == "GOFAI"):
             return self.concat_state
         else:
@@ -237,39 +246,48 @@ class AirSimEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    #def computeReward(self, now):
-    #    # test if getPosition works here liek that
-    #    # get exact coordiantes of the tip
-    #    distance_now = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
-    #    distance_before = self.allLogs['distance'][-1]
-    #    distance_correction = (distance_before - distance_now)
-    #    r = -1
-
-    #    # check if you are too close to the goal, if yes, you need to reduce the yaw and speed
-    #    if distance_now < settings.slow_down_activation_distance:
-    #        yaw_correction =  abs(self.track) * distance_now 
-    #        velocity_correction = (settings.mv_fw_spd_5 - self.speed)* settings.mv_fw_dur
-    #        r = r + distance_correction + velocity_correction
-    #    else:
-    #        r = r + distance_correction
-    #    return r, distance_now
 
     def computeReward(self, action):
-        #if success ratio is more than 90%, try to penalize sensor usage. else, encourage more sensors for better performance.
+        #base sensor reward is -0.55. we then add two terms: a proximity term (distance of the object) and a heading term (if the object is in the direction of current velocity)
+        # a third term is added to counter the incentive to get close to obstacles: safety term (points based on how far we are from any obstacle
+        arc = 2*math.pi/settings.number_of_sensors
+        angles =  np.arange(-math.pi,math.pi,arc)
+        vel_angle = self.prev_state[0][0][3]
+        velocity = self.prev_state[0][0][2]
+        angles = angles-vel_angle
+        sensors = self.prev_state[0][0][6:settings.number_of_sensors+6]
         nb_sensors = np.sum(action)
-        if len(self.success_history) > 0:
-            success_ratio = float(sum(self.success_history)/len(self.success_history))
-        else:
-            success_ratio = 0
+        closest = min(sensors)
 
-        if (success_ratio > 0.9):
-            r = (settings.number_of_sensors-nb_sensors)/settings.number_of_sensors*5-4
-        else:
-            r = (nb_sensors-settings.number_of_sensors)/settings.number_of_sensors*5-5
+        #print(f"number of sensors: {nb_sensors}")
+        #print(f"vel_angle: {vel_angle*180/np.pi}")
+        #print(f"velocity: {velocity}")
+        #print(f"angles: {angles}")
+        #print(f"sensors: {np.round(sensors,1)}")
+        #print(f"action: {action}")
+        #print(f"heading: {np.cos(angles)*action}")
+        #print(f"heading half sum: {np.sum(np.cos(angles)*action)*0.5}")
+        #print(f"proximity: {[min(3/distance,10) for distance in sensors]*action}")
+        #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
 
-        #print(r)
+        cost = 0.95
 
-        return r
+        #safety = min(2.5, closest)*settings.number_of_sensors
+        heading = np.sum(np.cos(angles)*action)*0.5
+        proximity = np.sum([min(3/distance,10) for distance in sensors]*action)
+        
+        r = -cost*nb_sensors + heading*velocity + proximity
+        #if nb_sensors == 0:
+        #    r += 0.25
+        # --------------- reward func 1 -----------------------
+        #if len(self.success_history) > 1:
+        #    SR_w = sum(self.success_history)/len(self.success_history)
+        #else:
+        #    SR_w = 0.5
+        #r = (settings.number_of_sensors - nb_sensors) * (SR_w - 0.95)
+        
+        #print(f"total reward: {r/settings.number_of_sensors}")
+        return r/settings.number_of_sensors
 
     def ddpg_add_noise_action(self, actions):
         noise_t = np.zeros([1, self.action_space.shape[0]])
@@ -414,7 +432,7 @@ class AirSimEnv(gym.Env):
         msgs.episodal_log_dic.clear()
         msgs.episodal_log_dic_verbose.clear()
         msgs.episodal_log_dic["cur_zone_number"] = msgs.cur_zone_number
-        msgs.episodal_log_dic["success_ratio"] = round(float(sum(self.success_history)/len(self.success_history)),3)
+        msgs.episodal_log_dic["success_ratio"] = round(float(sum(self.success_history)/settings.update_zone_window),3)
         msgs.episodal_log_dic["success_history"] = sum(self.success_history)
         msgs.episodal_log_dic["success"] = msgs.success
         msgs.episodal_log_dic["stepN"] = self.stepN
@@ -435,13 +453,17 @@ class AirSimEnv(gym.Env):
 
         #verbose
         msgs.episodal_log_dic_verbose = copy.deepcopy(msgs.episodal_log_dic)
-        msgs.episodal_log_dic_verbose["reward_in_each_step"] = self.reward_in_step
+        msgs.episodal_log_dic_verbose["reward_in_each_step"] = [round(reward,4) for reward in self.reward_in_step]
+        msgs.episodal_log_dic_verbose["DWA_action_in_each_step"] = self.moveAction_in_step
         if (msgs.mode == "test"):
             msgs.episodal_log_dic_verbose["actions_in_each_step"] = self.actions_in_step
+            if msgs.algo != "GOFAI":
+                msgs.episodal_log_dic_verbose["observations_in_each_step"] = self.observations_in_step
             msgs.episodal_log_dic_verbose["distance_in_each_step"] = self.distance_in_step
             msgs.episodal_log_dic_verbose["position_in_each_step"] = self.position_in_step
         elif (msgs.mode == "train"):
             msgs.episodal_log_dic_verbose["actions_in_each_step"] = self.actions_in_step
+            msgs.episodal_log_dic_verbose["observations_in_each_step"] = self.observations_in_step
         else:
             raise Exception(msgs.mode + "is not supported as a mode")
 
@@ -509,16 +531,18 @@ class AirSimEnv(gym.Env):
             self.ppo_call_back_emulator()
         elif(msgs.algo == "SAC"):
             self.sac_call_back_emulator()
-        elif(msgs.algo == "DQN-B" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI"):
+        elif(msgs.algo == "DQN-B" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI" or msgs.algo == "PPO-B"):
             self.dqn_baselines_call_back_emulator()
 
         self.restart_window_if_necessary()
         self.update_zone_if_necessary()
 
         self.actions_in_step = []
+        self.observations_in_step = []
+        self.moveAction_in_step = []
         self.distance_in_step = []
         self.reward_in_step = []
-        self.position_in_step
+        self.position_in_step = []
         self.total_reward = 0
 
         self.allLogs['distance'] = [float(np.sqrt(np.power((self.goal[0]), 2) + np.power(self.goal[1], 2)))]
@@ -533,8 +557,26 @@ class AirSimEnv(gym.Env):
 
         try:
             
-            if (msgs.mode == 'train'):
+            if (msgs.algo != 'GOFAI'):
                 self.airgym.client.simPause(False)
+
+            time.sleep(settings.delay)
+            now = self.airgym.drone_pos()
+            self.velocity = self.airgym.drone_velocity()
+
+            #copy, de-normalize, and log observation
+            observation = np.copy(self.prev_state[0][0])
+            observation[6:settings.number_of_sensors+6] = np.round(100**observation[6:settings.number_of_sensors+6],2)
+            #observation[settings.number_of_sensors+6:] = np.round(180*observation[settings.number_of_sensors+6:],2)
+            observation[1] = 100**observation[1]
+            observation[0] = observation[0]*np.pi #rad
+            observation[2] = observation[2]*(settings.base_speed*20.0)
+            observation[3] = observation[3]*np.pi
+            observation[4:6] = observation[4:6]*50.0 
+            self.observations_in_step.append(str(list(observation)))
+            #print(f"speed after delay: {np.round(np.sqrt(self.velocity[0]**2 + self.velocity[1]**2 +self.velocity[2]**2),2)}") 
+            #print(f"pose after delay: {np.round(now,2)}")
+            #print("--------------------------------------------------------")
 
             #print("ENter Step"+str(self.stepN))
             #print(f"action taken: {action}")
@@ -560,15 +602,24 @@ class AirSimEnv(gym.Env):
                     self.collided = self.airgym.take_discrete_action(action)
                 self.actions_in_step.append(str(action))
             else:  #determine observation based on meta-action
-                process_action_start = time.perf_counter()
+                
                 #action = action*0 +1 #artificially set all to 1
+                
+                #determine move action based on DWA
+                bug_start = time.perf_counter()
+                goal = self.bug.predict(self.prev_state)
+                bug_end = time.perf_counter()
+                process_action_start = time.perf_counter()
                 obs = self.airgym.take_meta_action(action, self.prev_state)
                 #print(f"meta action: {np.round((time.perf_counter() - process_action_start)*1000)} ms")
-                #determine move action based on DWA
-                goal = self.bug.predict(obs)
+                dwa_cpu_start = time.process_time()
                 moveAction = self.DWA.predict(obs, goal)
+                dwa_cpu_end = time.process_time()
+                self.moveAction_in_step.append(moveAction)
                 process_action_end = time.perf_counter()
+                #print(f"bug processing: {np.round((bug_end - bug_start)*1000)} ms")
                 #print(f"dwa processing: {np.round((process_action_end - process_action_start)*1000)} ms")
+                #print(f"dwa CPU processing: {(dwa_cpu_end - dwa_cpu_start)*1000000.0} microS")
                 
                 take_action_start = time.perf_counter()
                 if(settings.profile):
@@ -584,16 +635,15 @@ class AirSimEnv(gym.Env):
                 elif(msgs.algo == "SAC"):
                     self.actions_in_step.append([action[0], action[1]])
                     self.collided = self.airgym.take_continious_action(action)
-                else: #A2C-b
+                else: #all other stable baselines algos
                     if(settings.timedActions):
                         self.collided = self.airgym.take_timed_action(moveAction)
                     elif(settings.positionActions):
                         self.collided = self.airgym.take_position_action(moveAction)
                     else:
                         self.collided = self.airgym.take_discrete_action(moveAction)
-                    self.actions_in_step.append(str(action))
+                    self.actions_in_step.append(list(action.flatten()))
                 
-            
             if(settings.profile):
                     take_action_end = time.perf_counter()
                     self.take_action_list.append(take_action_end - take_action_start)
@@ -601,9 +651,12 @@ class AirSimEnv(gym.Env):
             now = self.airgym.drone_pos()
             self.track = self.airgym.goal_direction(self.goal, now)
             
-            #get observation
-            if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI"):
-                self.concat_state = self.airgym.getConcatState(self.track, self.goal)
+            
+            #get new observation
+            if(msgs.algo == "DQN-B" or msgs.algo == "SAC" or msgs.algo == "PPO" or msgs.algo == "A2C-B" or msgs.algo == "GOFAI" or msgs.algo == "PPO-B"):
+                [self.lidar_distances, self.lidar_angles] = self.airgym.get_laser_state()
+                sensors = self.airgym.process_lidar(self.lidar_distances, self.lidar_angles, -180, 180)
+                self.concat_state = self.airgym.getConcatState(self.track, self.goal, sensors)
             elif(msgs.algo == "DQN" or msgs.algo == "DDPG"):
                 self.depth = self.airgym.getScreenDepthVis(self.track)
             else:
@@ -625,13 +678,13 @@ class AirSimEnv(gym.Env):
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             #print(distance)
             
-            #print(f"current pose: {np.round(now,2)}")
+            #print(f"pose right after action: {np.round(now,2)}")
             #print("-------------------------------------------------------------------------------------------------------")
             #print(f"goal pose: {self.goal}")
-            if (msgs.mode == 'train'):
+            if (msgs.algo != 'GOFAI'):
                 self.airgym.client.simPause(True)
             
-            if distance < settings.success_distance_to_goal: #we found the goal: 1000ptso
+            if distance < settings.success_distance_to_goal: #we found the goal: 100ptso
                 done = True
                 print("-----------success, be happy!--------")
                 self.success = True
@@ -639,7 +692,7 @@ class AirSimEnv(gym.Env):
                 #print(self.goal)
                 #print(now)
                 # Todo: Add code for landing drone (Airsim API)
-                reward = 100
+                reward = 10
                 #self.collect_data()
             elif self.stepN >= settings.nb_max_episodes_steps: #ran out of time/battery: 100pts (avoided collision)
                 done = True
@@ -656,7 +709,7 @@ class AirSimEnv(gym.Env):
                 done = True
                 reward = -100
                 self.success = False
-            else: #not finished, compute reward like this: r = -1 + getting closer + flying slow when close (see def of computeReward)
+            else: #not finished, compute reward like this: r = -1 + proximity term + heading term
                 reward= self.computeReward(action)
                 done = False
                 self.success = False
@@ -670,7 +723,7 @@ class AirSimEnv(gym.Env):
             self.count +=1
             self.reward_in_step.append(reward)
             self.total_reward = sum(self.reward_in_step)
-            self.position_in_step.append(str(now))
+            self.position_in_step.append(now.tolist())
             info = {"x_pos":now[0], "y_pos":now[1]}
 
             state = self.state()
@@ -682,8 +735,6 @@ class AirSimEnv(gym.Env):
             if (done):
                 self.on_episode_end()
 
-            if(settings.profile):
-                print(f"gym remaining steps: {np.round((time.perf_counter() - gym_stuff_start)*1000)} ms")
             
 
             return state, reward, done, info
@@ -697,9 +748,12 @@ class AirSimEnv(gym.Env):
     def update_history(self, result):
         if (len(self.success_history) < settings.update_zone_window):
             self.success_history.append(result)
+            self.collision_history.append(self.collided)
         else:
             self.success_history.pop(0)
             self.success_history.append(result)
+            self.collision_history.pop(0)
+            self.collision_history.append(self.collided)
 
     def addToLog(self, key, value):
         if key not in self.allLogs:
@@ -716,7 +770,9 @@ class AirSimEnv(gym.Env):
         self.episodeInWindow +=1
         now = self.airgym.drone_pos()
         self.track = self.airgym.goal_direction(self.goal, now)
-        self.concat_state = self.airgym.getConcatState(self.track, self.goal)
+        [self.lidar_distances, self.lidar_angles] = self.airgym.get_laser_state()
+        sensors = self.airgym.process_lidar(self.lidar_distances, self.lidar_angles, -180, 180)
+        self.concat_state = self.airgym.getConcatState(self.track, self.goal, sensors)
         #self.depth = self.airgym.getScreenDepthVis(self.track)
         #self.rgb = self.airgym.getScreenRGB()
         self.position = self.airgym.get_distance(self.goal)
@@ -733,7 +789,7 @@ class AirSimEnv(gym.Env):
                     print ("Action Time:" +str(np.mean(self.take_action_list)))
                     print("Collect State Time"+str(np.mean(self.clct_state_list)))
 
-            if(self.collided or self.episodeN % 20 == 0): 
+            if(self.collided or self.episodeN % 50 == 0): 
                 self.randomize_env()
                 if(os.name=="nt"):
                     connection_established = self.airgym.unreal_reset()
