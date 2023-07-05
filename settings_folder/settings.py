@@ -237,12 +237,12 @@ slow_down_activation_distance = 2.5 * success_distance_to_goal  # detrmines at w
 # ---------------------------
 # training params
 # ---------------------------
-runs_to_do = 3
-i_run =  3#this needs to be the same value as runs_to_do
+runs_to_do = 1
+i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 200000
+training_steps_cap = 166667
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True

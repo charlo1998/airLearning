@@ -416,7 +416,7 @@ def plot_sensor_usage(data):
     print(f"sensor usage window size: {window_size}")
     plt.plot(np.array(range(len(smoothed)))*3, smoothed)
     plt.fill_between(np.array(range(len(smoothed)))*3, smoothed-smoothed_std, smoothed+smoothed_std, alpha=0.5)
-    plt.xlabel('Number of episodes')
+    plt.xlabel('Time step')
     plt.ylabel('number of sensors')
     plt.title('average number of sensors used in the timesteps during training')
 
