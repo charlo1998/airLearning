@@ -269,8 +269,10 @@ class AirSimEnv(gym.Env):
         #print(f"heading half sum: {np.sum(np.cos(angles)*action)*0.5}")
         #print(f"proximity: {[min(3/distance,10) for distance in sensors]*action}")
         #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
-
-        cost = 0.95
+        if self.stepN < 200000:
+            cost = 1.15
+        else:
+            cost = 1.3
 
         #safety = min(2.5, closest)*settings.number_of_sensors
         heading = np.sum(np.cos(angles)*action)*0.5

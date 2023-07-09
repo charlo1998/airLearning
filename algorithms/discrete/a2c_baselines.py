@@ -37,7 +37,7 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     vec_env = DummyVecEnv([lambda: env])  # The algorithms require a vectorized environment to run
     # Parallel environments
     #env = make_vec_env('CartPole-v1', n_envs=4)
-    agent = A2C(CustomPolicy, vec_env, verbose=1, learning_rate=1e-2, gamma=0.99)
+    agent = A2C(CustomPolicy, vec_env, verbose=1, learning_rate=3e-3, gamma=0.9, max_grad_norm = 0.5)
     print(agent.summary)
 
     env.set_model(agent)
