@@ -269,10 +269,10 @@ class AirSimEnv(gym.Env):
         #print(f"heading half sum: {np.sum(np.cos(angles)*action)*0.5}")
         #print(f"proximity: {[min(3/distance,10) for distance in sensors]*action}")
         #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
-        if self.stepN < 200000:
-            cost = 1.15
+        if self.stepN < 150000:
+            cost = 1.35
         else:
-            cost = 1.3
+            cost = 1.4
 
         #safety = min(2.5, closest)*settings.number_of_sensors
         heading = np.sum(np.cos(angles)*action)*0.5
@@ -680,9 +680,10 @@ class AirSimEnv(gym.Env):
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             #print(distance)
             
-            #print(f"pose right after action: {np.round(now,2)}")
-            #print("-------------------------------------------------------------------------------------------------------")
-            #print(f"goal pose: {self.goal}")
+            print(f"pose right after action: {np.round(now,2)}")
+            print(f"goal pose: {self.goal}")
+            print("-------------------------------------------------------------------------------------------------------")
+            
             if (msgs.algo != 'GOFAI'):
                 self.airgym.client.simPause(True)
             

@@ -524,6 +524,7 @@ def get_random_end_point(arena_size, split_index, total_num_of_splits):
     if settings.deterministic:
         [rnd_idx0, rnd_idx1, grounded_idx2] = settings.goals_list[settings.goals_idx]
         settings.goals_idx +=1 
+        print(f"goal set to: {[rnd_idx0, rnd_idx1]}")
         return [rnd_idx0, rnd_idx1, grounded_idx2]
 
 
