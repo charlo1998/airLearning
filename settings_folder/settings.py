@@ -96,11 +96,11 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "MinimumDistance": [3],
                   "EnvType": ["Indoor"],
                   "EnvType": ["Indoor"],
-                  "ArenaSize": [[40, 8, 10]],
+                  "ArenaSize": [[8, 40, 10]],
                   "PlayerStart": [[0, 0, 0]], #this is not working
                   "NumberOfDynamicObjects": list(range(1, 2)), #hard seed: 100 obstacles
                   "Walls1": [[255, 255, 10]],
-                  "Seed": list(range(1,2)), #hard seed: seed 0. random: list(range(0,1000))
+                  "Seed": list(range(4,5)), #hard seed: seed 0. random: list(range(0,1000))
                   "VelocityRange": [[0.0, 0.0]],
                   "Name": ["Name"],
                   "NumberOfObjects": list(range(0,1))}
@@ -250,13 +250,13 @@ verbose = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = max_zone*update_zone_window  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = 1  # note that if number of zones are x, #pay attention
 random.seed(hard_range_dic["Seed"][0])
 deterministic = True
 goals_list = []
 for i in range(testing_nb_episodes_per_model+1):
-    x_goal = random.choice(range(14,15))
-    y_goal = random.choice(range(-0,1))
+    x_goal = random.choice(range(0,1))
+    y_goal = random.choice(range(18,19))
     goals_list.append([x_goal, y_goal, 0])
 goals_idx = 0
 # then model get tested testing_nb_episodes_per_model/x
@@ -268,7 +268,7 @@ assert(testing_nb_episodes_per_zone <= testing_nb_episodes_per_model), "get the 
 # plotting params
 # ---------------------------
 average_runs = True
-visualize_actions = False
+visualize_actions = True
 # ---------------------------
 # reseting params
 # ---------------------------

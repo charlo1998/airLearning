@@ -89,7 +89,7 @@ def normalize(obs):
 def plot_trajectories(file):
     print("collecting trajectories")
     data = parse_data(file)
-    nbOfEpisodesToPlot = min(50,len(data['stepN'])-1)
+    nbOfEpisodesToPlot = min(50,len(data['stepN']))
     nbOfSteps = 0
     #plot the first x episodes
     plt.figure()
@@ -113,12 +113,18 @@ def plot_trajectories(file):
         nbOfSteps += episodeLength
         plt.plot(xcoord, ycoord, label=str(i))
 
+
+    trajectories = np.array([xcoord, ycoord])
+    np.savetxt(os.path.join(settings.proj_root_path, "data", msgs.algo,"trajectories0.txt"), trajectories)
+
     plt.scatter(xgoal, ygoal)
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title(f'first {nbOfEpisodesToPlot} episodes')
-    plt.xlim([-50, 50])
-    plt.ylim([-50, 50])
+    arena_size = settings.hard_range_dic['ArenaSize'][0]
+    print(arena_size)
+    plt.xlim([-arena_size[0]/2, arena_size[0]/2])
+    plt.ylim([-0, arena_size[1]/2])
     plt.legend()
 
 
@@ -691,12 +697,12 @@ class gofai():
         # ---------------- random and greedy baselines -----------------------------
         if(msgs.algo == "GOFAI"):
             #chooses k closest sensors
-            k_sensors = 2
-            chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
-            sensor_output = np.ones(settings.number_of_sensors)*100
-            for idx in chosen_idx:
-                sensor_output[idx] = sensors[idx]
-            sensors = sensor_output
+            k_sensors = 12
+            #chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
+            #sensor_output = np.ones(settings.number_of_sensors)*100
+            #for idx in chosen_idx:
+            #    sensor_output[idx] = sensors[idx]
+            #sensors = sensor_output
             #randomly chooses a subset of sensors to process (imitating RL agent)
             #n_sensors = 6
             #chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
