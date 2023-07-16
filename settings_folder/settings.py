@@ -93,17 +93,17 @@ medium_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                     "NumberOfObjects": list(range(2,4))}
 
 hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
-                  "MinimumDistance": [3],
+                  "MinimumDistance": [1],
                   "EnvType": ["Indoor"],
                   "EnvType": ["Indoor"],
-                  "ArenaSize": [[8, 40, 10]],
+                  "ArenaSize": [[16, 70, 10]],
                   "PlayerStart": [[0, 0, 0]], #this is not working
-                  "NumberOfDynamicObjects": list(range(1, 2)), #hard seed: 100 obstacles
+                  "NumberOfDynamicObjects": list(range(10,12)), #hard seed: 100 obstacles
                   "Walls1": [[255, 255, 10]],
-                  "Seed": list(range(4,5)), #hard seed: seed 0. random: list(range(0,1000))
+                  "Seed": list(range(1,2)), #hard seed: seed 0. scenario 2: seed 4
                   "VelocityRange": [[0.0, 0.0]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(0,1))}
+                  "NumberOfObjects": list(range(1,2))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -250,13 +250,13 @@ verbose = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = 1  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = 5  # note that if number of zones are x, #pay attention
 random.seed(hard_range_dic["Seed"][0])
 deterministic = True
 goals_list = []
 for i in range(testing_nb_episodes_per_model+1):
     x_goal = random.choice(range(0,1))
-    y_goal = random.choice(range(18,19))
+    y_goal = random.choice(range(33,34))
     goals_list.append([x_goal, y_goal, 0])
 goals_idx = 0
 # then model get tested testing_nb_episodes_per_model/x

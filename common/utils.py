@@ -95,7 +95,7 @@ def plot_trajectories(file):
     plt.figure()
     xgoal = []
     ygoal = []
-    for i in range(nbOfEpisodesToPlot): #this is the number of trajectories to plot
+    for i in range(3,4): #nbOfEpisodesToPlot this is the number of trajectories to plot
         xgoal.append(data['goal'][i][0])
         ygoal.append(data['goal'][i][1])
         xcoord = []
@@ -348,28 +348,40 @@ def plot_action_vs_obs(data):
     r2 = np.arange(0, 2*settings.number_of_sensors)
     theta2 = 2 * np.pi * (r2+1) / (2*settings.number_of_sensors) - np.pi
     
-    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
-    ax.set_rmax(66)
-    ax.set_rscale('symlog')
-    ax.set_title("sensor observation", va='bottom')
-    ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
-    ax.grid(True)
+    
 
     #print(sensors_per_action[0])
-
+    
     number_of_episodes_to_show = min(1, len(episode_actions))
-    for episode in range(-3,-1):
+    for episode in range(-2,-1):
+        plt.figure()
+        number_of_sensors = []
+        for sensors in sensors_per_action[episode]:
+            number_of_sensors.append(sum(sensors))
+        plt.step(range(len(episode_actions[episode])), number_of_sensors)
+        plt.xlabel('Time step')
+        plt.ylabel('number of selected sectors')
+        
+        fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+        #ax.set_rmax(12)
+        ax.set_ylim([0,12])
+        #ax.set_rscale('symlog')
+        #ax.set_title("sensor observation", va='bottom')
+        ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+        ax.grid(True)
+
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_sensors
             for i, sensor in enumerate(sensors_per_action[episode][step]):
                 if sensor:
-                    chosen_areas[2*i-1] = 66
-                    chosen_areas[2*i] = 66
-                    chosen_areas[2*i+1] = 66
+                    chosen_areas[2*i-1] = 12
+                    chosen_areas[2*i] = 12
+                    chosen_areas[2*i+1] = 12
 
-            ax.set_rmax(66)
-            ax.set_rscale('symlog')
-            ax.set_title("sensor observation for episode " + str(episode+len(episode_actions)), va='bottom')
+            #ax.set_rmax(12)
+            ax.set_ylim([0,12])
+            #ax.set_rscale('symlog')
+            #ax.set_title("sensor observation for timestep " + str(step), va='bottom')
             ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
             line1 = ax.plot(theta, obs_per_action[episode][step])
             line2 = plt.fill_between(theta2, 0, chosen_areas, alpha=0.2)
@@ -386,6 +398,8 @@ def plot_action_vs_obs(data):
         
             if(step == len(episode_actions[episode])-1): #pause longer for last step of the episode
                 plt.pause(2)
+            elif (step > 75):
+                plt.pause(0.9)
             else:
                 plt.pause(0.05)
             plt.cla()
@@ -529,7 +543,7 @@ def get_random_end_point(arena_size, split_index, total_num_of_splits):
 
     if settings.deterministic:
         [rnd_idx0, rnd_idx1, grounded_idx2] = settings.goals_list[settings.goals_idx]
-        settings.goals_idx +=1 
+        #settings.goals_idx +=1 
         print(f"goal set to: {[rnd_idx0, rnd_idx1]}")
         return [rnd_idx0, rnd_idx1, grounded_idx2]
 
