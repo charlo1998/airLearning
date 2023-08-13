@@ -562,7 +562,7 @@ class AirSimEnv(gym.Env):
             if (msgs.algo != 'GOFAI'):
                 self.airgym.client.simPause(False)
 
-            time.sleep(settings.delay)
+            #time.sleep(settings.delay)
             now = self.airgym.drone_pos()
             self.velocity = self.airgym.drone_velocity()
 
