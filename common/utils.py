@@ -267,7 +267,7 @@ def plot_data(file, data_to_inquire, mode="separate"):
         if settings.average_runs and el[0] == "total_step_count_for_experiment":
             new_data = average(data, el[1])
             if el[1] == "success_ratio":
-                 np.savetxt(os.path.join(settings.proj_root_path, "data", "A2C-B","SuccessRatio0.txt"), new_data)
+                 np.savetxt(os.path.join(settings.proj_root_path, "data", msgs.algo,"SuccessRatio0.txt"), new_data)
             plt.plot(np.array(new_data[0])*3, new_data[1])
             plt.fill_between(np.array(new_data[0])*3, new_data[1] + np.array(new_data[2]), new_data[1] - np.array(new_data[2]), alpha=0.5)
         else:
@@ -441,7 +441,7 @@ def plot_sensor_usage(data):
     plt.title('average number of sensors used in the timesteps during training')
 
     data = np.vstack((avg_sensors_per_action, std))
-    np.savetxt(os.path.join(settings.proj_root_path, "data", "A2C-B","sensors0.txt"), data)
+    np.savetxt(os.path.join(settings.proj_root_path, "data", msgs.algo,"sensors0.txt"), data)
 
 def plot_histogram(file="C:/Users/Charles/workspace/airlearning/airlearning-rl/data/env/env_log.txt"):
     with open(file, 'r') as f:
