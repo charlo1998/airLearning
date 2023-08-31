@@ -185,9 +185,9 @@ def plot_trajectories(file):
     n, bins, patches = plt.hist(ratio, bins = 'auto')
     plt.xlabel("traveled distance/birdview distance ratio")
     plt.ylabel("frequency")
-    print(f"Average ratio of traveled distance/bird view distance: {sum(ratio)/(len(ratio)-fails-collisions)}")
-
-    print(f"Average mission time: {sum([time if time > 0 else 0 for time in mission_times])/(len(mission_times)-fails-collisions)}")
+    if  data['success_ratio'][-1] > 0.0:
+        print(f"Average ratio of traveled distance/bird view distance: {sum(ratio)/(len(ratio)-fails-collisions)}")
+        print(f"Average mission time: {sum([time if time > 0 else 0 for time in mission_times])/(len(mission_times)-fails-collisions)}")
     plt.figure()
     n, bins, patches = plt.hist(mission_times, bins = 'auto')
     plt.xlabel("mission length (s)")
@@ -802,7 +802,8 @@ class gofai():
         travel_speed = min(2, settings.base_speed*3**(action//settings.action_discretization)) #travelling speed can be 0.5, 1, 2, or 4 
         x_dest = travel_speed*math.cos(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5) + vel_norm*math.cos(vel_angle) * (0.75+predicted_delay)  + x_pos # correcting for current speed since change in speed isn't instantaneous
         y_dest = travel_speed*math.sin(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5)  + vel_norm*math.sin(vel_angle) * (0.75+predicted_delay) + y_pos
-        #print(f"desired angle: {np.round(direction*180/math.pi,1)}")
+        print(f"dwa desired angle: {np.round(direction*180/math.pi,1)}")
+        print(f"dwa action: {action}")
         #print(f"current speed: {[np.round(vel_norm,1), np.round(vel_angle*180/np.pi,1)]}")
         #print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
         #print(f"objects: {np.round(objects,1)}")
@@ -847,3 +848,139 @@ class gofai():
 
         return minDist
 
+
+
+class APF():
+
+    def __init__(self):
+        self.arc = 2*math.pi/settings.number_of_sensors #rad
+        self.previous_obs = [3]*(settings.number_of_sensors+6)
+        self.attractive_coeff = 0.25
+        self.repulsive_coeff = 3
+        self.safety_dist = 10
+
+    def attractive_force(self, position, goal):
+        "Computes the attractive force to the goal. takes goal and robot positions as [x,y] arrays and returns [x,y] force"
+        return self.attractive_coeff * (goal - position)
+
+    def repulsive_force(self, position, obstacles):
+        "Computes the repulsive forces to the goal. takes relative obstacles positions as a list of [x,y] arrays and returns [x,y] force"
+        total_force = np.zeros_like(position)
+        for obstacle in obstacles:
+            distance = np.linalg.norm(position - obstacle)
+            if distance < self.safety_dist:
+                repulsion = self.repulsive_coeff * (1 / distance - 1 / self.safety_dist) * ((1 / (distance)) ** 2) * ((position - obstacle) / distance)
+                total_force += repulsion
+                #print(f" for obstacle at {obstacle}, repulsive force is {repulsion}")
+        return total_force
+
+    def artificial_potential_field(self, position, goal, obstacles):
+        attractive = self.attractive_force(position, goal)
+        repulsive = self.repulsive_force(position, obstacles)
+        total_force = attractive + repulsive
+        return total_force
+
+    
+    def predict(self, obs, goal):
+        '''
+        observation is in the form [angle, d_goal, vel_norm, vel_angle, y_pos, x_pos, d1, d2, ..., dn] where d1 starts at 180 deg and goes ccw, velocities are in drone's body frame ref
+        actions are distributed as following:
+        0-15: small circle
+        16-31: medium small circle
+        32-47: medium big circle
+        48-63: big circle
+        '''
+        obs = obs[0][0] #flattening the list
+
+        
+        #read goal from observation (when not using tangent bug)
+        #goal_angle = obs[0]*math.pi #rad
+        #global_goal_distance = obs[1]
+
+        #read goal coordinates from tangent bug
+        x_goal = goal[0]
+        y_goal = goal[1]
+        global_goal_distance = np.sqrt(x_goal**2 + y_goal**2)
+        #print(f"received goal (relative): {[x_goal,y_goal]}")
+
+        
+        vel_angle = obs[3]
+        vel_norm = obs[2]
+        x_pos = obs[5]
+        y_pos = obs[4]
+        predicted_delay = settings.delay*5 #accouting for predicted latency, and simulation time vs real time
+        x_offset = predicted_delay*vel_norm*math.cos(vel_angle)*1.25
+        y_offset = predicted_delay*vel_norm*math.sin(vel_angle)*1.25
+
+        sensors = obs[6:settings.number_of_sensors+6] 
+        #angles = obs[settings.number_of_sensors+6:]
+        angles =  np.arange(-math.pi,math.pi,self.arc)
+        #print(f"sensors: {np.round(sensors,1)}")
+
+        # ---------------- random and greedy baselines -----------------------------
+        if(msgs.algo == "GOFAI"):
+            #chooses k closest sensors
+            k_sensors = 12
+            #chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
+            #sensor_output = np.ones(settings.number_of_sensors)*100
+            #for idx in chosen_idx:
+            #    sensor_output[idx] = sensors[idx]
+            #sensors = sensor_output
+            #randomly chooses a subset of sensors to process (imitating RL agent)
+            #n_sensors = 6
+            #chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
+            ##print(chosens)
+            #for idx in chosens:
+            #    sensors[idx] = 100
+        #print(f"sensors dwa: {np.round(sensors,1)}")
+        # -----------------------------------------------------------------
+
+
+        objects =[]
+        orientations = []
+        #create objects list to evaluate obstacles positions, and replace missing values with old observations
+        #values over 99 are the sensors that are "removed" by the RL agent
+        for i, sensor in enumerate(sensors):
+            if sensor < 99:
+                if sensor >= 66:
+                    sensors[i] = self.previous_obs[i]
+                object_x = math.cos(angles[i])*sensors[i]
+                object_y = math.sin(angles[i])*sensors[i]
+                objects.append(np.array([object_x, object_y]))
+                orientations.append(angles[i])
+            
+        
+        #print(f"dwa objects: {np.round(objects,1)}")
+        #print(orientations)
+        #print(len(objects))
+        thetas =  np.linspace(-math.pi, math.pi, settings.action_discretization+1)
+        if len(objects) == 0: #if there is no obstacles, go straight to the goal at max speed
+            goal_angle = math.atan2(y_goal,x_goal)
+            direction = bisect(thetas, goal_angle)
+            if (thetas[direction]-goal_angle > goal_angle - thetas[direction-1]): #find which discretized value is closest
+                direction -= 1
+            action = (16 - direction%settings.action_discretization + round(0.75*settings.action_discretization))%settings.action_discretization  #transform the airsim action space (starts at 90 deg and goes cw)
+            #print(f"Direction: {thetas[direction]*180/np.pi} at 2 m/s. action: {action+48}. no obstacles!")
+            return action + 48
+
+        force =  self.artificial_potential_field(np.zeros(2), np.array([x_goal, y_goal]), objects)
+        #print(f"force [x,y]: {force}")
+        force_angle = math.atan2(force[1],force[0])
+        speed = np.linalg.norm(force)
+
+        direction = bisect(thetas, force_angle)
+        if (thetas[direction]-force_angle > force_angle - thetas[direction-1]): #find which discretized value is closest
+            direction -= 1
+        action = (16 - direction%settings.action_discretization + round(0.75*settings.action_discretization))%settings.action_discretization  #transform the airsim action space (starts at 90 deg and goes cw)
+        #adjusting for force magnitude
+        if action > 2:
+            action += 3*settings.action_discretization
+        elif action > 1:
+            action += 2*settings.action_discretization
+        elif action > 0.3:
+            action += settings.action_discretization
+
+        self.previous_obs = sensors
+        #print(f"Direction: {thetas[direction]*180/np.pi%360} at {speed} m/s. action: {action}")
+
+        return action

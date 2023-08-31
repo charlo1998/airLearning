@@ -75,8 +75,6 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
     msgs.weight_file_under_test = filepath
 
     model = A2C.load(filepath)
-    DWA = utils.gofai()
-    bug = tangent_bug()
 
     infer_latency_list= []
     infer_cpu_list=[]

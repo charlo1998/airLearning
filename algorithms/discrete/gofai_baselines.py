@@ -9,7 +9,7 @@ import tensorflow as tf
 os.sys.path.insert(0, os.path.abspath('../../../settings_folder'))
 import settings
 import msgs
-from utils import gofai
+from utils import gofai, APF
 from tangent_bug import tangent_bug
 from gym_airsim.envs.airlearningclient import *
 import callbacks
@@ -40,6 +40,7 @@ def test(env):
     process_action_list = []
     cpu_times_list = []
     DWA = gofai()
+    APF_planner = APF()
     bug = tangent_bug()
     
 
@@ -54,13 +55,16 @@ def test(env):
             goal = bug.predict(obs)
             bug_end = time.perf_counter()
             #print("--------------------------------------dwa---------------------------------------------")
-            action = DWA.predict(obs,goal)
+            #action = DWA.predict(obs,goal)
+            for i in range(300):
+                action = APF_planner.predict(obs,goal)
             end = time.perf_counter()
             end_CPU = time.process_time()
 
             #print(f"bug processing: {np.round((bug_end - begin)*1000)} ms")
             #print(f"dwa processing: {np.round((end - begin)*1000)} ms")
-            print(f"dwa CPU processing: {np.round((end_CPU - begin_CPU)*1000)} ms")
+            print(f"APF processing: {np.round((end - bug_end)*1000/300,2)} ms")
+            print(f"APF processing: {np.round((end - bug_end)*1000/300,4)} ms")
             
             #---------------------step by step mode----------------------
             #env.airgym.client.simPause(True)
@@ -75,8 +79,8 @@ def test(env):
 
     #env loop rate logging
     if settings.profile:
-        print(f"Average clock processing time: {sum(process_action_list)/len(process_action_list)*1000} ms")
-        print(f"Average CPU processing time: {sum(cpu_times_list)/len(cpu_times_list)*1000} ms")
+        print(f"Average clock processing time: {sum(process_action_list)/len(process_action_list)*1000/300} ms")
+        print(f"Average CPU processing time: {sum(cpu_times_list)/len(cpu_times_list)*1000/300} ms")
         with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),
             "w") as f:
             f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
