@@ -250,7 +250,7 @@ verbose = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = 5  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = 1  # note that if number of zones are x, #pay attention
 random.seed(hard_range_dic["Seed"][0])
 deterministic = True
 goals_list = []
