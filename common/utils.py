@@ -362,12 +362,12 @@ def plot_action_vs_obs(data):
         plt.xlabel('Time step')
         plt.ylabel('number of selected sectors')
         
-        fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+        fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, figsize=(2.1, 2.5))
         #ax.set_rmax(12)
         ax.set_ylim([0,12])
         #ax.set_rscale('symlog')
         #ax.set_title("sensor observation", va='bottom')
-        ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+        
         ax.grid(True)
 
         for step in range(len(episode_actions[episode])):
@@ -394,12 +394,13 @@ def plot_action_vs_obs(data):
                 wanted_angle = dwa_goal_per_action[episode][step][0]
                 wanted_norm = dwa_goal_per_action[episode][step][1]
                 line3 = ax.scatter(wanted_angle, wanted_norm, c= 'g')
-            #ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
-        
+            ax.set_rticks([3, 6, 9])  # Less radial ticks
+            ax.set_rlabel_position(180)  # Move radial labels away from plotted line
+            selected_actions = [27]
             if(step == len(episode_actions[episode])-1): #pause longer for last step of the episode
                 plt.pause(2)
-            elif (step > 75):
-                plt.pause(0.9)
+            elif (step in selected_actions):
+                plt.pause(5)
             else:
                 plt.pause(0.05)
             plt.cla()
@@ -857,7 +858,7 @@ class APF():
         self.previous_obs = [3]*(settings.number_of_sensors+6)
         self.attractive_coeff = 0.25
         self.repulsive_coeff = 3
-        self.safety_dist = 10
+        self.safety_dist = 5
 
     def attractive_force(self, position, goal):
         "Computes the attractive force to the goal. takes goal and robot positions as [x,y] arrays and returns [x,y] force"
@@ -866,12 +867,10 @@ class APF():
     def repulsive_force(self, position, obstacles):
         "Computes the repulsive forces to the goal. takes relative obstacles positions as a list of [x,y] arrays and returns [x,y] force"
         total_force = np.zeros_like(position)
-        for obstacle in obstacles:
-            distance = np.linalg.norm(position - obstacle)
-            if distance < self.safety_dist:
-                repulsion = self.repulsive_coeff * (1 / distance - 1 / self.safety_dist) * ((1 / (distance)) ** 2) * ((position - obstacle) / distance)
-                total_force += repulsion
-                #print(f" for obstacle at {obstacle}, repulsive force is {repulsion}")
+        distances = np.linalg.norm(position - obstacles, axis=0)
+        repulsion = self.repulsive_coeff * (1 / distances - 1 / self.safety_dist) * ((1 / (distances)) ** 2) * ((position - obstacles) / distances)
+        total_force = np.sum(repulsion,axis=0)
+        #print(f" for obstacle at {obstacle}, repulsive force is {repulsion}")
         return total_force
 
     def artificial_potential_field(self, position, goal, obstacles):
@@ -956,19 +955,19 @@ class APF():
         thetas =  np.linspace(-math.pi, math.pi, settings.action_discretization+1)
         if len(objects) == 0: #if there is no obstacles, go straight to the goal at max speed
             goal_angle = math.atan2(y_goal,x_goal)
-            direction = bisect(thetas, goal_angle)
+            direction = bisect(thetas, goal_angle)%16
             if (thetas[direction]-goal_angle > goal_angle - thetas[direction-1]): #find which discretized value is closest
                 direction -= 1
             action = (16 - direction%settings.action_discretization + round(0.75*settings.action_discretization))%settings.action_discretization  #transform the airsim action space (starts at 90 deg and goes cw)
             #print(f"Direction: {thetas[direction]*180/np.pi} at 2 m/s. action: {action+48}. no obstacles!")
             return action + 48
 
-        force =  self.artificial_potential_field(np.zeros(2), np.array([x_goal, y_goal]), objects)
+        force =  self.artificial_potential_field(np.zeros(2), np.array([x_goal, y_goal]), np.array(objects))
         #print(f"force [x,y]: {force}")
         force_angle = math.atan2(force[1],force[0])
         speed = np.linalg.norm(force)
 
-        direction = bisect(thetas, force_angle)
+        direction = bisect(thetas, force_angle)%16
         if (thetas[direction]-force_angle > force_angle - thetas[direction-1]): #find which discretized value is closest
             direction -= 1
         action = (16 - direction%settings.action_discretization + round(0.75*settings.action_discretization))%settings.action_discretization  #transform the airsim action space (starts at 90 deg and goes cw)

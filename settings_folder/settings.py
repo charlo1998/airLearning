@@ -268,7 +268,7 @@ assert(testing_nb_episodes_per_zone <= testing_nb_episodes_per_model), "get the 
 # plotting params
 # ---------------------------
 average_runs = True
-visualize_actions = False
+visualize_actions = True
 # ---------------------------
 # reseting params
 # ---------------------------

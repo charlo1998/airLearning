@@ -74,7 +74,7 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
     msgs.mode = 'test'
     msgs.weight_file_under_test = filepath
 
-    model = A2C.load(filepath)
+    model = A2C.load(filepath, policy=CustomPolicy)
 
     infer_latency_list= []
     infer_cpu_list=[]
@@ -93,9 +93,9 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
             
 
             obs, rewards, done, info = env.step(action)
-            #env.airgym.client.simPause(True)
-            #answer = input()
-            #env.airgym.client.simPause(False)
+            env.airgym.client.simPause(True)
+            answer = input()
+            env.airgym.client.simPause(False)
             
     print(f"total CPU processing time: {(time.process_time()-start)} s")
     print(f"average DWA clock processing time: {sum(env.process_action_list)/len(env.process_action_list)*1000} ms")

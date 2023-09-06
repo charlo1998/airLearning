@@ -115,6 +115,7 @@ class BasePolicy(ABC):
                 self.obs_ph, self.processed_obs = observation_input(ob_space, n_batch, scale=scale)
             else:
                 self.obs_ph, self.processed_obs = obs_phs
+            print(f"in base policy, processed obs: {self.processed_obs}")
 
             self.action_ph = None
             if add_action_ph:
@@ -196,6 +197,7 @@ class ActorCriticPolicy(BasePolicy):
         """
         with tf.variable_scope("output", reuse=True):
             assert self.policy is not None and self.proba_distribution is not None and self.value_fn is not None
+            print(f"ActorCriticPolicy proba dist: {self.proba_distribution}")
             self.action = self.proba_distribution.sample()
             self.deterministic_action = self.proba_distribution.mode()
             self.neglogp = self.proba_distribution.neglogp(self.action)
@@ -206,6 +208,7 @@ class ActorCriticPolicy(BasePolicy):
             elif isinstance(self.proba_distribution, BernoulliProbabilityDistribution):
                 self.policy_proba = tf.nn.sigmoid(self.policy)
             elif isinstance(self.proba_distribution, MultiCategoricalProbabilityDistribution):
+                print(f"policy proba: {self.policy_proba}")
                 self.policy_proba = [tf.nn.softmax(categorical.flatparam())
                                      for categorical in self.proba_distribution.categoricals]
             else:

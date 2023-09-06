@@ -50,21 +50,23 @@ def test(env):
         done = False
         while not done:
             begin = time.perf_counter()
-            begin_CPU = time.process_time()
+            
             #print("--------------------------------------bug---------------------------------------------")
             goal = bug.predict(obs)
             bug_end = time.perf_counter()
             #print("--------------------------------------dwa---------------------------------------------")
             #action = DWA.predict(obs,goal)
-            for i in range(300):
-                action = APF_planner.predict(obs,goal)
+            begin_CPU = time.process_time()
+            #for i in range(100):
+            #    action = APF_planner.predict(obs,goal)
+            action =DWA.predict(obs,goal)
             end = time.perf_counter()
             end_CPU = time.process_time()
 
             #print(f"bug processing: {np.round((bug_end - begin)*1000)} ms")
             #print(f"dwa processing: {np.round((end - begin)*1000)} ms")
-            print(f"APF processing: {np.round((end - bug_end)*1000/300,2)} ms")
-            print(f"APF processing: {np.round((end - bug_end)*1000/300,4)} ms")
+            print(f"APF processing: {np.round((end - bug_end)*1000,2)} ms")
+            print(f"APF processing: {np.round((end_CPU - begin_CPU)*1000,4)} ms")
             
             #---------------------step by step mode----------------------
             #env.airgym.client.simPause(True)
@@ -74,13 +76,13 @@ def test(env):
             bug.done = done
 
             if settings.profile:
-                process_action_list.append(end-begin)
+                process_action_list.append(end-bug_end)
                 cpu_times_list.append(end_CPU-begin_CPU)
 
     #env loop rate logging
     if settings.profile:
-        print(f"Average clock processing time: {sum(process_action_list)/len(process_action_list)*1000/300} ms")
-        print(f"Average CPU processing time: {sum(cpu_times_list)/len(cpu_times_list)*1000/300} ms")
+        print(f"Average clock processing time: {sum(process_action_list)/len(process_action_list)*1000} ms")
+        print(f"Average CPU processing time: {sum(cpu_times_list)/len(cpu_times_list)*1000} ms")
         with open(os.path.join(settings.proj_root_path, "data", "env","env_log.txt"),
             "w") as f:
             f.write("loop_rate_list:" + str(env.loop_rate_list) + "\n")
