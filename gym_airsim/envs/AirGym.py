@@ -165,7 +165,7 @@ class AirSimEnv(gym.Env):
                     self.action_space = spaces.Discrete(20)
             else:
                 #this is for RL on choosing observations
-                self.action_space = spaces.MultiBinary(settings.number_of_sensors) # one for each sensor 
+                self.action_space = spaces.Discrete(20)
                 self.DWA = gofai()
                 self.APF = APF()
                 self.bug = tangent_bug()
@@ -249,48 +249,20 @@ class AirSimEnv(gym.Env):
 
 
     def computeReward(self, action):
-        #base sensor reward is -0.55. we then add two terms: a proximity term (distance of the object) and a heading term (if the object is in the direction of current velocity)
-        # a third term is added to counter the incentive to get close to obstacles: safety term (points based on how far we are from any obstacle
-        arc = 2*math.pi/settings.number_of_sensors
-        angles =  np.arange(-math.pi,math.pi,arc)
-        vel_angle = self.prev_state[0][0][3]
-        velocity = self.prev_state[0][0][2]
-        angles = angles-vel_angle
-        sensors = self.prev_state[0][0][6:settings.number_of_sensors+6]
-        nb_sensors = np.sum(action)
-        closest = min(sensors)
+        distance_now = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
+        distance_before = self.allLogs['distance'][-1]
+        distance_correction = (distance_before - distance_now)
+        r = -1
 
-        #print(f"number of sensors: {nb_sensors}")
-        #print(f"vel_angle: {vel_angle*180/np.pi}")
-        #print(f"velocity: {velocity}")
-        #print(f"angles: {angles}")
-        #print(f"sensors: {np.round(sensors,1)}")
-        #print(f"action: {action}")
-        #print(f"heading: {np.cos(angles)*action}")
-        #print(f"heading half sum: {np.sum(np.cos(angles)*action)*0.5}")
-        #print(f"proximity: {[min(3/distance,10) for distance in sensors]*action}")
-        #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
-        if self.stepN < 150000:
-            cost = 0.95
+        # check if you are too close to the goal, if yes, you need to reduce the yaw and speed
+        if distance_now < settings.slow_down_activation_distance:
+            yaw_correction =  abs(self.track) * distance_now 
+            velocity_correction = (settings.mv_fw_spd_4 - self.speed)* settings.mv_fw_dur
+            r = r + distance_correction + velocity_correction
         else:
-            cost = 1.15
+            r = r + distance_correction
 
-        #safety = min(2.5, closest)*settings.number_of_sensors
-        heading = np.sum(np.cos(angles)*action)*0.5
-        proximity = np.sum([min(3/distance,10) for distance in sensors]*action)
-        
-        r = -cost*nb_sensors + heading*velocity + proximity
-        #if nb_sensors == 0:
-        #    r += 0.25
-        # --------------- reward func 1 -----------------------
-        #if len(self.success_history) > 1:
-        #    SR_w = sum(self.success_history)/len(self.success_history)
-        #else:
-        #    SR_w = 0.5
-        #r = (settings.number_of_sensors - nb_sensors) * (SR_w - 0.95)
-        
-        #print(f"total reward: {r/settings.number_of_sensors}")
-        return r/settings.number_of_sensors
+        return r
 
     def ddpg_add_noise_action(self, actions):
         noise_t = np.zeros([1, self.action_space.shape[0]])
@@ -610,21 +582,15 @@ class AirSimEnv(gym.Env):
                 
                 #determine move action based on planner
                 bug_start = time.perf_counter()
-                goal = self.bug.predict(self.prev_state)
                 bug_end = time.perf_counter()
                 process_action_start = time.perf_counter()
-                obs = self.airgym.take_meta_action(action, self.prev_state)
                 #print(f"meta action: {np.round((time.perf_counter() - process_action_start)*1000)} ms")
                 dwa_cpu_start = time.process_time()
                 
-                moveAction = self.DWA.predict(obs, goal)
                 #moveAction = self.APF.predict(obs, goal)
                 dwa_cpu_end = time.process_time()
-                self.moveAction_in_step.append(moveAction)
+                self.moveAction_in_step.append(action)
                 process_action_end = time.perf_counter()
-                #print(f"bug processing: {np.round((bug_end - bug_start)*1000)} ms")
-                print(f"dwa processing: {np.round((process_action_end - process_action_start)*1000000.0)} microS")
-                print(f"dwa CPU processing: {(dwa_cpu_end - dwa_cpu_start)*1000000.0} microS")
                 
                 take_action_start = time.perf_counter()
                 if(settings.profile):

@@ -184,7 +184,7 @@ this means the "percieved" latency doesn't increase linearly with the clockspeed
 # action space configuration
 # ---------------------------
 timedActions = False
-positionActions = True
+positionActions = False
 action_discretization = 16 #this needs to be a square number and greater than one if timedActions is set to true! 
 number_of_sensors = 12
 k_sensors = number_of_sensors  #the maximum amount of sensors the agent can choose at any time
@@ -250,9 +250,9 @@ verbose = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = 5  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = 50  # note that if number of zones are x, #pay attention
 random.seed(hard_range_dic["Seed"][0])
-deterministic = True
+deterministic = False
 goals_list = []
 for i in range(testing_nb_episodes_per_model+1):
     x_goal = random.choice(range(0,1))
