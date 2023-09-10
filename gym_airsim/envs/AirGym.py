@@ -18,7 +18,7 @@ import time
 from gym_airsim.envs.airlearningclient import *
 
 from utils import append_log_file
-from utils import gofai
+from utils import gofai, APF
 from tangent_bug import tangent_bug
 
 logger = logging.getLogger(__name__)
@@ -167,6 +167,7 @@ class AirSimEnv(gym.Env):
                 #this is for RL on choosing observations
                 self.action_space = spaces.MultiBinary(settings.number_of_sensors) # one for each sensor 
                 self.DWA = gofai()
+                self.APF = APF()
                 self.bug = tangent_bug()
                 self.moveAction_in_step = []
 
@@ -269,10 +270,10 @@ class AirSimEnv(gym.Env):
         #print(f"heading half sum: {np.sum(np.cos(angles)*action)*0.5}")
         #print(f"proximity: {[min(3/distance,10) for distance in sensors]*action}")
         #print(f"proximity: {np.sum([min(3/distance,10) for distance in sensors]*action)}")
-        if self.stepN < 200000:
-            cost = 1.15
+        if self.stepN < 150000:
+            cost = 0.95
         else:
-            cost = 1.3
+            cost = 1.15
 
         #safety = min(2.5, closest)*settings.number_of_sensors
         heading = np.sum(np.cos(angles)*action)*0.5
@@ -456,7 +457,7 @@ class AirSimEnv(gym.Env):
         #verbose
         msgs.episodal_log_dic_verbose = copy.deepcopy(msgs.episodal_log_dic)
         msgs.episodal_log_dic_verbose["reward_in_each_step"] = [round(reward,4) for reward in self.reward_in_step]
-        msgs.episodal_log_dic_verbose["DWA_action_in_each_step"] = self.moveAction_in_step
+        msgs.episodal_log_dic_verbose["planner_action_in_each_step"] = self.moveAction_in_step
         if (msgs.mode == "test"):
             msgs.episodal_log_dic_verbose["actions_in_each_step"] = self.actions_in_step
             if msgs.algo != "GOFAI":
@@ -562,7 +563,7 @@ class AirSimEnv(gym.Env):
             if (msgs.algo != 'GOFAI'):
                 self.airgym.client.simPause(False)
 
-            time.sleep(settings.delay)
+            #time.sleep(settings.delay)
             now = self.airgym.drone_pos()
             self.velocity = self.airgym.drone_velocity()
 
@@ -607,7 +608,7 @@ class AirSimEnv(gym.Env):
                 
                 #action = action*0 +1 #artificially set all to 1
                 
-                #determine move action based on DWA
+                #determine move action based on planner
                 bug_start = time.perf_counter()
                 goal = self.bug.predict(self.prev_state)
                 bug_end = time.perf_counter()
@@ -615,17 +616,19 @@ class AirSimEnv(gym.Env):
                 obs = self.airgym.take_meta_action(action, self.prev_state)
                 #print(f"meta action: {np.round((time.perf_counter() - process_action_start)*1000)} ms")
                 dwa_cpu_start = time.process_time()
+                
                 moveAction = self.DWA.predict(obs, goal)
+                #moveAction = self.APF.predict(obs, goal)
                 dwa_cpu_end = time.process_time()
                 self.moveAction_in_step.append(moveAction)
                 process_action_end = time.perf_counter()
                 #print(f"bug processing: {np.round((bug_end - bug_start)*1000)} ms")
-                #print(f"dwa processing: {np.round((process_action_end - process_action_start)*1000)} ms")
-                #print(f"dwa CPU processing: {(dwa_cpu_end - dwa_cpu_start)*1000000.0} microS")
+                print(f"dwa processing: {np.round((process_action_end - process_action_start)*1000000.0)} microS")
+                print(f"dwa CPU processing: {(dwa_cpu_end - dwa_cpu_start)*1000000.0} microS")
                 
                 take_action_start = time.perf_counter()
                 if(settings.profile):
-                    self.process_action_list.append(process_action_end - process_action_start)
+                    self.process_action_list.append((process_action_end - process_action_start))
                 if(msgs.algo == "DDPG"):
                     self.actions_in_step.append([action[0], action[1], action[2]])
                     action = self.ddpg_add_noise_action(action)
@@ -680,9 +683,10 @@ class AirSimEnv(gym.Env):
             distance = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
             #print(distance)
             
-            #print(f"pose right after action: {np.round(now,2)}")
-            #print("-------------------------------------------------------------------------------------------------------")
-            #print(f"goal pose: {self.goal}")
+            print(f"pose right after action: {np.round(now,2)}")
+            print(f"goal pose: {self.goal}")
+            print("-------------------------------------------------------------------------------------------------------")
+            
             if (msgs.algo != 'GOFAI'):
                 self.airgym.client.simPause(True)
             
@@ -791,7 +795,7 @@ class AirSimEnv(gym.Env):
                     print ("Action Time:" +str(np.mean(self.take_action_list)))
                     print("Collect State Time"+str(np.mean(self.clct_state_list)))
 
-            if(self.collided or self.episodeN % 50 == 0): 
+            if(self.collided or self.episodeN % 1 == 0): 
                 self.randomize_env()
                 if(os.name=="nt"):
                     connection_established = self.airgym.unreal_reset()

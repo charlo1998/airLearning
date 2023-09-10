@@ -93,17 +93,17 @@ medium_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                     "NumberOfObjects": list(range(2,4))}
 
 hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
-                  "MinimumDistance": [3],
+                  "MinimumDistance": [1],
                   "EnvType": ["Indoor"],
                   "EnvType": ["Indoor"],
-                  "ArenaSize": [[100, 100, 10]],
-                  "PlayerStart": [[0, 0, 0]],
-                  "NumberOfDynamicObjects": list(range(75, 76)), #hard seed: 100 obstacles
+                  "ArenaSize": [[16, 70, 10]],
+                  "PlayerStart": [[0, 0, 0]], #this is not working
+                  "NumberOfDynamicObjects": list(range(11,12)), #hard seed: 100 obstacles #complex scenario: 11
                   "Walls1": [[255, 255, 10]],
-                  "Seed": list(range(1,2)), #hard seed: seed 0. random: list(range(0,1000))
+                  "Seed": [1], #hard seed: seed 1. scenario 2: seed 4 #list(range(1,2))
                   "VelocityRange": [[0.0, 0.0]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(24,25))}
+                  "NumberOfObjects": list(range(1,2))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -242,7 +242,7 @@ i_run = 1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = True
-training_steps_cap = 500000
+training_steps_cap = 300000
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True
@@ -250,13 +250,13 @@ verbose = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = max_zone*update_zone_window  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = 5  # note that if number of zones are x, #pay attention
 random.seed(hard_range_dic["Seed"][0])
-deterministic = False
+deterministic = True
 goals_list = []
 for i in range(testing_nb_episodes_per_model+1):
-    x_goal = random.choice(range(-49,49))
-    y_goal = random.choice(range(-49,49))
+    x_goal = random.choice(range(0,1))
+    y_goal = random.choice(range(33,34))
     goals_list.append([x_goal, y_goal, 0])
 goals_idx = 0
 # then model get tested testing_nb_episodes_per_model/x
@@ -268,7 +268,7 @@ assert(testing_nb_episodes_per_zone <= testing_nb_episodes_per_model), "get the 
 # plotting params
 # ---------------------------
 average_runs = True
-visualize_actions = False
+visualize_actions = True
 # ---------------------------
 # reseting params
 # ---------------------------

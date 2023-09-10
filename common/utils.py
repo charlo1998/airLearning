@@ -89,13 +89,14 @@ def normalize(obs):
 def plot_trajectories(file):
     print("collecting trajectories")
     data = parse_data(file)
-    nbOfEpisodesToPlot = min(50,len(data['stepN'])-1)
+    nbOfEpisodesToPlot = min(50,len(data['stepN']))
     nbOfSteps = 0
     #plot the first x episodes
     plt.figure()
     xgoal = []
     ygoal = []
-    for i in range(nbOfEpisodesToPlot): #this is the number of trajectories to plot
+    episodes_to_plot = [0,3]
+    for i in episodes_to_plot: #nbOfEpisodesToPlot this is the number of trajectories to plot
         xgoal.append(data['goal'][i][0])
         ygoal.append(data['goal'][i][1])
         xcoord = []
@@ -112,13 +113,17 @@ def plot_trajectories(file):
 
         nbOfSteps += episodeLength
         plt.plot(xcoord, ycoord, label=str(i))
+        trajectories = np.array([xcoord, ycoord])
+        np.savetxt(os.path.join(settings.proj_root_path, "data", msgs.algo,f"trajectories{i}.txt"), trajectories)
 
     plt.scatter(xgoal, ygoal)
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title(f'first {nbOfEpisodesToPlot} episodes')
-    plt.xlim([-50, 50])
-    plt.ylim([-50, 50])
+    arena_size = settings.hard_range_dic['ArenaSize'][0]
+    print(arena_size)
+    plt.xlim([-arena_size[0]/2, arena_size[0]/2])
+    plt.ylim([-0, arena_size[1]/2])
     plt.legend()
 
 
@@ -179,9 +184,9 @@ def plot_trajectories(file):
     n, bins, patches = plt.hist(ratio, bins = 'auto')
     plt.xlabel("traveled distance/birdview distance ratio")
     plt.ylabel("frequency")
-    print(f"Average ratio of traveled distance/bird view distance: {sum(ratio)/(len(ratio)-fails-collisions)}")
-
-    print(f"Average mission time: {sum([time if time > 0 else 0 for time in mission_times])/(len(mission_times)-fails-collisions)}")
+    if  data['success_ratio'][-1] > 0.0:
+        print(f"Average ratio of traveled distance/bird view distance: {sum(ratio)/(len(ratio)-fails-collisions)}")
+        print(f"Average mission time: {sum([time if time > 0 else 0 for time in mission_times])/(len(mission_times)-fails-collisions)}")
     plt.figure()
     n, bins, patches = plt.hist(mission_times, bins = 'auto')
     plt.xlabel("mission length (s)")
@@ -261,7 +266,7 @@ def plot_data(file, data_to_inquire, mode="separate"):
         if settings.average_runs and el[0] == "total_step_count_for_experiment":
             new_data = average(data, el[1])
             if el[1] == "success_ratio":
-                 np.savetxt(os.path.join(settings.proj_root_path, "data", "A2C-B","SuccessRatio0.txt"), new_data)
+                 np.savetxt(os.path.join(settings.proj_root_path, "data", msgs.algo,"SuccessRatio0.txt"), new_data)
             plt.plot(np.array(new_data[0])*3, new_data[1])
             plt.fill_between(np.array(new_data[0])*3, new_data[1] + np.array(new_data[2]), new_data[1] - np.array(new_data[2]), alpha=0.5)
         else:
@@ -288,7 +293,7 @@ def plot_action_vs_obs(data):
     for k in range(settings.runs_to_do):
         episode_actions = data[k]["actions_in_each_step"]
         episode_observations = data[k]["observations_in_each_step"]
-        dwa_actions = data[k]["DWA_action_in_each_step"]
+        dwa_actions = data[k]["planner_action_in_each_step"]
         if msgs.mode == "test":
             episode_positions = data[k]["position_in_each_step"]
             goals = data[k]["goal"]
@@ -342,30 +347,42 @@ def plot_action_vs_obs(data):
     r2 = np.arange(0, 2*settings.number_of_sensors)
     theta2 = 2 * np.pi * (r2+1) / (2*settings.number_of_sensors) - np.pi
     
-    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
-    ax.set_rmax(66)
-    ax.set_rscale('symlog')
-    ax.set_title("sensor observation", va='bottom')
-    ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
-    ax.grid(True)
+    
 
     #print(sensors_per_action[0])
-
+    
     number_of_episodes_to_show = min(1, len(episode_actions))
-    for episode in range(-3,-1):
+    for episode in range(3,4):
+        plt.figure()
+        number_of_sensors = []
+        for sensors in sensors_per_action[episode]:
+            number_of_sensors.append(sum(sensors))
+        plt.step(range(len(episode_actions[episode])), number_of_sensors)
+        plt.xlabel('Time step')
+        plt.ylabel('number of selected sectors')
+        
+        fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, figsize=(2.1, 2.5))
+        #ax.set_rmax(12)
+        ax.set_ylim([0,12])
+        #ax.set_rscale('symlog')
+        #ax.set_title("sensor observation", va='bottom')
+        
+        ax.grid(True)
+
         for step in range(len(episode_actions[episode])):
             chosen_areas = [0]*2*settings.number_of_sensors
             for i, sensor in enumerate(sensors_per_action[episode][step]):
                 if sensor:
-                    chosen_areas[2*i-1] = 66
-                    chosen_areas[2*i] = 66
-                    chosen_areas[2*i+1] = 66
+                    chosen_areas[2*i-1] = 12
+                    chosen_areas[2*i] = 12
+                    chosen_areas[2*i+1] = 12
 
-            ax.set_rmax(66)
-            ax.set_rscale('symlog')
-            ax.set_title("sensor observation for episode " + str(episode+len(episode_actions)), va='bottom')
+            #ax.set_rmax(12)
+            ax.set_ylim([0,12])
+            #ax.set_rscale('symlog')
+            #ax.set_title("sensor observation for timestep " + str(step), va='bottom')
             ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
-            line1 = ax.plot(theta, obs_per_action[episode][step])
+            line1 = ax.plot(list(theta) + [theta[0]], obs_per_action[episode][step] + [obs_per_action[episode][step][0]])
             line2 = plt.fill_between(theta2, 0, chosen_areas, alpha=0.2)
             if msgs.mode == "test":
                 x_goal_rel = goals[episode][1]-pos_per_action[episode][step][1] #uav frame of ref
@@ -376,12 +393,15 @@ def plot_action_vs_obs(data):
                 wanted_angle = dwa_goal_per_action[episode][step][0]
                 wanted_norm = dwa_goal_per_action[episode][step][1]
                 line3 = ax.scatter(wanted_angle, wanted_norm, c= 'g')
-            #ax.set_rticks([0.5, 1, 1.5, 2])  # Less radial ticks
-        
+            ax.set_rticks([3, 6, 9])  # Less radial ticks
+            ax.set_rlabel_position(180)  # Move radial labels away from plotted line
+            selected_actions = [176]
             if(step == len(episode_actions[episode])-1): #pause longer for last step of the episode
                 plt.pause(2)
+            elif (step in selected_actions):
+                plt.pause(0.6)
             else:
-                plt.pause(0.05)
+                plt.pause(0.03)
             plt.cla()
     plt.show()
 
@@ -421,7 +441,7 @@ def plot_sensor_usage(data):
     plt.title('average number of sensors used in the timesteps during training')
 
     data = np.vstack((avg_sensors_per_action, std))
-    np.savetxt(os.path.join(settings.proj_root_path, "data", "A2C-B","sensors0.txt"), data)
+    np.savetxt(os.path.join(settings.proj_root_path, "data", msgs.algo,"sensors0.txt"), data)
 
 def plot_histogram(file="C:/Users/Charles/workspace/airlearning/airlearning-rl/data/env/env_log.txt"):
     with open(file, 'r') as f:
@@ -523,7 +543,8 @@ def get_random_end_point(arena_size, split_index, total_num_of_splits):
 
     if settings.deterministic:
         [rnd_idx0, rnd_idx1, grounded_idx2] = settings.goals_list[settings.goals_idx]
-        settings.goals_idx +=1 
+        #settings.goals_idx +=1 
+        print(f"goal set to: {[rnd_idx0, rnd_idx1]}")
         return [rnd_idx0, rnd_idx1, grounded_idx2]
 
 
@@ -690,12 +711,12 @@ class gofai():
         # ---------------- random and greedy baselines -----------------------------
         if(msgs.algo == "GOFAI"):
             #chooses k closest sensors
-            k_sensors = 2
-            chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
-            sensor_output = np.ones(settings.number_of_sensors)*100
-            for idx in chosen_idx:
-                sensor_output[idx] = sensors[idx]
-            sensors = sensor_output
+            k_sensors = 12
+            #chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
+            #sensor_output = np.ones(settings.number_of_sensors)*100
+            #for idx in chosen_idx:
+            #    sensor_output[idx] = sensors[idx]
+            #sensors = sensor_output
             #randomly chooses a subset of sensors to process (imitating RL agent)
             #n_sensors = 6
             #chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
@@ -781,7 +802,8 @@ class gofai():
         travel_speed = min(2, settings.base_speed*3**(action//settings.action_discretization)) #travelling speed can be 0.5, 1, 2, or 4 
         x_dest = travel_speed*math.cos(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5) + vel_norm*math.cos(vel_angle) * (0.75+predicted_delay)  + x_pos # correcting for current speed since change in speed isn't instantaneous
         y_dest = travel_speed*math.sin(direction)*0.4*(settings.mv_fw_dur+predicted_delay*0.5)  + vel_norm*math.sin(vel_angle) * (0.75+predicted_delay) + y_pos
-        #print(f"desired angle: {np.round(direction*180/math.pi,1)}")
+        print(f"dwa desired angle: {np.round(direction*180/math.pi,1)}")
+        print(f"dwa action: {action}")
         #print(f"current speed: {[np.round(vel_norm,1), np.round(vel_angle*180/np.pi,1)]}")
         #print(f"min distance in chosen trajectory: {np.round(minDist,5)}")
         #print(f"objects: {np.round(objects,1)}")
@@ -826,3 +848,137 @@ class gofai():
 
         return minDist
 
+
+
+class APF():
+
+    def __init__(self):
+        self.arc = 2*math.pi/settings.number_of_sensors #rad
+        self.previous_obs = [3]*(settings.number_of_sensors+6)
+        self.attractive_coeff = 0.25
+        self.repulsive_coeff = 3
+        self.safety_dist = 5
+
+    def attractive_force(self, position, goal):
+        "Computes the attractive force to the goal. takes goal and robot positions as [x,y] arrays and returns [x,y] force"
+        return self.attractive_coeff * (goal - position)
+
+    def repulsive_force(self, position, obstacles):
+        "Computes the repulsive forces to the goal. takes relative obstacles positions as a list of [x,y] arrays and returns [x,y] force"
+        total_force = np.zeros_like(position)
+        distances = np.linalg.norm(position - obstacles, axis=0)
+        repulsion = self.repulsive_coeff * (1 / distances - 1 / self.safety_dist) * ((1 / (distances)) ** 2) * ((position - obstacles) / distances)
+        total_force = np.sum(repulsion,axis=0)
+        #print(f" for obstacle at {obstacle}, repulsive force is {repulsion}")
+        return total_force
+
+    def artificial_potential_field(self, position, goal, obstacles):
+        attractive = self.attractive_force(position, goal)
+        repulsive = self.repulsive_force(position, obstacles)
+        total_force = attractive + repulsive
+        return total_force
+
+    
+    def predict(self, obs, goal):
+        '''
+        observation is in the form [angle, d_goal, vel_norm, vel_angle, y_pos, x_pos, d1, d2, ..., dn] where d1 starts at 180 deg and goes ccw, velocities are in drone's body frame ref
+        actions are distributed as following:
+        0-15: small circle
+        16-31: medium small circle
+        32-47: medium big circle
+        48-63: big circle
+        '''
+        obs = obs[0][0] #flattening the list
+
+        
+        #read goal from observation (when not using tangent bug)
+        #goal_angle = obs[0]*math.pi #rad
+        #global_goal_distance = obs[1]
+
+        #read goal coordinates from tangent bug
+        x_goal = goal[0]
+        y_goal = goal[1]
+        global_goal_distance = np.sqrt(x_goal**2 + y_goal**2)
+        #print(f"received goal (relative): {[x_goal,y_goal]}")
+
+        
+        vel_angle = obs[3]
+        vel_norm = obs[2]
+        x_pos = obs[5]
+        y_pos = obs[4]
+        predicted_delay = settings.delay*5 #accouting for predicted latency, and simulation time vs real time
+        x_offset = predicted_delay*vel_norm*math.cos(vel_angle)*1.25
+        y_offset = predicted_delay*vel_norm*math.sin(vel_angle)*1.25
+
+        sensors = obs[6:settings.number_of_sensors+6] 
+        #angles = obs[settings.number_of_sensors+6:]
+        angles =  np.arange(-math.pi,math.pi,self.arc)
+        #print(f"sensors: {np.round(sensors,1)}")
+
+        # ---------------- random and greedy baselines -----------------------------
+        if(msgs.algo == "GOFAI"):
+            #chooses k closest sensors
+            k_sensors = 12
+            #chosen_idx = np.argpartition(sensors, k_sensors)[:k_sensors]
+            #sensor_output = np.ones(settings.number_of_sensors)*100
+            #for idx in chosen_idx:
+            #    sensor_output[idx] = sensors[idx]
+            #sensors = sensor_output
+            #randomly chooses a subset of sensors to process (imitating RL agent)
+            #n_sensors = 6
+            #chosens = random.sample(range(len(sensors)),k=(settings.number_of_sensors-n_sensors))
+            ##print(chosens)
+            #for idx in chosens:
+            #    sensors[idx] = 100
+        #print(f"sensors dwa: {np.round(sensors,1)}")
+        # -----------------------------------------------------------------
+
+
+        objects =[]
+        orientations = []
+        #create objects list to evaluate obstacles positions, and replace missing values with old observations
+        #values over 99 are the sensors that are "removed" by the RL agent
+        for i, sensor in enumerate(sensors):
+            if sensor < 99:
+                if sensor >= 66:
+                    sensors[i] = self.previous_obs[i]
+                object_x = math.cos(angles[i])*sensors[i]
+                object_y = math.sin(angles[i])*sensors[i]
+                objects.append(np.array([object_x, object_y]))
+                orientations.append(angles[i])
+            
+        
+        #print(f"dwa objects: {np.round(objects,1)}")
+        #print(orientations)
+        #print(len(objects))
+        thetas =  np.linspace(-math.pi, math.pi, settings.action_discretization+1)
+        if len(objects) == 0: #if there is no obstacles, go straight to the goal at max speed
+            goal_angle = math.atan2(y_goal,x_goal)
+            direction = bisect(thetas, goal_angle)%16
+            if (thetas[direction]-goal_angle > goal_angle - thetas[direction-1]): #find which discretized value is closest
+                direction -= 1
+            action = (16 - direction%settings.action_discretization + round(0.75*settings.action_discretization))%settings.action_discretization  #transform the airsim action space (starts at 90 deg and goes cw)
+            #print(f"Direction: {thetas[direction]*180/np.pi} at 2 m/s. action: {action+48}. no obstacles!")
+            return action + 48
+
+        force =  self.artificial_potential_field(np.zeros(2), np.array([x_goal, y_goal]), np.array(objects))
+        #print(f"force [x,y]: {force}")
+        force_angle = math.atan2(force[1],force[0])
+        speed = np.linalg.norm(force)
+
+        direction = bisect(thetas, force_angle)%16
+        if (thetas[direction]-force_angle > force_angle - thetas[direction-1]): #find which discretized value is closest
+            direction -= 1
+        action = (16 - direction%settings.action_discretization + round(0.75*settings.action_discretization))%settings.action_discretization  #transform the airsim action space (starts at 90 deg and goes cw)
+        #adjusting for force magnitude
+        if action > 2:
+            action += 3*settings.action_discretization
+        elif action > 1:
+            action += 2*settings.action_discretization
+        elif action > 0.3:
+            action += settings.action_discretization
+
+        self.previous_obs = sensors
+        #print(f"Direction: {thetas[direction]*180/np.pi%360} at {speed} m/s. action: {action}")
+
+        return action
