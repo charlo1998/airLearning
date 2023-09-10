@@ -97,9 +97,9 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
             
             actions.append(action)
             obs, rewards, done, info = env.step(action)
-            env.airgym.client.simPause(True)
-            answer = input()
-            env.airgym.client.simPause(False)
+            #env.airgym.client.simPause(True)
+            #answer = input()
+            #env.airgym.client.simPause(False)
             
     print(f"total CPU processing time: {(time.process_time()-start)} s")
     print(f"average DWA clock processing time: {sum(env.process_action_list)/len(env.process_action_list)*1000} ms")

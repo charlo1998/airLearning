@@ -617,8 +617,8 @@ class AirSimEnv(gym.Env):
                 #print(f"meta action: {np.round((time.perf_counter() - process_action_start)*1000)} ms")
                 dwa_cpu_start = time.process_time()
                 
-                #moveAction = self.DWA.predict(obs, goal)
-                moveAction = self.APF.predict(obs, goal)
+                moveAction = self.DWA.predict(obs, goal)
+                #moveAction = self.APF.predict(obs, goal)
                 dwa_cpu_end = time.process_time()
                 self.moveAction_in_step.append(moveAction)
                 process_action_end = time.perf_counter()

@@ -98,9 +98,9 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "EnvType": ["Indoor"],
                   "ArenaSize": [[16, 70, 10]],
                   "PlayerStart": [[0, 0, 0]], #this is not working
-                  "NumberOfDynamicObjects": list(range(10,12)), #hard seed: 100 obstacles
+                  "NumberOfDynamicObjects": list(range(11,12)), #hard seed: 100 obstacles #complex scenario: 11
                   "Walls1": [[255, 255, 10]],
-                  "Seed": list(range(1,2)), #hard seed: seed 0. scenario 2: seed 4
+                  "Seed": [1], #hard seed: seed 1. scenario 2: seed 4 #list(range(1,2))
                   "VelocityRange": [[0.0, 0.0]],
                   "Name": ["Name"],
                   "NumberOfObjects": list(range(1,2))}
@@ -250,7 +250,7 @@ verbose = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = 1  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = 5  # note that if number of zones are x, #pay attention
 random.seed(hard_range_dic["Seed"][0])
 deterministic = True
 goals_list = []

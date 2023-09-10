@@ -95,7 +95,8 @@ def plot_trajectories(file):
     plt.figure()
     xgoal = []
     ygoal = []
-    for i in range(3,4): #nbOfEpisodesToPlot this is the number of trajectories to plot
+    episodes_to_plot = [0,3]
+    for i in episodes_to_plot: #nbOfEpisodesToPlot this is the number of trajectories to plot
         xgoal.append(data['goal'][i][0])
         ygoal.append(data['goal'][i][1])
         xcoord = []
@@ -112,10 +113,8 @@ def plot_trajectories(file):
 
         nbOfSteps += episodeLength
         plt.plot(xcoord, ycoord, label=str(i))
-
-
-    trajectories = np.array([xcoord, ycoord])
-    np.savetxt(os.path.join(settings.proj_root_path, "data", msgs.algo,"trajectories0.txt"), trajectories)
+        trajectories = np.array([xcoord, ycoord])
+        np.savetxt(os.path.join(settings.proj_root_path, "data", msgs.algo,f"trajectories{i}.txt"), trajectories)
 
     plt.scatter(xgoal, ygoal)
     plt.xlabel("x")
@@ -294,7 +293,7 @@ def plot_action_vs_obs(data):
     for k in range(settings.runs_to_do):
         episode_actions = data[k]["actions_in_each_step"]
         episode_observations = data[k]["observations_in_each_step"]
-        dwa_actions = data[k]["DWA_action_in_each_step"]
+        dwa_actions = data[k]["planner_action_in_each_step"]
         if msgs.mode == "test":
             episode_positions = data[k]["position_in_each_step"]
             goals = data[k]["goal"]
@@ -353,7 +352,7 @@ def plot_action_vs_obs(data):
     #print(sensors_per_action[0])
     
     number_of_episodes_to_show = min(1, len(episode_actions))
-    for episode in range(-2,-1):
+    for episode in range(3,4):
         plt.figure()
         number_of_sensors = []
         for sensors in sensors_per_action[episode]:
@@ -383,7 +382,7 @@ def plot_action_vs_obs(data):
             #ax.set_rscale('symlog')
             #ax.set_title("sensor observation for timestep " + str(step), va='bottom')
             ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
-            line1 = ax.plot(theta, obs_per_action[episode][step])
+            line1 = ax.plot(list(theta) + [theta[0]], obs_per_action[episode][step] + [obs_per_action[episode][step][0]])
             line2 = plt.fill_between(theta2, 0, chosen_areas, alpha=0.2)
             if msgs.mode == "test":
                 x_goal_rel = goals[episode][1]-pos_per_action[episode][step][1] #uav frame of ref
@@ -396,13 +395,13 @@ def plot_action_vs_obs(data):
                 line3 = ax.scatter(wanted_angle, wanted_norm, c= 'g')
             ax.set_rticks([3, 6, 9])  # Less radial ticks
             ax.set_rlabel_position(180)  # Move radial labels away from plotted line
-            selected_actions = [27]
+            selected_actions = [176]
             if(step == len(episode_actions[episode])-1): #pause longer for last step of the episode
                 plt.pause(2)
             elif (step in selected_actions):
-                plt.pause(5)
+                plt.pause(0.6)
             else:
-                plt.pause(0.05)
+                plt.pause(0.03)
             plt.cla()
     plt.show()
 
