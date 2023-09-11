@@ -53,7 +53,7 @@ checkpoint_interval = 10000
 # ---------------------------
 # how many zones for each variable for the entire range. Note that frequency
 # of moving to a new zone is not determined here
-zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 1}  # pay attention
+zone_dic = {"Seed": 1, "NumberOfDynamicObjects": 1, "MinimumDistance": 1, "VelocityRange": 1, "End": 4}  # pay attention
 
 # update_zone_success_threshold = 50
 acceptable_success_rate_to_update_zone = 0.96  # after what ratio of success up the zone # pay attention
@@ -96,14 +96,14 @@ hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                   "MinimumDistance": [1],
                   "EnvType": ["Indoor"],
                   "EnvType": ["Indoor"],
-                  "ArenaSize": [[16, 70, 10]],
+                  "ArenaSize": [[100, 100, 10]], #[16, 70, 10]
                   "PlayerStart": [[0, 0, 0]], #this is not working
-                  "NumberOfDynamicObjects": list(range(11,12)), #hard seed: 100 obstacles #complex scenario: 11
+                  "NumberOfDynamicObjects": list(range(40,45)), #hard seed: 100 obstacles #complex scenario: 11
                   "Walls1": [[255, 255, 10]],
                   "Seed": [1], #hard seed: seed 1. scenario 2: seed 4 #list(range(1,2))
                   "VelocityRange": [[0.0, 0.0]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(1,2))}
+                  "NumberOfObjects": list(range(10,12))} #complex scenario: 11
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -228,7 +228,7 @@ backup_folder_name_style = "bu_0"  # the backup obj will create a file with this
 # general params
 # ---------------------------
 list_algo = ["DQN", "DQN-B", "PPO-B", "DDPG", "A2C-B", "GOFAI"]  # a new algo needs to be added to this list for backup to back up its results
-nb_max_episodes_steps = 600  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
+nb_max_episodes_steps = 300  # pay attention, this could be changed to a constant divided by the action rate if its keeps increasing.
 #This way we could use a fixed time insatead of a fixed amount of actions
 # assert(nb_max_episodes_steps > 16 )
 success_distance_to_goal = 2
@@ -242,7 +242,7 @@ i_run = 1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = True
-training_steps_cap = 300000
+training_steps_cap = 20000
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True

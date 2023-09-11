@@ -248,7 +248,7 @@ class AirSimEnv(gym.Env):
         return [seed]
 
 
-    def computeReward(self, action):
+    def computeReward(self, action, now):
         distance_now = np.sqrt(np.power((self.goal[0] - now[0]), 2) + np.power((self.goal[1] - now[1]), 2))
         distance_before = self.allLogs['distance'][-1]
         distance_correction = (distance_before - distance_now)
@@ -612,7 +612,7 @@ class AirSimEnv(gym.Env):
                     elif(settings.positionActions):
                         self.collided = self.airgym.take_position_action(moveAction)
                     else:
-                        self.collided = self.airgym.take_discrete_action(moveAction)
+                        self.collided = self.airgym.take_discrete_action(action)
                     self.actions_in_step.append(list(action.flatten()))
                 
             if(settings.profile):
@@ -682,7 +682,7 @@ class AirSimEnv(gym.Env):
                 reward = -100
                 self.success = False
             else: #not finished, compute reward like this: r = -1 + proximity term + heading term
-                reward= self.computeReward(action)
+                reward= self.computeReward(action,now)
                 done = False
                 self.success = False
 
