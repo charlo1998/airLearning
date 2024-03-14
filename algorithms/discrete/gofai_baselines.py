@@ -10,6 +10,7 @@ os.sys.path.insert(0, os.path.abspath('../../../settings_folder'))
 import settings
 import msgs
 from utils import gofai
+from utils import gofai_vfh
 from tangent_bug import tangent_bug
 from gym_airsim.envs.airlearningclient import *
 import callbacks
@@ -40,6 +41,7 @@ def test(env):
     process_action_list = []
     cpu_times_list = []
     DWA = gofai()
+    VFH = gofai_vfh()
     bug = tangent_bug()
     
 
@@ -54,7 +56,7 @@ def test(env):
             goal = bug.predict(obs)
             bug_end = time.perf_counter()
             #print("--------------------------------------dwa---------------------------------------------")
-            action = DWA.predict(obs,goal)
+            action = VFH.predict(obs,goal)
             end = time.perf_counter()
             end_CPU = time.process_time()
 
@@ -63,9 +65,9 @@ def test(env):
             print(f"dwa CPU processing: {np.round((end_CPU - begin_CPU)*1000)} ms")
             
             #---------------------step by step mode----------------------
-            #env.airgym.client.simPause(True)
-            #answer = input()
-            #env.airgym.client.simPause(False)
+            env.airgym.client.simPause(True)
+            answer = input()
+            env.airgym.client.simPause(False)
             obs, rewards, done, info = env.step(action)
             bug.done = done
 

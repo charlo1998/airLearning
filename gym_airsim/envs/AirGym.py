@@ -19,6 +19,7 @@ from gym_airsim.envs.airlearningclient import *
 
 from utils import append_log_file
 from utils import gofai
+from utils import gofai_vfh
 from tangent_bug import tangent_bug
 
 logger = logging.getLogger(__name__)
@@ -167,6 +168,7 @@ class AirSimEnv(gym.Env):
                 #this is for RL on choosing observations
                 self.action_space = spaces.MultiBinary(settings.number_of_sensors) # one for each sensor 
                 self.DWA = gofai()
+                self.VFH = gofai_vfh()
                 self.bug = tangent_bug()
                 self.moveAction_in_step = []
 

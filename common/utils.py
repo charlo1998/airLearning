@@ -826,3 +826,116 @@ class gofai():
 
         return minDist
 
+
+class gofai_vfh(gofai):
+    def predict(self, obs, goal):
+
+        obs = obs[0][0] #flattening the list
+
+        
+        #read goal from observation (when not using tangent bug)
+        #goal_angle = obs[0]*math.pi #rad
+        #global_goal_distance = obs[1]
+
+        #read goal coordinates from tangent bug
+        x_goal = goal[0]
+        y_goal = goal[1]
+        #print(f"received goal (relative): {[x_goal,y_goal]}")
+
+        sensors = obs[6:settings.number_of_sensors+6]
+        angles =  np.arange(-math.pi,math.pi,self.arc)
+
+        objects =[]
+        orientations = []
+        for i, sensor in enumerate(sensors):
+            if sensor >= 66:
+                sensors[i] = self.previous_obs[i]
+            objects.append(min(10,sensors[i]))
+            orientations.append(angles[i])
+
+        #map sectors to a - b * d_max
+        sectors = [10 - object for object in objects]
+        
+        #find valid valleys with threshold
+        threshold = 8
+        valleys = [0]*settings.number_of_sensors
+        for i, sector in enumerate(sectors):
+            if sector <= threshold:
+                valleys[i] = 1
+
+        print(f"sensors: {np.round(sensors,2)}")
+        print(f"objects: {np.round(objects,2)}")
+        print(f"sectors: {np.round(sectors,2)}")
+        print(f"valleys: {valleys}")
+
+        #find closest valid sector to goal
+        thetas =  np.linspace(-math.pi, math.pi, settings.action_discretization+1)
+        goal_angle = math.atan2(y_goal,x_goal)
+        target_direction = bisect(thetas, goal_angle)
+        if (thetas[target_direction]-goal_angle > goal_angle - thetas[target_direction-1]): #find which discretized value is closest
+            target_direction -= 1
+
+        print(f"goal angle: {np.round(goal_angle*180/np.pi,2)} target_direction: {target_direction}")
+        if any(valleys):
+            target_valley = self.find_closest_valley(valleys, target_direction)
+        else: #no valleys, go towards safe space
+            print("no valid valley! going away from closest object")
+            direction = settings.action_discretization - np.argmin(objects) #away from closest obstacle
+            action = (16 - direction%settings.action_discretization + round(0.75*settings.action_discretization))%settings.action_discretization  #transform the airsim action space (starts at 90 deg and goes cw)
+            return action
+
+        #measure window span
+        right_counter=0
+        found_boundary=False
+        right_boundary=-1
+        left_boundary=-1
+        left_counter=0
+        for i, valley in enumerate(valleys):
+            if not found_boundary: #didn't yet find right boundary of the window
+                if valleys[(i+target_valley)%len(valleys)] == 1:
+                    right_counter += 1
+                    right_boundary = (i+target_valley)%len(valleys)
+                else:
+                    found_boundary = True
+            else:
+                if valleys[(i+target_valley)%len(valleys)] == 1:
+                    left_counter += 1
+                    if left_boundary == -1:
+                        left_boundary = (i+target_valley)%len(valleys)
+                else:
+                    left_counter = 0
+                    left_boundary = -1
+        window_span = max(right_counter + left_counter, round(settings.action_discretization/4))
+
+        print(f"target valley: {target_valley}")
+        print(f"left_boundary: {left_boundary} right_boundary: {right_boundary}")
+        print(f"window_span: {window_span}")
+
+        #pick direction in middle of window
+        #check both boundaries, pick the one closest to goal and add min(4,window_span/2)
+        final_direction = round((left_boundary + right_boundary)/2)%settings.action_discretization
+
+        action = (16 - final_direction%settings.action_discretization + round(0.75*settings.action_discretization))%settings.action_discretization  #transform the airsim action space (starts at 90 deg and goes cw)
+
+        print(f"final_direction: {final_direction}")
+        print(f"converted action for airsim: {action}")
+
+        return action + 2*settings.action_discretization #go a bit faster
+
+    def find_closest_valley(self, valleys, current_valley):
+        #todo: refactor recursive search for iterative search: (alternate between left and right while saving distance)
+        if settings.action_discretization != settings.number_of_sensors:
+            print("incompatible amount of actions and valleys! convert to angles or use the same number")
+
+
+        direction = 1
+        dist=1
+        idx = current_valley
+        for i, valley in enumerate(valleys):
+            if valleys[idx] == 1:
+                return idx
+            else:
+                direction *= -1
+                dist += 1
+                idx = ((current_valley + dist*direction)+settings.number_of_sensors)%settings.number_of_sensors
+

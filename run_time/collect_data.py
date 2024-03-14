@@ -109,8 +109,8 @@ def main():
 
 
 
-    algo = "A2C-B"
-    task_type = "train"
+    algo = "GOFAI"
+    task_type = "test"
     msgs.mode = task_type
     model_weights_list_to_test = [os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"]
     model_to_checkpoint = os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/" + algo + "/model.pkl"
@@ -122,7 +122,6 @@ def main():
     task4 = {"algo": algo, "task_type": "generate_csv", "data_file": task_type + "_episodal_log.txt"}
     task5 = {"algo": algo, "task_type": "plot_data", "data_file": task_type + "_episodal_logverbose.txt", "data_to_plot": [["total_step_count_for_experiment", "success_ratio"], ["episodeN", "success_ratio"], ["total_step_count_for_experiment", "total_reward"], ["episodeN", "stepN"]], "plot_data_mode": "separate"}
     task6 = {"algo": algo, "task_type": "plot_trajectories", "data_file": task_type + "_episodal_logverbose0.txt"}
-
 
 
     
