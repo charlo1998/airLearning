@@ -242,7 +242,7 @@ i_run =  1#this needs to be the same value as runs_to_do
 assert(runs_to_do == i_run)
 buffer_size = 50000  #replay buffer: this affects critically the iteration speed as the buffer gets filled (for dqn airsim)
 use_checkpoint = False
-training_steps_cap = 166667
+training_steps_cap = 10000
 nb_steps_warmup = 5000 #iterations are really fast during this phase
 curriculum_learning = True
 verbose = True
@@ -250,7 +250,7 @@ verbose = True
 # ---------------------------
 # testing params
 # ---------------------------
-testing_nb_episodes_per_model = max_zone*50  # note that if number of zones are x, #pay attention
+testing_nb_episodes_per_model = 5  # note that if number of zones are x, #pay attention
 random.seed(hard_range_dic["Seed"][0])
 deterministic = False
 goals_list = []

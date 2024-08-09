@@ -89,7 +89,7 @@ def normalize(obs):
 def plot_trajectories(file):
     print("collecting trajectories")
     data = parse_data(file)
-    nbOfEpisodesToPlot = min(50,len(data['stepN'])-1)
+    nbOfEpisodesToPlot = min(50,len(data['stepN']))
     nbOfSteps = 0
     #plot the first x episodes
     plt.figure()
