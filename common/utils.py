@@ -95,7 +95,7 @@ def plot_trajectories(file):
     plt.figure()
     xgoal = []
     ygoal = []
-    episodes_to_plot = [0,3]
+    episodes_to_plot = [0,1,2,3,4]
     for i in episodes_to_plot: #nbOfEpisodesToPlot this is the number of trajectories to plot
         xgoal.append(data['goal'][i][0])
         ygoal.append(data['goal'][i][1])

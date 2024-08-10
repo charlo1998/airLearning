@@ -92,18 +92,33 @@ medium_range_dic = {"End": zone_dic["End"] * ["Mutable"],
                     "Name": ["Name"],
                     "NumberOfObjects": list(range(2,4))}
 
+#additional results scenario #remove narrow obstacles from the possible models! only keep chimney1 and kira 1
 hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
-                  "MinimumDistance": [1],
+                  "MinimumDistance": [0.5],
                   "EnvType": ["Indoor"],
                   "EnvType": ["Indoor"],
-                  "ArenaSize": [[16, 70, 10]],
+                  "ArenaSize": [[30, 70, 10]],
                   "PlayerStart": [[0, 0, 0]], #this is not working
-                  "NumberOfDynamicObjects": list(range(11,12)), #hard seed: 100 obstacles #complex scenario: 11
+                  "NumberOfDynamicObjects": list(range(7,8)), #hard seed: 100 obstacles #complex scenario: 11
                   "Walls1": [[255, 255, 10]],
-                  "Seed": [1], #hard seed: seed 1. scenario 2: seed 4 #list(range(1,2))
+                  "Seed": [3], #u-obstacle: seed 3
                   "VelocityRange": [[0.0, 0.0]],
                   "Name": ["Name"],
-                  "NumberOfObjects": list(range(1,2))}
+                  "NumberOfObjects": list(range(3,4))}
+
+#initial paper scenario
+#hard_range_dic = {"End": zone_dic["End"] * ["Mutable"],
+#                  "MinimumDistance": [1],
+#                  "EnvType": ["Indoor"],
+#                  "EnvType": ["Indoor"],
+#                  "ArenaSize": [[15, 70, 10]],
+#                  "PlayerStart": [[0, 0, 0]], #this is not working
+#                  "NumberOfDynamicObjects": list(range(11,12)), #hard seed: 100 obstacles #complex scenario: 11
+#                  "Walls1": [[255, 255, 10]],
+#                  "Seed": [1], #hard seed: seed 1. scenario 2: seed 4 #list(range(1,2))
+#                  "VelocityRange": [[0.0, 0.0]],
+#                  "Name": ["Name"],
+#                  "NumberOfObjects": list(range(1,2))}
 
 difficulty = "hard" #choose between easy (or default), medium, and hard
 
@@ -255,8 +270,8 @@ random.seed(hard_range_dic["Seed"][0])
 deterministic = True
 goals_list = []
 for i in range(testing_nb_episodes_per_model+1):
-    x_goal = random.choice(range(0,1))
-    y_goal = random.choice(range(33,34))
+    x_goal = 5  #random.choice(range(0,1))
+    y_goal = random.choice(range(30,31)) # y = 33 for scenario 1
     goals_list.append([x_goal, y_goal, 0])
 goals_idx = 0
 # then model get tested testing_nb_episodes_per_model/x

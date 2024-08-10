@@ -138,7 +138,7 @@ def main():
     #taskList.append(task3) #close game
     
     taskList.append(task5) #plot
-    #taskList.append(task4) #generate_csv
+    taskList.append(task4) #generate_csv
 
     for task_el in taskList:
         print(f'executing task {task_el}')

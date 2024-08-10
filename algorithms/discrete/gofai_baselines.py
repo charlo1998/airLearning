@@ -56,10 +56,16 @@ def test(env):
             bug_end = time.perf_counter()
             #print("--------------------------------------dwa---------------------------------------------")
             #action = DWA.predict(obs,goal)
+            # -------------- skipping bug -----------
+            print(f"bug goal: {goal}")
+            goal = env.goal-env.airgym.drone_pos()
+            dwa_goal = [goal[1], goal[0]] #inverted x and y
+            print(f"relative goal: {dwa_goal}")
+            # --------------------------------
             begin_CPU = time.process_time()
             #for i in range(100):
             #    action = APF_planner.predict(obs,goal)
-            action =DWA.predict(obs,goal)
+            action =DWA.predict(obs,dwa_goal)
             end = time.perf_counter()
             end_CPU = time.process_time()
 
