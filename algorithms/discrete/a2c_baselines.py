@@ -21,7 +21,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 #from stable_baselines.common import make_vec_env #this yields an error
 from stable_baselines import A2C
 from keras.backend.tensorflow_backend import set_session
-from customPolicy import CustomLSTMPolicy, CustomPolicy
+from customPolicy import CustomLSTMPolicy, CustomPolicy, CustomTinyDeepCNNPolicy
 
 def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     config = tf.ConfigProto()
@@ -39,6 +39,8 @@ def setup(difficulty_level='default', env_name = "AirSimEnv-v42"):
     #env = make_vec_env('CartPole-v1', n_envs=4)
     agent = A2C(CustomPolicy, vec_env, verbose=1, learning_rate=3e-3, gamma=0.9, max_grad_norm = 0.5)
     print(agent.summary)
+    #model_baseline = A2C(CustomTinyDeepCNNPolicy, vec_env, verbose=1, learning_rate=1e-2, gamma=0.99)
+    #model_baseline.save(os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/A2C-B/model_dwa_rl") #todo: automate the path
 
     env.set_model(agent)
 
@@ -49,6 +51,7 @@ def train(env, agent, checkpoint=os.path.expanduser("~") + "/workspace/airlearni
         print(f"loading checkpoint {checkpoint}")
         agent = A2C.load(checkpoint)
         agent.env = DummyVecEnv([lambda: env])
+
     # Train the agent
     training_start = time.time()
     agent.learn(total_timesteps=settings.training_steps_cap)
@@ -74,11 +77,16 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
     msgs.mode = 'test'
     msgs.weight_file_under_test = filepath
 
+    #model_baseline = A2C.load( os.path.expanduser("~") + "/workspace/airlearning/airlearning-rl/data/A2C-B/model_dwa_rl")
+    DWA = utils.gofai()
+    bug = tangent_bug()
+    
     model = A2C.load(filepath, policy=CustomPolicy)
 
     observations = []
     actions = []
     infer_latency_list= []
+    infer_cnn_list = []
     infer_cpu_list=[]
     start = time.perf_counter()
     for i in range(settings.testing_nb_episodes_per_model):
@@ -95,6 +103,11 @@ def test(env, agent, filepath = os.path.expanduser("~") + "/workspace/airlearnin
             infer_latency_list.append(infer_end-infer_start)
             infer_cpu_list.append(cpu_end-cpu_start)
             
+            #cnn_infer_start = time.perf_counter()
+            #_, _ = model_baseline.predict(obs)
+            #cnn_infer_end = time.perf_counter()
+            #infer_cnn_list.append(cnn_infer_end-cnn_infer_start)
+
             actions.append(action)
             obs, rewards, done, info = env.step(action)
             #env.airgym.client.simPause(True)
